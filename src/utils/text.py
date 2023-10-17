@@ -88,17 +88,13 @@ def render_outline(text, font, text_color, outline_color, outline_width):
 
 def render_color_overlay(surface, color=(0, 0, 0), alpha: float = 1):
     """
-    This is supposed to change the color of a surface to a specific solid color, but it doesn't work exactly right.
-    In flappy_font() it somehow changes outline color as well, even though the outline is blitted after the solid color.
-    For this use case it's perfectly fine but still.
-    Might fix later (yeah sure...)
+    Color the surface with a solid color.
     """
-    overlay_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-    overlay_surface.fill((color[0], color[1], color[2], int(255 * alpha)))
+    surface_mask = pygame.mask.from_surface(surface)
+    colored_mask = surface_mask.to_surface(unsetcolor=(0, 0, 0, 0),
+                                           setcolor=(color[0], color[1], color[2], int(255 * alpha)))
 
-    surface.blit(overlay_surface, (0, 0), special_flags=pygame.BLEND_RGB_MAX)
-
-    return surface
+    return colored_mask
 
 
 def flappy_font(text: str, font, text_color, stroke_color, stroke_width: int, shadow_distance):
@@ -106,7 +102,7 @@ def flappy_font(text: str, font, text_color, stroke_color, stroke_width: int, sh
         text=text, font=font, text_color=text_color,
         outline_color=stroke_color, outline_width=stroke_width)
 
-    shadow_surface = render_color_overlay(outlined_text_surface)
+    shadow_surface = render_color_overlay(surface=outlined_text_surface, color=(0, 0, 0), alpha=1)
 
     combined_surface = pygame.Surface((outlined_text_surface.get_width() + shadow_distance[0],
                                        outlined_text_surface.get_height() + shadow_distance[1]),
