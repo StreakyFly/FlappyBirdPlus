@@ -1,6 +1,6 @@
 import pygame
 
-from ..utils import GameConfig, Fonts, flappy_font, load_font
+from ..utils import GameConfig, Fonts, flappy_text, load_font
 from .entity import Entity
 
 
@@ -24,7 +24,8 @@ class Score(Entity):
 
     @property
     def rect(self) -> pygame.Rect:
-        text_surface = self.font.render(str(self.score), True, (255, 255, 255))
+        text_surface = flappy_text(text=str(self.score), font=self.font, text_color=(255, 255, 255),
+                                   outline_color=(0, 0, 0), outline_width=5, shadow_distance=(5, 5))
         text_rect = text_surface.get_rect()
         text_rect.centerx = self.config.window.width // 2
         text_rect.y = self.y
@@ -32,11 +33,11 @@ class Score(Entity):
 
     def draw(self) -> None:
         if self.score not in Score.text_cache:
-            text = flappy_font(text=str(self.score), font=self.font, text_color=(255, 255, 255),
-                               stroke_color=(0, 0, 0), stroke_width=5, shadow_distance=(5, 5))
+            text_surface = flappy_text(text=str(self.score), font=self.font, text_color=(255, 255, 255),
+                                       outline_color=(0, 0, 0), outline_width=5, shadow_distance=(5, 5))
 
             # Store the rendered text in the cache
-            Score.text_cache[self.score] = text
+            Score.text_cache[self.score] = text_surface
 
             # Check the cache size and remove the second-newest entry if necessary
             if len(Score.text_cache) > Score.max_cache_size:
