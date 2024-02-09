@@ -3,6 +3,8 @@ import pygame
 
 def clamp(n: float, minn: float, maxn: float) -> float:
     """
+    Use pygame.math.clamp() instead if possible!
+
     Clamps a number between two specified values.
 
     This function ensures that the input number 'n' falls within the specified range defined
@@ -50,3 +52,20 @@ def pixel_collision(rect1: pygame.Rect, rect2: pygame.Rect, mask1: pygame.mask.M
     # Use the 'overlap' function to check if the masks overlap
     return bool(mask1.overlap(mask2, offset))
 
+
+def rotate_on_pivot(image, angle, pivot, origin):
+    """
+    Rotate an image around a pivot point.
+
+    :param image: The Pygame image to be rotated.
+    :param angle: The angle of rotation in degrees.
+    :param pivot: The pivot point around which the image will be rotated.
+    :param origin: The origin point of the image.
+    :return: The rotated image and its bounding rectangle.
+    """
+    surf = pygame.transform.rotate(image, angle)
+
+    offset = pivot + (origin - pivot).rotate(-angle)
+    rect = surf.get_rect(center=offset)
+
+    return surf, rect

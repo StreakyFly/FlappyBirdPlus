@@ -20,7 +20,7 @@ class Score(Entity):
 
     def add(self) -> None:
         self.score += 1
-        self.config.sounds.point.play()
+        self.config.sounds.play_random(self.config.sounds.point)
 
     @property
     def rect(self) -> pygame.Rect:
@@ -36,16 +36,15 @@ class Score(Entity):
             text_surface = flappy_text(text=str(self.score), font=self.font, text_color=(255, 255, 255),
                                        outline_color=(0, 0, 0), outline_width=5, shadow_distance=(5, 5))
 
-            # Store the rendered text in the cache
             Score.text_cache[self.score] = text_surface
 
-            # Check the cache size and remove the second-newest entry if necessary
+            # check the cache size and remove the second-newest entry if necessary
             if len(Score.text_cache) > Score.max_cache_size:
                 scores = list(Score.text_cache.keys())
                 second_newest_score = scores[-2]
                 del Score.text_cache[second_newest_score]
 
-        # Use the pre-rendered text from the cache
+        # use the pre-rendered text from the cache
         combined_surface = Score.text_cache[self.score]
 
         text_rect = combined_surface.get_rect()

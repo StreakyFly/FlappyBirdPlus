@@ -11,12 +11,13 @@ def load_font(path: str, font_size: int) -> pygame.font:
     return pygame.font.Font(f'assets/{path}', font_size)
 
 
-def flappy_text(text: str, font, text_color, outline_color, outline_width: int, shadow_distance):
+def flappy_text(text: str, font, text_color=(255, 255, 255), outline_color=(0, 0, 0), outline_width: int = 5,
+                shadow_distance: tuple[int, int] = (0, 0), outline_algorithm: int = 3):
     text_surface = font.render(text, True, text_color).convert_alpha()
     outlined_text_surface = render_outline(surface=text_surface,
                                            outline_color=outline_color,
                                            outline_width=outline_width,
-                                           outline_algorithm=3)
+                                           outline_algorithm=outline_algorithm)
 
     shadow_surface = render_color_overlay(surface=outlined_text_surface, color=(0, 0, 0), alpha=1)
 

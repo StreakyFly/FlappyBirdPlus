@@ -43,9 +43,11 @@ def get_points(outline_algorithm: int, outline_width: int):
         case 2:
             points = _squarepoints_corners(outline_width)
         case 3:
-            points = _squarepoints_corners_chonk(outline_width)
+            points = _squarepoints_corners_for_chonkers(outline_width)
+        case 4:
+            points = _squarepoints_corners_for_less_chonkers(outline_width)
         case _:
-            raise ValueError("Invalid outline algorithm choice.")
+            raise ValueError("Invalid argument for outline_algorithm.")
 
     return points
 
@@ -92,14 +94,27 @@ def _squarepoints_corners(r):
     return list(points)
 
 
-def _squarepoints_corners_chonk(r):
+def _squarepoints_corners_for_chonkers(r):
+    points = set()
+    points.add((r, r))
+    points.add((r, -r))
+    points.add((-r, r))
+    points.add((-r, -r))
+
+    return list(points)
+
+def _squarepoints_corners_for_less_chonkers(r):
     """
-    i am really good at naming functions
+    I am really good at naming functions.
     """
     points = set()
     points.add((r, r))
     points.add((r, -r))
     points.add((-r, r))
     points.add((-r, -r))
+    points.add((0, r))
+    points.add((0, -r))
+    points.add((r, 0))
+    points.add((-r, 0))
 
     return list(points)

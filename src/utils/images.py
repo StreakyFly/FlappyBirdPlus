@@ -11,20 +11,19 @@ class Images:
     player: Tuple[pygame.Surface, pygame.Surface, pygame.Surface]
     welcome_message: pygame.Surface
     game_over: pygame.Surface
+    inventory_slot: pygame.Surface
+    item_spawn_bubble: pygame.Surface
+    inventory_backgrounds: dict[str, pygame.Surface]
+    items: dict[str, pygame.Surface]
 
     def __init__(self) -> None:
-        self.background = _load_image('background-day.png').convert()
-        self.floor = _load_image('floor.png').convert_alpha()
-        self.pipe = (pygame.transform.flip(_load_image('pipe.png').convert_alpha(), False, True),
-                     _load_image('pipe.png').convert_alpha())
-        self.welcome_message = _load_image('welcome_message.png').convert_alpha()
-        self.game_over = _load_image('game_over.png').convert_alpha()
-        self.randomize()
+        self._load_base_images()
+        self._load_all_item_images()
 
     def randomize(self) -> None:
-        PLAYER_IMGS = [['yellowbird-upflap.png', 'yellowbird-midflap.png', 'yellowbird-downflap.png'],
-                       ['bluebird-upflap.png', 'bluebird-midflap.png', 'bluebird-downflap.png'],
-                       ['redbird-upflap.png', 'redbird-midflap.png', 'redbird-downflap.png']]
+        PLAYER_IMGS = [['yellowbird-upflap', 'yellowbird-midflap', 'yellowbird-downflap'],
+                       ['bluebird-upflap', 'bluebird-midflap', 'bluebird-downflap'],
+                       ['redbird-upflap', 'redbird-midflap', 'redbird-downflap']]
 
         random_player = random.randint(0, len(PLAYER_IMGS) - 1)
 
@@ -32,6 +31,51 @@ class Images:
                        _load_image(f'birds/{PLAYER_IMGS[random_player][1]}'),
                        _load_image(f'birds/{PLAYER_IMGS[random_player][2]}'))
 
+    def _load_base_images(self) -> None:
+        self.background = _load_image('background-day').convert()
+        self.floor = _load_image('floor').convert_alpha()
+        self.pipe = (pygame.transform.flip(_load_image('pipe').convert_alpha(), False, True),
+                     _load_image('pipe').convert_alpha())
+        self.welcome_message = _load_image('welcome-message').convert_alpha()
+        self.game_over = _load_image('game-over').convert_alpha()
+        self.inventory_slot = _load_image('inventory-slot').convert_alpha()
+        self.item_spawn_bubble = _load_image('item-spawn-bubble').convert_alpha()
+        self.randomize()
 
-def _load_image(path):
-    return pygame.image.load(f'assets/images/{path}')
+    def _load_all_item_images(self) -> None:
+        self._load_inventory_backgrounds()
+        self._load_item_images()
+
+    def _load_inventory_backgrounds(self) -> None:
+        self.inventory_backgrounds = dict()
+        item_type_names = ('empty', 'empty-weapon', 'empty-ammo', 'empty-potion', 'empty-heal', 'empty-special',
+                           'weapon', 'ammo', 'potion', 'heal', 'special')
+        for item_type in item_type_names:
+            self.inventory_backgrounds[item_type] = _load_inventory_backgrounds(item_type).convert()
+
+    def _load_item_images(self) -> None:
+        self.items = dict()
+        item_names = ('empty/empty', 'empty/empty-weapon', 'empty/empty-ammo',
+                      'special/totem-of-undying', 'heals/medkit', 'heals/bandage',
+                      'potions/potion-heal', 'potions/potion-shield', 'weapons/ak-47', 'weapons/big-bullet')
+        for item in item_names:
+            item_name = item.split('/')[-1]
+            self.items[item_name] = _load_item_image(item).convert_alpha()
+
+            for version in ('_small', '_inventory'):
+                try:
+                    self.items[f"{item_name}{version}"] = _load_item_image(f'{item}{version}').convert_alpha()
+                except FileNotFoundError:
+                    pass
+
+
+def _load_image(image_name) -> pygame.Surface:
+    return pygame.image.load(f'assets/images/{image_name}.png')
+
+
+def _load_item_image(item_name) -> pygame.Surface:
+    return _load_image(f'items/{item_name.replace(" ", "-")}')
+
+
+def _load_inventory_backgrounds(item_name) -> pygame.Surface:
+    return _load_image(f'items/inventory_backgrounds/{item_name.replace(" ", "-")}')
