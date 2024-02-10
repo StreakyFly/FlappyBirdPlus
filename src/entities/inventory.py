@@ -1,3 +1,4 @@
+import math
 from typing import List, Union
 
 from ..utils import GameConfig, flappy_text, load_font, Fonts
@@ -84,20 +85,23 @@ class Inventory(Entity):
                     slot.item.quantity = weapon.magazine_size
                     self.inventory_slots[1].item.quantity += weapon.magazine_size  # add one additional ammo magazine
                 else:
-                    slot.item.quantity += slot.item.spawn_quantity()
+                    slot.item.quantity += slot.item.spawn_quantity
                 return
 
         self.add_new_item(item_name)
 
     def add_new_item(self, item_name: ItemName, inventory_slot: InventorySlot = None):
-        # TODO če pobereš drugačen weapon, ti zamenja weapon, ammo spremeni, quantity pa pretvori in magazine_size
-        #  relation - torej če si mel prej 90 ammo za weapon z 30 magazine_size, in pobereš weapon z 1 magazine_size,
-        #  boš potem mel 3 + 1 (1 new magazine)
-
-        # TODO if you already have a weapon but get a new one, don't delete previous weapon until self.shot_ammo becomes
-        #  empty -> maybe put the previous weapon in temp variable or something like that
-
         item_to_add = self.item_manager.init_item(item_name)
+
+        if item_to_add.type == ItemType.WEAPON and self.inventory_slots[0].item.name != ItemName.EMPTY:
+            current_weapon: Union[Item, Gun] = self.inventory_slots[0].item
+            new_weapon: Union[Item, Gun] = item_to_add
+            if current_weapon.shot_bullets:
+                # if there are still spawned bullets, move them to the new weapon, so they don't disappear
+                new_weapon.shot_bullets = set(current_weapon.shot_bullets)
+            if new_weapon.name != current_weapon.name:
+                # convert ammo quantity to correspond to the new weapon's magazine size
+                self.inventory_slots[1].item.quantity = math.ceil(self.inventory_slots[1].item.quantity / current_weapon.magazine_size) * item_to_add.magazine_size
 
         if not inventory_slot:
             for slot in self.inventory_slots:

@@ -17,22 +17,24 @@ class Gun(Item):
         self.magazine_size = magazine_size
         self.shoot_cooldown = shoot_cooldown
         self.reload_cooldown = reload_cooldown
+
         self.remaining_shoot_cooldown = 0
         self.remaining_reload_cooldown = 0
         self.quantity_after_reload = magazine_size
         self.interaction_in_progress: bool = False
 
         self.offset = pygame.Vector2(0, 0)
-        self.pivot_offset = pygame.Vector2(0, 0)
+        self.pivot = pygame.Vector2(0, 0)
         self.barrel_end_pos = pygame.Vector2(0, 0)
-        self.ammo_dimensions = pygame.Vector2(0, 0)
+
+        self.update_position()
 
         self.shot_bullets = set()
 
     def tick(self) -> None:
+        self.update_position()
         if len(self.shot_bullets) > 0:
             self.tick_ammo()
-        print(len(self.shot_bullets))
         super().tick()
 
         if not self.interaction_in_progress:
@@ -53,21 +55,26 @@ class Gun(Item):
 
     def tick_ammo(self) -> None:
         for bullet in set(self.shot_bullets):
-            # remove bullets if they are out of the window
-            # TODO add some extra space so the bullets don't disappear immediately after they leave the screen
-            if bullet.x > self.config.window.width or bullet.y < 0 or bullet.y > self.config.window.height or bullet.x < 0:
+            # remove bullets if they are out of the game window
+            extra = self.config.window.height * 0.2
+            if bullet.x > self.config.window.width + extra or bullet.x < -extra or \
+               bullet.y > self.config.window.height + extra or bullet.y < -extra:
                 self.shot_bullets.remove(bullet)
                 continue
             # TODO remove bullets if they hit enemies (if any enemy is even spawned)
             bullet.tick()
 
     def draw(self) -> None:
-        self.x = self.entity.x + self.offset.x
-        self.y = self.entity.y + self.offset.y
-        pivot_point = pygame.Vector2(self.entity.x + self.pivot_offset.x, self.entity.y + self.pivot_offset.y)
-        origin_point = pygame.Vector2(self.rect.center)
+        pivot_point = pygame.Vector2(self.x + self.pivot.x, self.y + self.pivot.y)
+        # pivot_point = pygame.Vector2(self.entity.x + self.pivot.x, self.entity.y + self.pivot.y)  # different weapon animation relative to the player (Ctrl+F: DWARP1)
+        origin_point = self.rect.center
         rotated_image, rotated_rect = rotate_on_pivot(self.image, self.entity.rot, pivot_point, origin_point)
         self.config.screen.blit(rotated_image, rotated_rect)
+        # pygame.draw.circle(self.config.screen, (255, 0, 0), self.calculate_initial_bullet_position(), 10, width=5)  # for debugging
+
+    def update_position(self):
+        self.x = self.entity.x + self.offset.x
+        self.y = self.entity.y + self.offset.y
 
     def use(self, action, ammo: Item, *args) -> None:
         if action == 0:
@@ -83,7 +90,7 @@ class Gun(Item):
 
         # if weapon magazine isn't empty, shoot
         if self.quantity > 0:
-            self.shoot()
+            self.shoot(ammo)
             return
 
         # if gun is empty, try reloading it
@@ -107,13 +114,14 @@ class Gun(Item):
             self.quantity_after_reload = self.magazine_size
         self.reload()
 
-    def shoot(self):
+    def shoot(self, ammo: Item):
         # TODO FIRE!
-        print("PEW")
         self.interaction_in_progress = True
         self.quantity -= 1
         self.remaining_shoot_cooldown = self.shoot_cooldown
         self.spawn_bullet()
+        if self.quantity == 0:
+            self.handle_reloading(ammo)
 
     def reload(self) -> None:
         # TODO RELOAD!
@@ -123,10 +131,10 @@ class Gun(Item):
 
     def calculate_initial_bullet_position(self):
         # calculate the position of the barrel end relative to the pivot point
-        relative_barrel_end_pos = self.barrel_end_pos - self.pivot_offset
+        relative_barrel_end_pos = self.barrel_end_pos - self.pivot
 
         # calculate the rotation angle in radians
-        rotation_rad = math.radians(-self.calculate_rotation())
+        rotation_rad = math.radians(-self.entity.rot)
 
         # rotate the relative barrel end position by the gun's rotation
         rotated_relative_barrel_end_pos = pygame.Vector2(
@@ -135,41 +143,19 @@ class Gun(Item):
         )
 
         # calculate the position of the barrel end in the world coordinates
-        world_barrel_end_pos = rotated_relative_barrel_end_pos + self.pivot_offset
+        world_barrel_end_pos = rotated_relative_barrel_end_pos + self.pivot
 
         # calculate the position where the ammo spawns
-        pos_x = self.x + world_barrel_end_pos.x - self.ammo_dimensions.x
-        pos_y = self.y + world_barrel_end_pos.y - self.ammo_dimensions.y / 2
+        pos_x = self.x + world_barrel_end_pos.x
+        pos_y = self.y + world_barrel_end_pos.y
+        # rotated_offset = self.offset.rotate(-self.entity.rot)  # different weapon animation relative to the player (Ctrl+F: DWARP1)
+        # pos_x = self.entity.x + world_barrel_end_pos.x + rotated_offset.x
+        # pos_y = self.entity.y + world_barrel_end_pos.y + rotated_offset.y
         position = pygame.Vector2(pos_x, pos_y)
         return position
-
-    def calculate_angle(self, vector1, vector2):
-        dot_product = vector1.dot(vector2)
-        magnitude_product = vector1.magnitude() * vector2.magnitude()
-        value = pygame.math.clamp(dot_product / magnitude_product, -1.0, 1.0)
-        angle_rad = math.acos(value)
-        angle_deg = math.degrees(angle_rad)
-
-        cross_product = vector1.x * vector2.y - vector1.y * vector2.x
-        if cross_product > 0:
-            angle_deg = -angle_deg
-
-        return angle_deg
-
-    def calculate_rotation(self):
-        # rotation = self.entity.rot might work fine? Or maybe not in cases where pivot is not in the middle of the gun.
-        pivot_point = pygame.Vector2(self.entity.x + self.pivot_offset.x, self.entity.y + self.pivot_offset.y)
-        origin_point = pygame.Vector2(self.rect.center)
-        _, rotated_rect = rotate_on_pivot(self.image, self.entity.rot, pivot_point, origin_point)
-
-        new_position = pygame.Vector2(rotated_rect.center)
-        vector1 = origin_point - pivot_point
-        vector2 = new_position - pivot_point
-        rotation = self.calculate_angle(vector1, vector2)
-        return rotation
 
     def spawn_bullet(self):
         bullet = self.ammo_class(config=self.config, item_name=self.ammo_name, item_type=ItemType.AMMO,
                                  damage=self.damage, spawn_position=self.calculate_initial_bullet_position(),
-                                 speed=self.ammo_speed, angle=self.calculate_rotation())
+                                 speed=self.ammo_speed, angle=self.entity.rot)
         self.shot_bullets.add(bullet)

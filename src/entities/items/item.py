@@ -47,6 +47,7 @@ class ItemName(Enum):
 
     # WEAPON
     WEAPON_AK47 = 'ak-47'
+    WEAPON_DEAGLE = 'deagle'
 
     # AMMO
     BULLET_BIG = 'big-bullet'
@@ -102,15 +103,15 @@ class Item(Entity):
         config: GameConfig,
         item_type: ItemType,
         item_name: ItemName,
-        spawn_quantity_range: Tuple[int, int] = (1, 1),
+        spawn_quantity: int = 1,
         entity=None,  # in case the Item needs to access attributes of Entity instance, for example its HP
         **kwargs
     ) -> None:
         super().__init__(config, **kwargs)
         self.type = item_type
         self.name = item_name
-        self._spawn_quantity_range = spawn_quantity_range
-        self._quantity = self.spawn_quantity()
+        self.spawn_quantity = spawn_quantity
+        self._quantity = spawn_quantity
         self.entity = entity
         if item_name.value + "_inventory" in self.config.images.items:
             self.inventory_image = config.images.items[item_name.value + "_inventory"]
@@ -129,24 +130,22 @@ class Item(Entity):
         else:
             self._quantity = value
 
-    def spawn_quantity(self):
-        min_value, max_value = self._spawn_quantity_range
-        return random.randint(min_value, max_value)
-
     def use(self, *args):
         self.quantity -= 1
 
 
 class Items(Entity):
     spawned_items: List[SpawnedItem]
+    # TODO set decent spawn chances for each item - maybe even move them to a separate file...?
     spawn_chance: Dict[ItemName, float] = {
         ItemName.TOTEM_OF_UNDYING: 0.03,
         ItemName.MEDKIT: 0.1,
         ItemName.BANDAGE: 0.3,
         ItemName.POTION_HEAL: 0.15,
         ItemName.POTION_SHIELD: 0.13,
-        ItemName.WEAPON_AK47: 10,  # TODO change to extremely low
-        ItemName.BULLET_BIG: 5,  # TODO change to pretty low
+        ItemName.WEAPON_AK47: 5,
+        ItemName.WEAPON_DEAGLE: 5,
+        ItemName.BULLET_BIG: 1,
     }
 
     def __init__(self, config: GameConfig, inventory, pipes, **kwargs):

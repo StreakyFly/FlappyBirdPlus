@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
 
 # TODO
-#  2. guns
+#  2. guns - add animation and sound for shooting and reloading - the shooting animation can be a simple move back and forth
 #  3. enemies
 #  4. traps
 #  5. TBD...

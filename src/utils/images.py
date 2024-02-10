@@ -57,7 +57,8 @@ class Images:
         self.items = dict()
         item_names = ('empty/empty', 'empty/empty-weapon', 'empty/empty-ammo',
                       'special/totem-of-undying', 'heals/medkit', 'heals/bandage',
-                      'potions/potion-heal', 'potions/potion-shield', 'weapons/ak-47', 'weapons/big-bullet')
+                      'potions/potion-heal', 'potions/potion-shield',
+                      'weapons/ak-47', 'weapons/deagle', 'weapons/big-bullet')
         for item in item_names:
             item_name = item.split('/')[-1]
             self.items[item_name] = _load_item_image(item).convert_alpha()
