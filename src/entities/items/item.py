@@ -50,6 +50,8 @@ class ItemName(Enum):
     WEAPON_DEAGLE = 'deagle'
 
     # AMMO
+    AMMO_BOX = 'ammo-box'
+    BULLET_MEDIUM = 'medium-bullet'
     BULLET_BIG = 'big-bullet'
 
 
@@ -145,7 +147,7 @@ class Items(Entity):
         ItemName.POTION_SHIELD: 0.13,
         ItemName.WEAPON_AK47: 5,
         ItemName.WEAPON_DEAGLE: 5,
-        ItemName.BULLET_BIG: 1,
+        ItemName.AMMO_BOX: 4,
     }
 
     def __init__(self, config: GameConfig, inventory, pipes, **kwargs):

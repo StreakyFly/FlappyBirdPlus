@@ -23,6 +23,6 @@ class AK47(Gun):
             barrel_end_pos=pygame.Vector2(self.w, self.h * 0.25)
         )
         self.set_recoil(
-            distance=16,
+            distance=14,
             duration=5
         )

@@ -26,7 +26,7 @@ class Gun(Item):
         self.pivot = pygame.Vector2(0, 0)
         self.barrel_end_pos = pygame.Vector2(0, 0)
 
-        self.recoil_distance = 20
+        self.recoil_distance = 15
         self.recoil_duration = 5
         self.recoil_remaining_duration = 0
         self.recoil_speed = self.recoil_distance / self.recoil_duration

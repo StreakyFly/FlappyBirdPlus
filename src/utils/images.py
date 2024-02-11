@@ -55,10 +55,12 @@ class Images:
 
     def _load_item_images(self) -> None:
         self.items = dict()
-        item_names = ('empty/empty', 'empty/empty-weapon', 'empty/empty-ammo',
-                      'special/totem-of-undying', 'heals/medkit', 'heals/bandage',
-                      'potions/potion-heal', 'potions/potion-shield',
-                      'weapons/ak-47', 'weapons/deagle', 'weapons/big-bullet')
+        item_names = (
+            'empty/empty', 'empty/empty-weapon', 'empty/empty-ammo',
+            'special/totem-of-undying', 'heals/medkit', 'heals/bandage', 'potions/potion-heal', 'potions/potion-shield'
+        )
+        item_names += _get_weapon_names()
+
         for item in item_names:
             item_name = item.split('/')[-1]
             self.items[item_name] = _load_item_image(item).convert_alpha()
@@ -80,3 +82,14 @@ def _load_item_image(item_name) -> pygame.Surface:
 
 def _load_inventory_backgrounds(item_name) -> pygame.Surface:
     return _load_image(f'items/inventory_backgrounds/{item_name.replace(" ", "-")}')
+
+
+def _get_weapon_names() -> Tuple[str]:
+    DIR_PREFIX = 'weapons/'
+    weapons = (
+        'ak-47', 'deagle',
+        'ammo-box',
+        'big-bullet', 'medium-bullet'
+    )
+
+    return tuple(f'{DIR_PREFIX}{weapon}' for weapon in weapons)

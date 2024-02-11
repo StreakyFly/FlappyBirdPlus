@@ -88,20 +88,41 @@ class Inventory(Entity):
                     slot.item.quantity += slot.item.spawn_quantity
                 return
 
+        if item_name == ItemName.AMMO_BOX:
+            # if there's no ammo and no weapon, add one magazine of BULLET_BIG ammo
+            if self.inventory_slots[1].item.name == ItemName.EMPTY and self.inventory_slots[0].item.name == ItemName.EMPTY:
+                self.add_new_item(ItemName.BULLET_BIG, self.inventory_slots[1])
+            # if there's ammo, add the corresponding quantity (one weapon magazine) to the existing ammo
+            else:
+                self.inventory_slots[1].item.quantity += self.inventory_slots[1].item.spawn_quantity
+            return
+
         self.add_new_item(item_name)
 
     def add_new_item(self, item_name: ItemName, inventory_slot: InventorySlot = None):
         item_to_add = self.item_manager.init_item(item_name)
 
-        if item_to_add.type == ItemType.WEAPON and self.inventory_slots[0].item.name != ItemName.EMPTY:
+        if item_to_add.type == ItemType.WEAPON:
             current_weapon: Union[Item, Gun] = self.inventory_slots[0].item
             new_weapon: Union[Item, Gun] = item_to_add
-            if current_weapon.shot_bullets:
-                # if there are still spawned bullets, move them to the new weapon, so they don't disappear
+            ammo_slot: InventorySlot = self.inventory_slots[1]
+
+            # if this is your first weapon, add corresponding ammo to the ammo inventory slot
+            if ammo_slot.item.type == ItemType.EMPTY:
+                self.add_new_item(new_weapon.ammo_name, ammo_slot)
+            # otherwise, add one magazine of ammo to the existing ammo
+            else:
+                ammo_slot.item.quantity += ammo_slot.item.spawn_quantity
+
+            # change ammo type and convert the quantity to correspond to the new weapon's magazine size
+            if current_weapon.name != new_weapon.name:
+                converted_quantity = math.ceil((ammo_slot.item.quantity / ammo_slot.item.spawn_quantity) * item_to_add.magazine_size)
+                ammo_slot.item = self.item_manager.init_item(new_weapon.ammo_name)
+                ammo_slot.item.quantity = converted_quantity
+
+            # if there are still spawned bullets, move them to the new weapon, so they don't immediately disappear
+            if current_weapon.name != ItemName.EMPTY and current_weapon.shot_bullets:
                 new_weapon.shot_bullets = set(current_weapon.shot_bullets)
-            if new_weapon.name != current_weapon.name:
-                # convert ammo quantity to correspond to the new weapon's magazine size
-                self.inventory_slots[1].item.quantity = math.ceil(self.inventory_slots[1].item.quantity / current_weapon.magazine_size) * item_to_add.magazine_size
 
         if not inventory_slot:
             for slot in self.inventory_slots:
@@ -111,14 +132,6 @@ class Inventory(Entity):
 
         inventory_slot.type = item_to_add.type
         inventory_slot.item = item_to_add
-
-        # if you got your first weapon, also add one ammo magazine to the ammo inventory slot
-        if item_to_add.type == ItemType.WEAPON:
-            weapon: Union[Item, Gun] = item_to_add
-            if self.inventory_slots[1].item.type == ItemType.EMPTY:
-                self.add_new_item(weapon.ammo_name, self.inventory_slots[1])
-            else:
-                self.inventory_slots[1].item.quantity += weapon.magazine_size
 
     def use_item(self, inventory_slot_index: int) -> None:
         slot = self.inventory_slots[inventory_slot_index]
