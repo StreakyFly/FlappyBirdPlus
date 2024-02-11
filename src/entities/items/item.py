@@ -104,7 +104,7 @@ class Item(Entity):
         item_type: ItemType,
         item_name: ItemName,
         spawn_quantity: int = 1,
-        entity=None,  # in case the Item needs to access attributes of Entity instance, for example its HP
+        entity=None,  # in case the Item needs to access attributes of Entity instance, for example its location or HP
         **kwargs
     ) -> None:
         super().__init__(config, **kwargs)
@@ -136,7 +136,7 @@ class Item(Entity):
 
 class Items(Entity):
     spawned_items: List[SpawnedItem]
-    # TODO set decent spawn chances for each item - maybe even move them to a separate file...?
+    # TODO set decent spawn chances for each item - maybe even move this to a separate file...?
     spawn_chance: Dict[ItemName, float] = {
         ItemName.TOTEM_OF_UNDYING: 0.03,
         ItemName.MEDKIT: 0.1,

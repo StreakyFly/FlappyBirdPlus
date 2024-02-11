@@ -7,25 +7,30 @@ from ..item import Item, ItemName, ItemType
 
 
 class Gun(Item):
-    def __init__(self, ammo_name: ItemName, ammo_class: callable, damage: int, ammo_speed: int, magazine_size: int,
-                 shoot_cooldown: int, reload_cooldown: int, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.ammo_name = ammo_name
-        self.ammo_class = ammo_class
-        self.damage = damage
-        self.ammo_speed = ammo_speed
-        self.magazine_size = magazine_size
-        self.shoot_cooldown = shoot_cooldown
-        self.reload_cooldown = reload_cooldown
+        self.ammo_name = None
+        self.ammo_class = None
+        self.damage = 0
+        self.ammo_speed = 0
+        self.magazine_size = 0
+        self.shoot_cooldown = 0
+        self.reload_cooldown = 0
 
         self.remaining_shoot_cooldown = 0
         self.remaining_reload_cooldown = 0
-        self.quantity_after_reload = magazine_size
+        self.quantity_after_reload = 0
         self.interaction_in_progress: bool = False
 
         self.offset = pygame.Vector2(0, 0)
         self.pivot = pygame.Vector2(0, 0)
         self.barrel_end_pos = pygame.Vector2(0, 0)
+
+        self.recoil_distance = 20
+        self.recoil_duration = 5
+        self.recoil_remaining_duration = 0
+        self.recoil_speed = self.recoil_distance / self.recoil_duration
+        self.animation_offset = pygame.Vector2(0, 0)
 
         self.update_position()
 
@@ -33,6 +38,7 @@ class Gun(Item):
 
     def tick(self) -> None:
         self.update_position()
+        self.shoot_animation()
         if len(self.shot_bullets) > 0:
             self.tick_ammo()
         super().tick()
@@ -73,8 +79,25 @@ class Gun(Item):
         # pygame.draw.circle(self.config.screen, (255, 0, 0), self.calculate_initial_bullet_position(), 10, width=5)  # for debugging
 
     def update_position(self):
-        self.x = self.entity.x + self.offset.x
-        self.y = self.entity.y + self.offset.y
+        self.x = self.entity.x + self.offset.x + self.animation_offset.x
+        self.y = self.entity.y + self.offset.y + self.animation_offset.y
+
+    def set_positions(self, offset: pygame.Vector2, pivot: pygame.Vector2, barrel_end_pos: pygame.Vector2) -> None:
+        self.offset = offset
+        self.pivot = pivot
+        self.barrel_end_pos = barrel_end_pos
+        self.update_position()
+
+    def set_properties(self, ammo_name: ItemName, ammo_class: callable,damage: int, ammo_speed: int, magazine_size: int,
+                       shoot_cooldown: int, reload_cooldown: int) -> None:
+        self.ammo_name = ammo_name
+        self.ammo_class = ammo_class
+        self.damage = damage
+        self.ammo_speed = ammo_speed
+        self.magazine_size = magazine_size
+        self.shoot_cooldown = shoot_cooldown
+        self.reload_cooldown = reload_cooldown
+        self.quantity_after_reload = magazine_size
 
     def use(self, action, ammo: Item, *args) -> None:
         if action == 0:
@@ -115,19 +138,20 @@ class Gun(Item):
         self.reload()
 
     def shoot(self, ammo: Item):
-        # TODO FIRE!
         self.interaction_in_progress = True
         self.quantity -= 1
         self.remaining_shoot_cooldown = self.shoot_cooldown
         self.spawn_bullet()
+        self.start_shoot_animation()
+        # TODO play shooting sound
         if self.quantity == 0:
             self.handle_reloading(ammo)
 
     def reload(self) -> None:
-        # TODO RELOAD!
-        print("Reloading...")
         self.interaction_in_progress = True
         self.remaining_reload_cooldown = self.reload_cooldown
+        # TODO start reloading animation
+        # TODO play reloading sound
 
     def calculate_initial_bullet_position(self):
         # calculate the position of the barrel end relative to the pivot point
@@ -159,3 +183,35 @@ class Gun(Item):
                                  damage=self.damage, spawn_position=self.calculate_initial_bullet_position(),
                                  speed=self.ammo_speed, angle=self.entity.rot)
         self.shot_bullets.add(bullet)
+
+    def set_recoil(self, distance: int, duration: int) -> None:
+        self.recoil_distance = distance
+        self.recoil_duration = duration
+        self.recoil_remaining_duration = 0
+        self.recoil_speed = self.recoil_distance / self.recoil_duration
+        self.animation_offset = pygame.Vector2(0, 0)
+
+        if self.recoil_duration > self.shoot_cooldown:
+            raise Exception("Recoil duration should NOT be greater than shoot cooldown!")
+
+    def start_shoot_animation(self) -> None:
+        if self.recoil_remaining_duration > 0:
+            return
+        self.recoil_remaining_duration = self.recoil_duration
+        self.animation_offset = pygame.Vector2(0, 0)
+
+    def shoot_animation(self):
+        if self.recoil_remaining_duration == 0:
+            return
+
+        half_duration = self.recoil_duration / 2
+        recoil_offset = self.recoil_speed * (half_duration - abs(half_duration - self.recoil_remaining_duration + 1)) * 2
+
+        rotation_rad = math.radians(-self.entity.rot)
+        self.animation_offset.x = -recoil_offset * math.cos(rotation_rad)
+        self.animation_offset.y = -recoil_offset * math.sin(rotation_rad)
+
+        self.recoil_remaining_duration -= 1
+
+        if self.recoil_remaining_duration == 0:
+            self.animation_offset = pygame.Vector2(0, 0)

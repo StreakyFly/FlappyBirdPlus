@@ -5,14 +5,17 @@ from ...item import Item
 
 
 class Bullet(Item):
-    def __init__(self, damage: int = 0, spawn_position: pygame.Vector2 = pygame.Vector2(0, 0),
+    def __init__(self, spawn_position: pygame.Vector2 = pygame.Vector2(0, 0), damage: int = 0,
                  speed: float = 0, angle: float = 0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.damage = damage
         self.speed = speed
         self.angle = angle
-        self.bullet_offset = pygame.Vector2(-self.w, -self.h / 2)  # override for unique bullets and then call set_spawn_position() again
-        self.set_spawn_position(spawn_position)
+        self.spawn_position = spawn_position
+
+        # for unique bullets call set_spawn_position() in subclass again
+        self.set_spawn_position(bullet_offset=pygame.Vector2(-self.w, -self.h / 2))
+
         self.velocity = self.calculate_velocity()
         rotated_image = pygame.transform.rotate(self.config.images.items[self.name.value], angle)
         self.update_image(rotated_image, self.image.get_width(), self.image.get_height())
@@ -31,7 +34,7 @@ class Bullet(Item):
 
         return pygame.Vector2(vel_x, vel_y)
 
-    def set_spawn_position(self, spawn_position: pygame.Vector2):
-        rotated_offset = self.bullet_offset.rotate(self.angle)
-        self.x = spawn_position.x + rotated_offset.x
-        self.y = spawn_position.y - rotated_offset.y
+    def set_spawn_position(self, bullet_offset: pygame.Vector2):
+        rotated_offset = bullet_offset.rotate(self.angle)
+        self.x = self.spawn_position.x + rotated_offset.x
+        self.y = self.spawn_position.y - rotated_offset.y

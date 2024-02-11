@@ -11,7 +11,6 @@ class ItemManager:
     def __init__(self, config: GameConfig, player):
         self.config = config
         self.player = player
-        self.fps = config.fps
 
     def init_item(self, item_name: ItemName):
         c = self.config
@@ -33,13 +32,9 @@ class ItemManager:
             case n.POTION_SHIELD:
                 item = ShieldPotion(c, t.POTION, n.POTION_SHIELD, 1, self.player)
             case n.WEAPON_AK47:
-                item = AK47(config=c, item_type=t.WEAPON, item_name=n.WEAPON_AK47, spawn_quantity=30,
-                            entity=self.player, ammo_name=n.BULLET_BIG, ammo_class=BigBullet, damage=35, ammo_speed=30,
-                            magazine_size=30, shoot_cooldown=self.fps * 0.3, reload_cooldown=self.fps * 1.5)
+                item = AK47(c, t.WEAPON, n.WEAPON_AK47, 30, self.player)
             case n.WEAPON_DEAGLE:
-                item = Deagle(config=c, item_type=t.WEAPON, item_name=n.WEAPON_DEAGLE, spawn_quantity=7,
-                              entity=self.player, ammo_name=n.BULLET_BIG, ammo_class=BigBullet, damage=80, ammo_speed=50,
-                              magazine_size=7, shoot_cooldown=self.fps * 0.7, reload_cooldown=self.fps * 2.5)
+                item = Deagle(c, t.WEAPON, n.WEAPON_DEAGLE, 7, self.player)
             case n.BULLET_BIG:
                 item = BigBullet(config=c, item_type=t.AMMO, item_name=n.BULLET_BIG, spawn_quantity=30)
             case _:
