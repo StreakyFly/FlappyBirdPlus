@@ -84,9 +84,7 @@ class Inventory(Entity):
     def tick(self) -> None:
         for slot in self.inventory_slots:
             slot.tick()
-            if slot.item.type == ItemType.WEAPON:
-                slot.item.tick()  # TODO you might want to improve this, as right now this is only used for gun cooldown
-                                  #  and no other items - maybe you'd like to use this with potions as well, so they slowly heal?
+            slot.item.tick()
 
     def add_item(self, item_name: ItemName) -> None:
         for slot in self.inventory_slots:
@@ -144,16 +142,14 @@ class Inventory(Entity):
 
     def use_item(self, inventory_slot_index: int) -> None:
         slot = self.inventory_slots[inventory_slot_index]
+
         if slot.item.type == ItemType.EMPTY:
             return
 
         if inventory_slot_index in [0, 1]:
-            # self.use_weapon(inventory_slot_index)
             weapon_slot = self.inventory_slots[0]
             ammo_slot = self.inventory_slots[1]
-            # TODO gun.use() could return either -1 if it's not reloading, or self.reloading_cooldown: int, so we can
-            #  then call InventorySlot's cooldown() method for visual effects
-            weapon_slot.item.use(inventory_slot_index, ammo_slot.item)  # ammo: Item, so the gun can properly reload
+            weapon_slot.item.use(inventory_slot_index, ammo_slot.item)  # pass in ammo item, so the gun can reload
             return
 
         slot.item.use()

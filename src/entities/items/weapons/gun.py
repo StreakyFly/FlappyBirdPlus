@@ -81,7 +81,7 @@ class Gun(Item):
         self.config.screen.blit(rotated_image, rotated_rect)
         # pygame.draw.circle(self.config.screen, (255, 0, 0), self.calculate_initial_bullet_position(), 10, width=5)  # for debugging
 
-    def update_position(self):
+    def update_position(self) -> None:
         self.x = self.entity.x + self.offset.x + self.animation_offset.x
         self.y = self.entity.y + self.offset.y + self.animation_offset.y
 
@@ -140,7 +140,7 @@ class Gun(Item):
             self.quantity_after_reload = self.magazine_size
         self.reload()
 
-    def shoot(self, ammo: Item):
+    def shoot(self, ammo: Item) -> None:
         self.interaction_in_progress = True
         self.quantity -= 1
         self.remaining_shoot_cooldown = self.shoot_cooldown
@@ -158,7 +158,7 @@ class Gun(Item):
         # TODO start reloading animation
         # TODO play reloading sound
 
-    def calculate_initial_bullet_position(self):
+    def calculate_initial_bullet_position(self) -> pygame.Vector2:
         # calculate the position of the barrel end relative to the pivot point
         relative_barrel_end_pos = self.barrel_end_pos - self.pivot
 
@@ -183,7 +183,7 @@ class Gun(Item):
         position = pygame.Vector2(pos_x, pos_y)
         return position
 
-    def spawn_bullet(self):
+    def spawn_bullet(self) -> None:
         bullet = self.ammo_class(config=self.config, item_name=self.ammo_name, item_type=ItemType.AMMO,
                                  damage=self.damage, spawn_position=self.calculate_initial_bullet_position(),
                                  speed=self.ammo_speed, angle=self.entity.rot)
@@ -205,7 +205,7 @@ class Gun(Item):
         self.recoil_remaining_duration = self.recoil_duration
         self.animation_offset = pygame.Vector2(0, 0)
 
-    def shoot_animation(self):
+    def shoot_animation(self) -> None:
         if self.recoil_remaining_duration == 0:
             return
 

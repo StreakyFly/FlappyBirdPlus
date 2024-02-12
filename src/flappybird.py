@@ -100,9 +100,9 @@ class FlappyBird:
             self.pipes.tick()
             self.floor.tick()
             self.score.tick()
+            self.items.tick()
             self.player.tick()
             self.inventory.tick()
-            self.items.tick()
 
             pygame.display.update()
             await asyncio.sleep(0)

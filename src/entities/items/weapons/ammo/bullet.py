@@ -24,7 +24,7 @@ class Bullet(Item):
         self.x += self.velocity.x
         self.y += self.velocity.y
         # pygame.draw.circle(self.config.screen, (0, 200, 111), (self.x, self.y), 20, width=8)  # for debugging
-        super().draw()
+        self.config.screen.blit(self.image, self.rect)
 
     def calculate_velocity(self):
         angle_rad = math.radians(-self.angle)

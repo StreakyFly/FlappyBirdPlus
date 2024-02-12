@@ -11,4 +11,3 @@ class HealPotion(Potion):
             return
         self.entity.change_hp(75)
         super().use()
-

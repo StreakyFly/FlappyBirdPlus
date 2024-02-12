@@ -141,6 +141,11 @@ class Item(Entity):
         self.total_cooldown = cooldown
         self.remaining_cooldown = cooldown
 
+    def draw(self) -> None:
+        # overrides Entity.draw() as Items should not be drawn on their own, unless it's a weapon or other special item
+        # that needs to be drawn on the game canvas, not just in the inventory
+        pass
+
 
 class Items(Entity):
     spawned_items: List[SpawnedItem]
@@ -164,8 +169,23 @@ class Items(Entity):
         self.spawned_items = []
 
     def tick(self) -> None:
-        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.MEDKIT,
-        #                            x=500, y=500, image=self.config.images.item_spawn_bubble))  # TODO temporary test
+        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
+        #                            x=800, y=700, image=self.config.images.item_spawn_bubble))  # temporary test
+        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
+        #                            x=800, y=600, image=self.config.images.item_spawn_bubble))  # temporary test
+        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.TOTEM_OF_UNDYING,
+        #                            x=800, y=500, image=self.config.images.item_spawn_bubble))  # temporary test
+        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
+        #                            x=800, y=400, image=self.config.images.item_spawn_bubble))  # temporary test
+        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
+        #                            x=800, y=300, image=self.config.images.item_spawn_bubble))  # temporary test
+        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.TOTEM_OF_UNDYING,
+        #                            x=800, y=200, image=self.config.images.item_spawn_bubble))  # temporary test
+        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
+        #                            x=800, y=100, image=self.config.images.item_spawn_bubble))  # temporary test
+        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
+        #                            x=800, y=0, image=self.config.images.item_spawn_bubble))  # temporary test
+
         if self.can_spawn_item():
             self.spawn_item()
 
