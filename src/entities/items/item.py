@@ -74,8 +74,8 @@ class SpawnedItem(Entity):
             item_img = self.config.images.items[self.item_name.value]
             self.item_image = pygame.transform.scale(item_img, (56, 56))
 
-        self.item_img_x: int = int((self.image.get_height() - 56) / 2)
-        self.item_img_y: int = int((self.image.get_width() - 56) / 2)
+        self.item_img_x: int = (self.image.get_height() - 56) // 2
+        self.item_img_y: int = (self.image.get_width() - 56) // 2
 
     # def draw(self) -> None:  # old draw, for 'stationary' spawned items (self.vel_x = -7.5)
     #     self.x += self.vel_x

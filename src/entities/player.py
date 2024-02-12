@@ -1,10 +1,9 @@
 from enum import Enum
 from typing import List
-from itertools import cycle
 
 import pygame
 
-from ..utils import GameConfig, GameState, GameStateManager
+from ..utils import GameConfig, GameState, GameStateManager, Animation
 from .entity import Entity
 from .floor import Floor
 from .pipe import Pipe, Pipes
@@ -32,21 +31,22 @@ class Player(Entity):
         super().__init__(config, image, x, y)
         self.min_y = -2 * self.h
         self.max_y = config.window.viewport_height - self.h * 0.75
-        self.img_idx = 0
-        self.img_gen = cycle([0, 1, 2, 1])
-        self.frame = 0
+
+        self.animation = Animation(images=list(self.config.images.player) + [self.config.images.player[1]])
+
         self.crashed = False
         self.crash_entity = None
         self.flapped = False
         self.rot = None
+
         self.mode = PlayerMode.SHM
         self.invincibility_frames = 0
         self.set_mode(PlayerMode.SHM)
         self.gsm = gsm
-        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=10000, color=(255, 0, 0),
-                                       x=self.x, y=int(self.y - 25), w=self.w, h=10)
+        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=1000, color=(255, 0, 0),
+                                       x=self.x, y=int(self.y) - 25, w=self.w, h=10)
         self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(20, 50, 255),
-                                           x=self.x, y=int(self.y - 40), w=self.w, h=10)
+                                           x=self.x, y=int(self.y) - 40, w=self.w, h=10)
 
     def set_mode(self, mode: PlayerMode) -> None:
         self.mode = mode
@@ -56,7 +56,7 @@ class Player(Entity):
         elif mode == PlayerMode.SHM:
             self.reset_vals_shm()
         elif mode == PlayerMode.CRASH:
-            self.stop_wings()
+            self.animation.stop()
             self.config.sounds.hit.play()
             if self.crash_entity == "pipe":
                 self.config.sounds.die.play()
@@ -95,13 +95,6 @@ class Player(Entity):
         self.vel_y = 13.125
         self.max_vel_y = 28.125
         self.vel_rot = -8
-
-    def update_image(self, image: pygame.Surface = None, w: int = None, h: int = None) -> None:
-        self.frame += 1
-        if self.frame % 5 == 0:
-            self.img_idx = next(self.img_gen)
-            # self.image = self.config.images.player[self.img_idx]
-            super().update_image(self.config.images.player[self.img_idx], self.image.get_width(), self.image.get_height())
 
     def tick_shm(self) -> None:
         if self.vel_y >= self.max_vel_y or self.vel_y <= self.min_vel_y:
@@ -142,7 +135,8 @@ class Player(Entity):
         self.rot = pygame.math.clamp(self.rot + self.vel_rot, self.rot_min, self.rot_max)
 
     def draw(self) -> None:
-        self.update_image()
+        self.image = self.animation.update()
+
         if self.mode == PlayerMode.SHM:
             self.tick_shm()
         elif self.mode == PlayerMode.NORMAL:
@@ -157,9 +151,6 @@ class Player(Entity):
         rotated_image = pygame.transform.rotate(self.image, self.rot)
         rotated_rect = rotated_image.get_rect(center=self.rect.center)
         self.config.screen.blit(rotated_image, rotated_rect)
-
-    def stop_wings(self) -> None:
-        self.img_gen = cycle([self.img_idx])
 
     def flap(self) -> None:
         if self.y > self.min_y:
