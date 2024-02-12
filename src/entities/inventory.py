@@ -1,5 +1,7 @@
 import math
-from typing import List, Union
+from typing import Union, List
+
+import pygame
 
 from ..utils import GameConfig, flappy_text, load_font, Fonts
 from .entity import Entity
@@ -11,8 +13,10 @@ class InventorySlot(Entity):
         super().__init__(*args, **kwargs)
         self.item: Item = None
         self.type: ItemType = ItemType.EMPTY
-        # self.item_quantity = 0
         self.font = load_font(Fonts.FONT_FLAPPY, 24)
+
+    def tick(self) -> None:
+        super().tick()
 
     def draw(self) -> None:
         blit_list = [
@@ -20,22 +24,29 @@ class InventorySlot(Entity):
             (self.item.inventory_image, (self.rect.x + 10, self.rect.y + 10)),
             (self.image, self.rect)]
 
+        if self.item.remaining_cooldown > 0:
+            cooldown_overlay, cd_height = self.create_cooldown_overlay()
+            blit_list.insert(2, (cooldown_overlay, (self.rect.x + 5, self.rect.y + self.rect.height - cd_height - 10)))
+
         self.config.screen.blits(blit_list)
 
-        if self.item.quantity != 0 or self.item.type in [ItemType.WEAPON, ItemType.AMMO]:
-            text_surface = flappy_text(text=str(self.item.quantity), font=self.font, outline_width=4,
-                                       outline_algorithm=4)
+        if self.item.name != ItemName.EMPTY:
+            text_surface = flappy_text(text=str(self.item.quantity), font=self.font,
+                                       outline_width=4, outline_algorithm=4)
 
             text_rect = text_surface.get_rect()
             text_rect.y, text_rect.x = self.y + 63, self.x + 74
 
             self.config.screen.blit(text_surface, text_rect)
 
-    def cooldown(self) -> None:
-        # inventory slot cooldown, basically just a partly transparent rectangle covering the slot
-        # and slowly moving down with timer in the middle of the slot like in many other games
-        # Will be used when reloading a gun and after using certain items
-        pass
+    def create_cooldown_overlay(self) -> [pygame.Surface, int]:
+        if self.item.remaining_cooldown == 0:
+            return
+
+        height = (self.rect.height - 15) * (self.item.remaining_cooldown / self.item.total_cooldown)
+        cooldown_overlay = pygame.Surface((self.rect.width - 15, height), pygame.SRCALPHA)
+        cooldown_overlay.fill((0, 0, 0, 150))
+        return cooldown_overlay, height
 
 
 class Inventory(Entity):
@@ -81,9 +92,7 @@ class Inventory(Entity):
         for slot in self.inventory_slots:
             if slot.item.name == item_name:
                 if slot.item.type == ItemType.WEAPON:
-                    weapon: Union[Item, Gun] = slot.item
-                    slot.item.quantity = weapon.magazine_size
-                    self.inventory_slots[1].item.quantity += weapon.magazine_size  # add one additional ammo magazine
+                    self.add_new_item(item_name, slot)
                 else:
                     slot.item.quantity += slot.item.spawn_quantity
                 return
@@ -99,7 +108,7 @@ class Inventory(Entity):
 
         self.add_new_item(item_name)
 
-    def add_new_item(self, item_name: ItemName, inventory_slot: InventorySlot = None):
+    def add_new_item(self, item_name: ItemName, inventory_slot: InventorySlot = None) -> None:
         item_to_add = self.item_manager.init_item(item_name)
 
         if item_to_add.type == ItemType.WEAPON:

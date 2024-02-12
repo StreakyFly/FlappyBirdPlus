@@ -59,6 +59,9 @@ class Gun(Item):
             if self.remaining_reload_cooldown == 0:
                 self.quantity = self.quantity_after_reload
 
+        if self.remaining_cooldown > 0:
+            self.remaining_cooldown -= 1
+
     def tick_ammo(self) -> None:
         for bullet in set(self.shot_bullets):
             # remove bullets if they are out of the game window
@@ -141,6 +144,7 @@ class Gun(Item):
         self.interaction_in_progress = True
         self.quantity -= 1
         self.remaining_shoot_cooldown = self.shoot_cooldown
+        self.set_cooldown(self.shoot_cooldown)
         self.spawn_bullet()
         self.start_shoot_animation()
         # TODO play shooting sound
@@ -150,6 +154,7 @@ class Gun(Item):
     def reload(self) -> None:
         self.interaction_in_progress = True
         self.remaining_reload_cooldown = self.reload_cooldown
+        self.set_cooldown(self.reload_cooldown)
         # TODO start reloading animation
         # TODO play reloading sound
 

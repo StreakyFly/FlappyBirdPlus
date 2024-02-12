@@ -120,6 +120,8 @@ class Item(Entity):
         else:
             self.inventory_image = config.images.items[item_name.value]
         self.update_image(self.config.images.items[self.name.value])
+        self.total_cooldown = 0
+        self.remaining_cooldown = 0
 
     @property
     def quantity(self):
@@ -134,6 +136,10 @@ class Item(Entity):
 
     def use(self, *args):
         self.quantity -= 1
+
+    def set_cooldown(self, cooldown: int) -> None:
+        self.total_cooldown = cooldown
+        self.remaining_cooldown = cooldown
 
 
 class Items(Entity):
