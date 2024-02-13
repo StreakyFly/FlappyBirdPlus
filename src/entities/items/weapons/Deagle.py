@@ -24,5 +24,6 @@ class Deagle(Gun):
         )
         self.set_recoil(
             distance=14,
-            duration=5
+            duration=5,
+            rotation=18
         )
