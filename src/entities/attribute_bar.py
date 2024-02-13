@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pygame
 
-from ..utils import GameConfig, GameState, GameStateManager
+from ..utils import GameConfig, GameState, GameStateManager, print_colored
 from .entity import Entity
 
 
@@ -16,15 +16,21 @@ class AttributeBar(Entity):
         w: int,
         h: int = 10,
         max_value: int = 100,
-        color: Tuple[int, int, int] = (255, 0, 0),
-        bg_color: Tuple[int, int, int] = None
+        color: Tuple[int, int, int, int] = (255, 0, 0, 255),
+        bg_color: Tuple[int, int, int, int] = None
     ) -> None:
         super().__init__(config, None, x, y, w, h)
         self.gsm = gsm
         self.max_value = max_value
         self.current_value = max_value
-        self.color = color
-        self.bg_color = bg_color or tuple([int(channel * 0.4) for channel in color])
+        self.color = color + (255,) if len(color) == 3 else color
+        if bg_color is not None:
+            self.bg_color = bg_color + (color[3],) if len(bg_color) == 3 else bg_color
+        else:
+            self.bg_color = tuple([int(channel * 0.4) for channel in color[:3]] + [self.color[3]])
+        if self.color[3] != self.bg_color[3]:
+            print_colored("The alpha channel of bg_color will be ignored. "
+                          "Current implementation uses the alpha channel of 'color' for the entire bar.", color="yellow")
         self.update_bar_surface()
 
     def change_value(self, amount) -> None:
@@ -61,6 +67,7 @@ class AttributeBar(Entity):
         current_width = int(self.w * value_ratio)
 
         self.image = pygame.Surface((self.w, self.h), pygame.SRCALPHA)
+        self.image.set_alpha(self.color[3])
 
         pygame.draw.rect(self.image, self.bg_color, (0, 0, self.w, self.h))
         pygame.draw.rect(self.image, self.color, (0, 0, current_width, self.h))
