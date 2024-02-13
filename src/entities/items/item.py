@@ -48,9 +48,11 @@ class ItemName(Enum):
     # WEAPON
     WEAPON_AK47 = 'ak-47'
     WEAPON_DEAGLE = 'deagle'
+    WEAPON_UZI = 'uzi'
 
     # AMMO
     AMMO_BOX = 'ammo-box'
+    BULLET_SMALL = 'small-bullet'
     BULLET_MEDIUM = 'medium-bullet'
     BULLET_BIG = 'big-bullet'
 
@@ -156,9 +158,10 @@ class Items(Entity):
         ItemName.BANDAGE: 0.3,
         ItemName.POTION_HEAL: 0.15,
         ItemName.POTION_SHIELD: 0.13,
-        ItemName.WEAPON_AK47: 5,
-        ItemName.WEAPON_DEAGLE: 5,
-        ItemName.AMMO_BOX: 4,
+        ItemName.WEAPON_AK47: 3,
+        ItemName.WEAPON_DEAGLE: 3,
+        ItemName.WEAPON_UZI: 5,
+        ItemName.AMMO_BOX: 3,
     }
 
     def __init__(self, config: GameConfig, inventory, pipes, **kwargs):

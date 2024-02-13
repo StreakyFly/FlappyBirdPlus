@@ -11,11 +11,11 @@ class Deagle(Gun):
         self.set_properties(
             ammo_name=ItemName.BULLET_MEDIUM,
             ammo_class=MediumBullet,
-            damage=85,
+            damage=95,
             ammo_speed=50,
             magazine_size=7,
-            shoot_cooldown=int(self.config.fps * 0.7),
-            reload_cooldown=int(self.config.fps * 2.5)
+            shoot_cooldown=int(self.config.fps * 0.9),
+            reload_cooldown=int(self.config.fps * 2.1)
         )
         self.set_positions(
             offset=pygame.Vector2(30, 20),
@@ -23,7 +23,7 @@ class Deagle(Gun):
             barrel_end_pos=pygame.Vector2(self.w, self.h * 0.1875)
         )
         self.set_recoil(
-            distance=14,
+            distance=16,
             duration=5,
             rotation=18
         )

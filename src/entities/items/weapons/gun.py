@@ -5,15 +5,14 @@ import pygame
 from ....utils import rotate_on_pivot, print_colored
 from ..item import Item, ItemName, ItemType
 
-
-# TODO the recoil animation will not look good if the gun is fast firing (self.recoil_duration > self.shoot_cooldown).
-#  To fix this, you should add the new recoil to the current recoil, so if gun fires again during recoil animation,
-#  it will sum both recoils. You should store old recoils as one transform, and current recoil as another transform, so
-#  modifying the current transform will be straightforward.
-#  When the gun stops firing:
-#   - if old recoils do not exist, simply use the recoil animation function as it is, so the gun jumps back in original position
-#   - if old recoils exist, calculate how many frames it will take for the gun to jump back to original position, and
-#     at what speed. Then simply use the recoil animation function as it is (with new recoil_duration and recoil_speed)
+"""
+The recoil animation currently does not work well with fast-firing guns, eg. Uzi, where self.recoil_duration is greater
+than self.shoot_cooldown (self.recoil_duration > self.shoot_cooldown).
+This is because the gun can fire again before the recoil animation from the previous shot has completed, leading to the
+animation being reset with each new shot. Instead of resetting, the animation should incorporate the new recoil force
+into the existing one, allowing the recoil effects to accumulate. Consequently, with continuous firing, the gun would
+be pushed back and up incrementally, reflecting a more realistic behavior.
+"""
 
 
 class Gun(Item):
@@ -214,12 +213,11 @@ class Gun(Item):
         self.animation_rotation = 0
 
         if self.recoil_duration > self.shoot_cooldown:
-            print_colored("Recoil duration ideally should NOT be greater than shoot cooldown!", color="yellow")
+            print_colored(f"WARNING: '{self.name}' - recoil duration is greater than shoot cooldown!", color="yellow")
 
     def start_shoot_animation(self) -> None:
-        # TODO this has to be improved to make the recoil animation look better for fast firing weapons
-        if self.remaining_recoil_duration > 0:
-            return
+        # if self.remaining_recoil_duration > 0:
+        #     return
         self.remaining_recoil_duration = self.recoil_duration
         self.animation_offset = pygame.Vector2(0, 0)
         self.animation_rotation = 0
