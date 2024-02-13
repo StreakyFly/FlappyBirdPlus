@@ -69,3 +69,25 @@ def rotate_on_pivot(image, angle, pivot, origin):
     rect = surf.get_rect(center=offset)
 
     return surf, rect
+
+
+def print_colored(*message, color="blue"):
+    """
+    Print a message in color.
+    :param message: The message to be printed.
+    :param color: The color in which the message should be printed.
+    :return: None
+    """
+    color_codes = {
+        "red": "\033[91m",
+        "green": "\033[92m",
+        "yellow": "\033[93m",
+        "blue": "\033[94m",
+        "pink": "\033[95m"
+    }
+    end_color = "\033[0m"
+
+    if color in color_codes:
+        print(*[f"{color_codes[color]}{msg}{end_color}" for msg in message])
+    else:
+        raise Exception("Invalid color specified. Options: [red, yellow, green, blue, purple]")

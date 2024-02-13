@@ -4,5 +4,5 @@ from .window import Window
 from .images import Images
 from .sounds import Sounds
 from .animation import Animation
-from .utils import get_mask, pixel_collision, rotate_on_pivot
+from .utils import get_mask, pixel_collision, rotate_on_pivot, print_colored
 from .text import Fonts, load_font, flappy_text
