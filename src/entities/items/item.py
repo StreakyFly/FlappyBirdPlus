@@ -1,12 +1,13 @@
 import random
 import math
-from enum import Enum
-from typing import List, Tuple, Dict
+from typing import List
 
 import pygame
 
 from ...utils import GameConfig
 from ..entity import Entity
+from .item_enums import ItemName, ItemType
+from .item_spawn_chances import get_spawn_chances
 
 
 """
@@ -14,47 +15,6 @@ INVISIBILITY POTION!! MINIGUN THAT OVERHEATS!! Food/hunger...?
 """
 
 # TODO when player collects the item aka. touches the bubble, the bubble should pop (simple animation).
-
-
-class ItemType(Enum):
-    EMPTY = 'empty'
-    EMPTY_WEAPON = 'empty-weapon'
-    EMPTY_AMMO = 'empty-ammo'
-    EMPTY_HEAL = 'empty-heal'
-    EMPTY_POTION = 'empty-potion'
-    EMPTY_SPECIAL = 'empty-special'
-
-    WEAPON = 'weapon'
-    AMMO = 'ammo'
-    POTION = 'potion'
-    HEAL = 'heal'
-    SPECIAL = 'special'
-
-
-class ItemName(Enum):
-    EMPTY = 'empty'
-
-    # SPECIAL
-    TOTEM_OF_UNDYING = 'totem-of-undying'
-
-    # HEAL
-    MEDKIT = 'medkit'
-    BANDAGE = 'bandage'
-
-    # POTION
-    POTION_HEAL = 'potion-heal'
-    POTION_SHIELD = 'potion-shield'
-
-    # WEAPON
-    WEAPON_AK47 = 'ak-47'
-    WEAPON_DEAGLE = 'deagle'
-    WEAPON_UZI = 'uzi'
-
-    # AMMO
-    AMMO_BOX = 'ammo-box'
-    BULLET_SMALL = 'small-bullet'
-    BULLET_MEDIUM = 'medium-bullet'
-    BULLET_BIG = 'big-bullet'
 
 
 class SpawnedItem(Entity):
@@ -150,26 +110,12 @@ class Item(Entity):
 
 
 class Items(Entity):
-    spawned_items: List[SpawnedItem]
-    # TODO set decent spawn chances for each item - maybe even move this to a separate file...?
-    spawn_chance: Dict[ItemName, float] = {
-        ItemName.TOTEM_OF_UNDYING: 0.03,
-        ItemName.MEDKIT: 0.1,
-        ItemName.BANDAGE: 0.3,
-        ItemName.POTION_HEAL: 0.15,
-        ItemName.POTION_SHIELD: 0.13,
-        ItemName.WEAPON_AK47: 3,
-        ItemName.WEAPON_DEAGLE: 3,
-        ItemName.WEAPON_UZI: 5,
-        ItemName.AMMO_BOX: 3,
-    }
-
     def __init__(self, config: GameConfig, inventory, pipes, **kwargs):
         super().__init__(config, **kwargs)
         self.config = config
         self.inventory = inventory
         self.pipes = pipes
-        self.spawned_items = []
+        self.spawned_items: List[SpawnedItem] = []
 
     def tick(self) -> None:
         # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
@@ -222,11 +168,11 @@ class Items(Entity):
         self.spawned_items.append(spawned_item)
 
     def get_random_spawn_item(self) -> ItemName:
-        total_probability = sum(self.spawn_chance.values())
+        total_probability = sum(get_spawn_chances().values())
         rand = random.uniform(0, total_probability)
 
         cumulative_prob = 0
-        for item_name, probability in self.spawn_chance.items():
+        for item_name, probability in get_spawn_chances().items():
             cumulative_prob += probability
             if rand <= cumulative_prob:
                 return item_name

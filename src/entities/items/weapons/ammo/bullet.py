@@ -3,6 +3,8 @@ import math
 
 from ...item import Item
 
+# TODO should ammo collide with floor and pipes? If yes, there should be a simple collision animation.
+
 
 class Bullet(Item):
     def __init__(self, spawn_position: pygame.Vector2 = pygame.Vector2(0, 0), damage: int = 0,
@@ -38,3 +40,7 @@ class Bullet(Item):
         rotated_offset = bullet_offset.rotate(self.angle)
         self.x = self.spawn_position.x + rotated_offset.x
         self.y = self.spawn_position.y - rotated_offset.y
+
+    def stop(self):
+        # TODO implement this method
+        self.velocity = pygame.Vector2(0, 0)

@@ -1,5 +1,6 @@
 from ...utils import GameConfig
-from .item import Item, ItemName, ItemType
+from .item import Item
+from .item_enums import ItemName, ItemType
 from .empty_item import EmptyItem
 from .special import TotemOfUndying
 from .heals import Medkit, Bandage

@@ -31,11 +31,12 @@ class InventorySlot(Entity):
         self.config.screen.blits(blit_list)
 
         if self.item.name != ItemName.EMPTY:
-            text_surface = flappy_text(text=str(self.item.quantity), font=self.font,
-                                       outline_width=4, outline_algorithm=4)
+            text_surface = flappy_text(text=str(self.item.quantity), font=self.font, outline_width=4, outline_algorithm=4)
 
+            text_width, _ = text_surface.get_size()
             text_rect = text_surface.get_rect()
-            text_rect.y, text_rect.x = self.y + 63, self.x + 74
+            text_rect.x = self.x - text_width / 1.6 + 92
+            text_rect.y = self.y + 66
 
             self.config.screen.blit(text_surface, text_rect)
 
@@ -50,12 +51,9 @@ class InventorySlot(Entity):
 
 
 class Inventory(Entity):
-    inventory_slots: List[InventorySlot]
-    empty_item: Item = None
-
     def __init__(self, config: GameConfig, player) -> None:
         super().__init__(config)
-        self.inventory_slots = []
+        self.inventory_slots: List[InventorySlot] = []
         self.item_manager = ItemManager(config, player)
         self.create_inventory_slots()
         self.empty_item = self.item_manager.init_item(ItemName.EMPTY)
