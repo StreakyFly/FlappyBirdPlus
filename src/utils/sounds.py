@@ -13,6 +13,8 @@ class Sounds:
     collect_item: List[pygame.mixer.Sound]
 
     def __init__(self) -> None:
+        pygame.mixer.set_num_channels(50)  # 50 channels just to be safe
+
         self.die = _load_sound('die.wav')
         self.hit = _load_sound('hit.wav')
         self.swoosh = _load_sound('swoosh.wav')
