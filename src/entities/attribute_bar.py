@@ -10,16 +10,19 @@ class AttributeBar(Entity):
     def __init__(
         self,
         config: GameConfig,
-        gsm: GameStateManager,
         x: int,
         y: int,
         w: int,
         h: int = 10,
         max_value: int = 100,
         color: Tuple[int, int, int, int] = (255, 0, 0, 255),
-        bg_color: Tuple[int, int, int, int] = None
+        bg_color: Tuple[int, int, int, int] = None,
+        gsm: GameStateManager = None
     ) -> None:
         super().__init__(config, None, x, y, w, h)
+        if gsm is None:
+            gsm = GameStateManager()
+            gsm.set_state(GameState.PLAY)
         self.gsm = gsm
         self.max_value = max_value
         self.current_value = max_value

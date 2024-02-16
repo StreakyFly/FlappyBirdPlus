@@ -17,7 +17,7 @@ class Animation:
         # if you need multiple instances of the same animation
         return Animation(self.images, self.image_duration, self.loop)
 
-    def update(self):
+    def update(self) -> pygame.Surface:
         if not self.running:
             return self.get_image()
 

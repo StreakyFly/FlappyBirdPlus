@@ -17,3 +17,5 @@ if __name__ == "__main__":
 #  3. enemies
 #  4. traps
 #  5. TBD...
+
+# TODO make the scene speed easily adjustable and make the scene move a bit faster

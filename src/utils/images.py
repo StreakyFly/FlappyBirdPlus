@@ -1,5 +1,5 @@
 import random
-from typing import Tuple
+from typing import Tuple, List, Dict
 
 import pygame
 
@@ -13,12 +13,15 @@ class Images:
     game_over: pygame.Surface
     inventory_slot: pygame.Surface
     item_spawn_bubble: pygame.Surface
-    inventory_backgrounds: dict[str, pygame.Surface]
-    items: dict[str, pygame.Surface]
+    inventory_backgrounds: Dict[str, pygame.Surface]
+    items: Dict[str, pygame.Surface]
+    enemies: Dict[str, List[pygame.Surface]]
 
     def __init__(self) -> None:
         self._load_base_images()
-        self._load_all_item_images()
+        self._load_inventory_backgrounds()
+        self._load_item_images()
+        self._load_enemy_images()
 
     def randomize(self) -> None:
         PLAYER_IMGS = [['yellowbird-upflap', 'yellowbird-midflap', 'yellowbird-downflap'],
@@ -27,9 +30,9 @@ class Images:
 
         random_player = random.randint(0, len(PLAYER_IMGS) - 1)
 
-        self.player = (_load_image(f'birds/{PLAYER_IMGS[random_player][0]}'),
-                       _load_image(f'birds/{PLAYER_IMGS[random_player][1]}'),
-                       _load_image(f'birds/{PLAYER_IMGS[random_player][2]}'))
+        self.player = (_load_image(f'player/{PLAYER_IMGS[random_player][0]}'),
+                       _load_image(f'player/{PLAYER_IMGS[random_player][1]}'),
+                       _load_image(f'player/{PLAYER_IMGS[random_player][2]}'))
 
     def _load_base_images(self) -> None:
         self.background = _load_image('background-day').convert()
@@ -42,22 +45,19 @@ class Images:
         self.item_spawn_bubble = _load_image('item-spawn-bubble').convert_alpha()
         self.randomize()
 
-    def _load_all_item_images(self) -> None:
-        self._load_inventory_backgrounds()
-        self._load_item_images()
-
     def _load_inventory_backgrounds(self) -> None:
         self.inventory_backgrounds = dict()
         item_type_names = ('empty', 'empty-weapon', 'empty-ammo', 'empty-potion', 'empty-heal', 'empty-special',
                            'weapon', 'ammo', 'potion', 'heal', 'special')
         for item_type in item_type_names:
-            self.inventory_backgrounds[item_type] = _load_inventory_backgrounds(item_type).convert()
+            self.inventory_backgrounds[item_type] = _load_item_image(f'inventory_backgrounds/{item_type}').convert()
 
     def _load_item_images(self) -> None:
         self.items = dict()
         item_names = (
             'empty/empty', 'empty/empty-weapon', 'empty/empty-ammo',
-            'special/totem-of-undying', 'heals/medkit', 'heals/bandage', 'potions/potion-heal', 'potions/potion-shield'
+            'special/totem-of-undying', 'heals/medkit', 'heals/bandage', 'potions/potion-heal', 'potions/potion-shield',
+
         )
         item_names += _get_armament_names()
 
@@ -71,28 +71,29 @@ class Images:
                 except FileNotFoundError:
                     pass
 
+    def _load_enemy_images(self) -> None:
+        self.enemies = dict()
+        enemy_names = ('enemy-temp_1', 'enemy-temp_2', )
+
+        for enemy_name in enemy_names:
+            base_name = enemy_name.rsplit('_', 1)[0]
+            if base_name not in self.enemies:
+                self.enemies[base_name] = []
+            self.enemies[base_name].append(_load_image(f'enemies/{enemy_name}').convert_alpha())
+
 
 def _load_image(image_name) -> pygame.Surface:
     return pygame.image.load(f'assets/images/{image_name}.png')
 
 
 def _load_item_image(item_name) -> pygame.Surface:
-    return _load_image(f'items/{item_name.replace(" ", "-")}')
-
-
-def _load_inventory_backgrounds(item_name) -> pygame.Surface:
-    return _load_image(f'items/inventory_backgrounds/{item_name.replace(" ", "-")}')
+    return _load_image(f'items/{item_name}')
 
 
 def _get_armament_names() -> Tuple[str]:
     DIR_PREFIXES = ['weapons', 'weapons/ammo']
-    weapons = (
-        'ak-47', 'deagle', 'uzi',
-    )
-    ammunition = (
-        'ammo-box',
-        'small-bullet', 'medium-bullet', 'big-bullet'
-    )
+    weapons = ('ak-47', 'deagle', 'uzi', )
+    ammunition = ('ammo-box', 'small-bullet', 'medium-bullet', 'big-bullet', )
 
     names = [f'{DIR_PREFIXES[0]}/{weapon}' for weapon in weapons]
     names.extend([f'{DIR_PREFIXES[1]}/{ammo}' for ammo in ammunition])

@@ -136,6 +136,7 @@ class Player(Entity):
 
     def draw(self) -> None:
         self.image = self.animation.update()
+        # self.update_image(self.animation.update())
 
         if self.mode == PlayerMode.SHM:
             self.tick_shm()
