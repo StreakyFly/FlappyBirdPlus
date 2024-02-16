@@ -54,12 +54,13 @@ class Pipes(Entity):
 
     def remove_old_pipes(self):
         # remove first pipe if it's out of the screen
+        extra = self.config.window.height * 0.2
         for pipe in self.upper:
-            if pipe.x < -pipe.w:
+            if pipe.x < -pipe.w - extra:
                 self.upper.remove(pipe)
 
         for pipe in self.lower:
-            if pipe.x < -pipe.w:
+            if pipe.x < -pipe.w - extra:
                 self.lower.remove(pipe)
 
     def spawn_initial_pipes(self):

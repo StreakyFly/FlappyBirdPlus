@@ -5,7 +5,7 @@ import pygame
 
 from ..utils import GameConfig, flappy_text, load_font, Fonts
 from .entity import Entity
-from .items import Item, ItemType, ItemName, ItemManager, Gun
+from .items import Item, ItemType, ItemName, ItemInitializer, Gun
 
 
 class InventorySlot(Entity):
@@ -16,6 +16,7 @@ class InventorySlot(Entity):
         self.font = load_font(Fonts.FONT_FLAPPY, 24)
 
     def tick(self) -> None:
+        self.item.tick()
         super().tick()
 
     def draw(self) -> None:
@@ -54,7 +55,7 @@ class Inventory(Entity):
     def __init__(self, config: GameConfig, player) -> None:
         super().__init__(config)
         self.inventory_slots: List[InventorySlot] = []
-        self.item_manager = ItemManager(config, player)
+        self.item_manager = ItemInitializer(config, player)
         self.create_inventory_slots()
         self.empty_item = self.item_manager.init_item(ItemName.EMPTY)
 
@@ -82,7 +83,6 @@ class Inventory(Entity):
     def tick(self) -> None:
         for slot in self.inventory_slots:
             slot.tick()
-            slot.item.tick()
 
     def add_item(self, item_name: ItemName) -> None:
         for slot in self.inventory_slots:

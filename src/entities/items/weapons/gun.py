@@ -76,14 +76,9 @@ class Gun(Item):
 
     def tick_ammo(self) -> None:
         for bullet in set(self.shot_bullets):
-            # remove bullets if they are out of the game window
-            extra = self.config.window.height * 0.2
-            if bullet.x > self.config.window.width + extra or bullet.x < -extra or \
-               bullet.y > self.config.window.height + extra or bullet.y < -extra:
-                self.shot_bullets.remove(bullet)
-                continue
-            # TODO remove bullets if they hit enemies (if any enemy is even spawned)
             bullet.tick()
+            if bullet.should_remove():
+                self.shot_bullets.remove(bullet)
 
     def draw(self) -> None:
         # pivot_point = pygame.Vector2(self.entity.x + self.pivot.x, self.entity.y + self.pivot.y)  # different weapon animation relative to the player (Ctrl+F: DWARP1)
@@ -91,7 +86,7 @@ class Gun(Item):
         origin_point = self.rect.center
         rotated_image, rotated_rect = rotate_on_pivot(self.image, self.rotation, pivot_point, origin_point)
         self.config.screen.blit(rotated_image, rotated_rect)
-        # pygame.draw.circle(self.config.screen, (255, 0, 0), self.calculate_initial_bullet_position(), 10, width=5)  # for debugging
+        # pygame.draw.circle(self.config.screen, (255, 0, 0), self.calculate_initial_bullet_position(), 10, width=5)  # for debugging & explanation!
 
     def update_transform(self) -> None:
         self.x = self.entity.x + self.offset.x + self.animation_offset.x

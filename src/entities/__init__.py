@@ -6,4 +6,5 @@ from .score import Score
 from .welcome_message import WelcomeMessage
 from .game_over import GameOver
 from .inventory import Inventory
-from .items import Items, SpawnedItem
+from .items import ItemName, SpawnedItem, ItemManager, ItemInitializer
+from .enemies import EnemyManager

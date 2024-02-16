@@ -5,7 +5,8 @@ import pygame
 from pygame.locals import K_SPACE, KEYDOWN, QUIT
 
 from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds
-from .entities import Background, Floor, Player, PlayerMode, Pipes, Score, WelcomeMessage, GameOver, Inventory, Items
+from .entities import Background, Floor, Player, PlayerMode, Pipes, Score, WelcomeMessage, GameOver, \
+    Inventory, ItemManager, ItemName, EnemyManager
 
 
 class FlappyBird:
@@ -33,7 +34,8 @@ class FlappyBird:
         self.welcome_message = None
         self.game_over_message = None
         self.inventory = None
-        self.items = None
+        self.item_manager = None
+        self.enemy_manager = None
 
     async def start(self):
         while True:
@@ -46,7 +48,8 @@ class FlappyBird:
             self.pipes = Pipes(self.config)
             self.score = Score(self.config)
             self.inventory = Inventory(self.config, self.player)
-            self.items = Items(self.config, self.inventory, self.pipes)
+            self.item_manager = ItemManager(self.config, self.inventory, self.pipes)
+            self.enemy_manager = EnemyManager(self.config)
             await self.start_screen()
             await self.play()
             await self.game_over()
@@ -88,8 +91,13 @@ class FlappyBird:
             for i, pipe in enumerate(self.pipes.upper):
                 if self.player.crossed(pipe):
                     self.score.add()
-            collided_items = self.player.collided_items(self.items.spawned_items)  # collided with a spawned item(s)
-            self.items.collect_items(collided_items)
+            collided_items = self.player.collided_items(self.item_manager.spawned_items)  # collided with a spawned item(s)
+            self.item_manager.collect_items(collided_items)
+
+            # TODO do this for all bullets, even those from enemy guns, not just bullets from inventory gun!
+            if self.inventory.inventory_slots[0].item.name != ItemName.EMPTY and self.inventory.inventory_slots[0].item.shot_bullets:
+                for bullet in self.inventory.inventory_slots[0].item.shot_bullets:
+                    bullet.set_entities(self.player, self.enemy_manager.spawned_enemies, self.pipes)
 
             for event in pygame.event.get():
                 if self.handle_events(event):
@@ -99,10 +107,11 @@ class FlappyBird:
             self.background.tick()
             self.pipes.tick()
             self.floor.tick()
-            self.score.tick()
-            self.items.tick()
+            self.item_manager.tick()
             self.player.tick()
+            self.enemy_manager.tick()
             self.inventory.tick()
+            self.score.tick()
 
             pygame.display.update()
             await asyncio.sleep(0)
@@ -113,7 +122,7 @@ class FlappyBird:
         self.player.set_mode(PlayerMode.CRASH)
         self.pipes.stop()
         self.floor.stop()
-        self.items.stop()
+        self.item_manager.stop()
 
         while True:
             for event in pygame.event.get():
@@ -123,10 +132,11 @@ class FlappyBird:
             self.background.tick()
             self.pipes.tick()
             self.floor.tick()
-            self.score.tick()
+            self.item_manager.tick()
             self.player.tick()
+            self.enemy_manager.tick()
             self.inventory.tick()
-            self.items.tick()
+            self.score.tick()
             self.game_over_message.tick()
 
             self.config.tick()
