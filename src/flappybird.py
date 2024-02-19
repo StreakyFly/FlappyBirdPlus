@@ -78,7 +78,7 @@ class FlappyBird:
         self.score.reset()
 
         while True:
-            self.monitor_fps_drops(fps_threshold=28)
+            self.monitor_fps_drops(fps_threshold=26)
             self.player.handle_bad_collisions(self.pipes, self.floor)
             if self.player.hp_manager.current_value <= 0:
                 if self.player.invincibility_frames > 0:
@@ -97,7 +97,7 @@ class FlappyBird:
             # TODO do this for all bullets, even those from enemy guns, not just bullets from inventory gun!
             if self.inventory.inventory_slots[0].item.name != ItemName.EMPTY and self.inventory.inventory_slots[0].item.shot_bullets:
                 for bullet in self.inventory.inventory_slots[0].item.shot_bullets:
-                    bullet.set_entities(self.player, self.enemy_manager.spawned_enemies, self.pipes)
+                    bullet.set_entities(self.player, self.enemy_manager.spawned_enemies, (self.pipes.upper + self.pipes.lower))
 
             for event in pygame.event.get():
                 if self.handle_events(event):

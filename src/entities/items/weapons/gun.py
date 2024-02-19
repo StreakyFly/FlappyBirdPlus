@@ -2,7 +2,7 @@ import math
 
 import pygame
 
-from ....utils import rotate_on_pivot, print_colored
+from ....utils import rotate_on_pivot, printc
 from ..item import Item, ItemName, ItemType
 
 """
@@ -51,8 +51,7 @@ class Gun(Item):
     def tick(self) -> None:
         self.update_transform()
         self.shoot_animation()
-        if len(self.shot_bullets) > 0:
-            self.tick_ammo()
+        self.tick_ammo()
         super().tick()
 
         if not self.interaction_in_progress:
@@ -208,7 +207,7 @@ class Gun(Item):
         self.animation_rotation = 0
 
         if self.recoil_duration > self.shoot_cooldown:
-            print_colored(f"WARNING: '{self.name}' - recoil duration is greater than shoot cooldown!", color="yellow")
+            printc(f"WARNING: '{self.name}' - recoil duration is greater than shoot cooldown!", color="yellow")
 
     def start_shoot_animation(self) -> None:
         # if self.remaining_recoil_duration > 0:

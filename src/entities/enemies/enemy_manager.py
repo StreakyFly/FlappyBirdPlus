@@ -29,9 +29,6 @@ class EnemyManager:
 
     def test_spawn_enemies(self):
         # TODO DELETE THIS METHOD LATERR
-        if len(self.spawned_enemies) > 0:
-            print("NAH")
-            return
         self.spawned_enemies.append(CloudSkimmer(self.config, x=550, y=250))
         self.spawned_enemies.append(CloudSkimmer(self.config, x=500, y=400))
         self.spawned_enemies.append(CloudSkimmer(self.config, x=550, y=550))

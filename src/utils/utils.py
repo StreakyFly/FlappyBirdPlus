@@ -71,7 +71,7 @@ def rotate_on_pivot(image, angle, pivot, origin):
     return surf, rect
 
 
-def print_colored(*message, color="blue"):
+def printc(*message, color="blue"):
     """
     Print a message in color.
     :param message: The message to be printed.
