@@ -26,7 +26,7 @@ class SpawnedItem(Entity):
         random_amplitude = random.uniform(15, 30)
         self.amplitude = random.choice([random_amplitude, -random_amplitude])  # oscillation amplitude
         self.frequency = random.uniform(0.005, 0.009)  # oscillation frequency
-        self.sin_y = random.uniform(-self.amplitude, self.amplitude)  # initial vertical position
+        self.sin_y = random.uniform(-self.amplitude, self.amplitude)  # initial relative vertical position
 
         if f"{self.item_name.value}_small" in self.config.images.items:
             self.item_image = self.config.images.items[f"{self.item_name.value}_small"]
