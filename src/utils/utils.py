@@ -1,24 +1,6 @@
 import pygame
 
 
-def clamp(n: float, minn: float, maxn: float) -> float:
-    """
-    Use pygame.math.clamp() instead if possible!
-
-    Clamps a number between two specified values.
-
-    This function ensures that the input number 'n' falls within the specified range defined
-    by 'minn' and 'maxn'. If 'n' is less than 'minn', it is set to 'minn'. If 'n' is greater
-    than 'maxn', it is set to 'maxn'.
-
-    :param n: The number to be clamped.
-    :param minn: The minimum value of the range.
-    :param maxn: The maximum value of the range.
-    :return: The clamped value, ensuring it falls within the specified range.
-    """
-    return max(min(maxn, n), minn)
-
-
 def get_mask(image: pygame.Surface) -> pygame.mask.Mask:
     """
     Get a mask for collision detection from a Pygame image.
