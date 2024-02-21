@@ -55,9 +55,9 @@ class Inventory(Entity):
     def __init__(self, config: GameConfig, player) -> None:
         super().__init__(config)
         self.inventory_slots: List[InventorySlot] = []
-        self.item_manager = ItemInitializer(config, player)
+        self.item_initializer = ItemInitializer(config, player)
         self.create_inventory_slots()
-        self.empty_item = self.item_manager.init_item(ItemName.EMPTY)
+        self.empty_item = self.item_initializer.init_item(ItemName.EMPTY)
 
     def create_inventory_slots(self) -> None:
         num_slots = 6
@@ -76,7 +76,7 @@ class Inventory(Entity):
         for i in range(num_slots):
             x = 24 + i * slot_width
             slot = InventorySlot(self.config, self.config.images.inventory_slot, x=x, y=slot_height)
-            slot.item = self.item_manager.init_item(ItemName.EMPTY)
+            slot.item = self.item_initializer.init_item(ItemName.EMPTY)
             slot.type = default_item_types[i]  # set the item type for the slot
             self.inventory_slots.append(slot)
 
@@ -105,7 +105,7 @@ class Inventory(Entity):
         self.add_new_item(item_name)
 
     def add_new_item(self, item_name: ItemName, inventory_slot: InventorySlot = None) -> None:
-        item_to_add = self.item_manager.init_item(item_name)
+        item_to_add = self.item_initializer.init_item(item_name)
 
         if item_to_add.type == ItemType.WEAPON:
             current_weapon: Union[Item, Gun] = self.inventory_slots[0].item
@@ -122,7 +122,7 @@ class Inventory(Entity):
             # change ammo type and convert the quantity to correspond to the new weapon's magazine size
             if current_weapon.name != new_weapon.name:
                 converted_quantity = math.ceil((ammo_slot.item.quantity / ammo_slot.item.spawn_quantity) * item_to_add.magazine_size)
-                ammo_slot.item = self.item_manager.init_item(new_weapon.ammo_name)
+                ammo_slot.item = self.item_initializer.init_item(new_weapon.ammo_name)
                 ammo_slot.item.quantity = converted_quantity
 
             # if there are still spawned bullets, move them to the new weapon, so they don't immediately disappear
@@ -144,10 +144,11 @@ class Inventory(Entity):
         if slot.item.type == ItemType.EMPTY:
             return
 
-        if inventory_slot_index in [0, 1]:
-            weapon_slot = self.inventory_slots[0]
-            ammo_slot = self.inventory_slots[1]
-            weapon_slot.item.use(inventory_slot_index, ammo_slot.item)  # pass in ammo item, so the gun can reload
+        if inventory_slot_index == 0:
+            weapon_item: Union[Item, Gun] = self.inventory_slots[0].item
+            ammo_item = self.inventory_slots[1].item
+            weapon_item.update_ammo_object(ammo_item)  # so the gun can properly reload
+            weapon_item.use(inventory_slot_index)
             return
 
         slot.item.use()

@@ -9,6 +9,11 @@ from ...item import Item
 # TODO Simple collision animation/explosion when colliding with objects.
 
 
+# TODO self.flipped attribute has been added to Item, but it is NOT taken into account in any of the methods
+#  do some research if it's possible to somehow flip the entire object with positions, not just the image...
+#  it would save me so much trouble now and in the future if I decide to change anything
+
+
 class Bullet(Item):
     BACKGROUND_VELOCITY = pygame.Vector2(-7.5, 0)
 

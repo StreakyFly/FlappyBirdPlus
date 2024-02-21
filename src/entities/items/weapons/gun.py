@@ -15,6 +15,11 @@ be pushed back and up incrementally, reflecting a more realistic behavior.
 """
 
 
+# TODO self.flipped attribute has been added to Item, but it is NOT taken into account in any of the methods
+#  do some research if it's possible to somehow flip the entire object with positions, not just the image...
+#  it would save me so much trouble now and in the future if I decide to change anything
+
+
 class Gun(Item):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -25,6 +30,7 @@ class Gun(Item):
         self.magazine_size = 0
         self.shoot_cooldown = 0
         self.reload_cooldown = 0
+        self.ammo_item = None  # ammo item from the inventory slot[1]
 
         self.remaining_shoot_cooldown = 0
         self.remaining_reload_cooldown = 0
@@ -90,7 +96,10 @@ class Gun(Item):
     def update_transform(self) -> None:
         self.x = self.entity.x + self.offset.x + self.animation_offset.x
         self.y = self.entity.y + self.offset.y + self.animation_offset.y
-        self.rotation = self.entity.rot + self.animation_rotation
+        self.rotation = self.entity.rotation + self.animation_rotation
+
+    def update_ammo_object(self, ammo_item: Item) -> None:
+        self.ammo_item = ammo_item
 
     def set_positions(self, offset: pygame.Vector2, pivot: pygame.Vector2, barrel_end_pos: pygame.Vector2) -> None:
         self.offset = offset
@@ -98,7 +107,7 @@ class Gun(Item):
         self.barrel_end_pos = barrel_end_pos
         self.update_transform()
 
-    def set_properties(self, ammo_name: ItemName, ammo_class: callable,damage: int, ammo_speed: int, magazine_size: int,
+    def set_properties(self, ammo_name: ItemName, ammo_class: callable, damage: int, ammo_speed: int, magazine_size: int,
                        shoot_cooldown: int, reload_cooldown: int) -> None:
         self.ammo_name = ammo_name
         self.ammo_class = ammo_class
@@ -109,45 +118,45 @@ class Gun(Item):
         self.reload_cooldown = reload_cooldown
         self.quantity_after_reload = magazine_size
 
-    def use(self, action, ammo: Item, *args) -> None:
+    def use(self, action, *args) -> None:
         if action == 0:
-            self.handle_shooting(ammo)
+            self.handle_shooting()
             return
         elif action == 1:
-            self.handle_reloading(ammo)
+            self.handle_reloading()
             return
 
-    def handle_shooting(self, ammo: Item) -> None:
+    def handle_shooting(self) -> None:
         if self.interaction_in_progress:
             return
 
         # if weapon magazine isn't empty, shoot
         if self.quantity > 0:
-            self.shoot(ammo)
+            self.shoot()
             return
 
         # if gun is empty, try reloading it
-        self.handle_reloading(ammo)
+        self.handle_reloading()
 
-    def handle_reloading(self, ammo: Item) -> None:
+    def handle_reloading(self) -> None:
         if self.remaining_reload_cooldown > 0:
             return
 
-        if ammo.quantity <= 0 or self.quantity == self.magazine_size:
+        if self.ammo_item.quantity <= 0 or self.quantity == self.magazine_size:
             return
 
         # if we have more ammo, reload as much as possible
-        total_ammo = self.quantity + ammo.quantity
+        total_ammo = self.quantity + self.ammo_item.quantity
 
         if total_ammo <= self.magazine_size:
-            ammo.quantity = 0
+            self.ammo_item.quantity = 0
             self.quantity_after_reload = total_ammo
         else:
-            ammo.quantity -= self.magazine_size - self.quantity
+            self.ammo_item.quantity -= self.magazine_size - self.quantity
             self.quantity_after_reload = self.magazine_size
         self.reload()
 
-    def shoot(self, ammo: Item) -> None:
+    def shoot(self) -> None:
         self.interaction_in_progress = True
         self.quantity -= 1
         self.remaining_shoot_cooldown = self.shoot_cooldown
@@ -157,7 +166,7 @@ class Gun(Item):
         # TODO play shooting sound
 
         if self.quantity == 0:
-            self.handle_reloading(ammo)
+            self.handle_reloading()
 
     def reload(self) -> None:
         self.interaction_in_progress = True
@@ -194,7 +203,9 @@ class Gun(Item):
     def spawn_bullet(self) -> None:
         bullet = self.ammo_class(config=self.config, item_name=self.ammo_name, item_type=ItemType.AMMO,
                                  damage=self.damage, spawn_position=self.calculate_initial_bullet_position(),
-                                 speed=self.ammo_speed, angle=self.entity.rot + self.animation_rotation)
+                                 speed=self.ammo_speed, angle=self.entity.rotation + self.animation_rotation)
+        if self.flipped:
+            bullet.flip()
         self.shot_bullets.add(bullet)
 
     def set_recoil(self, distance: int, duration: int, rotation: int) -> None:
@@ -224,7 +235,7 @@ class Gun(Item):
         recoil_progress = abs(1 - abs(half_duration - self.remaining_recoil_duration + 1) / half_duration)
         recoil_offset = self.recoil_speed * (half_duration - abs(half_duration - self.remaining_recoil_duration + 1)) * 2
 
-        rotation_rad = math.radians(-self.entity.rot)
+        rotation_rad = math.radians(-self.entity.rotation)
         self.animation_offset.x = -recoil_offset * math.cos(rotation_rad)
         self.animation_offset.y = -recoil_offset * math.sin(rotation_rad)
 
