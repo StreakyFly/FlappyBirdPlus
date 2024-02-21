@@ -25,4 +25,4 @@ class EnemyManager:
 
     def spawn_enemy(self) -> None:
         # TODO implement this
-        self.spawned_enemy_groups.append(CloudSkimmerGroup(self.config, x=850, y=250))
+        self.spawned_enemy_groups.append(CloudSkimmerGroup(self.config, x=1000, y=350))

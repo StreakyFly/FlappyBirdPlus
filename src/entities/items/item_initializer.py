@@ -1,4 +1,4 @@
-from ...utils import GameConfig
+from ...utils import GameConfig, printc
 from .item import Item
 from .item_enums import ItemName, ItemType
 from .empty_item import EmptyItem
@@ -9,11 +9,12 @@ from .weapons import AK47, Deagle, Uzi, AmmoBox, BigBullet, MediumBullet, SmallB
 
 
 class ItemInitializer:
-    def __init__(self, config: GameConfig, player):
+    def __init__(self, config: GameConfig, entity):
         self.config = config
-        self.player = player
+        self.entity = entity
 
-    def init_item(self, item_name: ItemName):
+    def init_item(self, item_name: ItemName, entity=None) -> Item:
+        entity = entity if entity else self.entity
         c = self.config
         t = ItemType
         n = ItemName
@@ -23,21 +24,21 @@ class ItemInitializer:
             case n.EMPTY:
                 item = EmptyItem(c, t.EMPTY, n.EMPTY, 0)
             case n.TOTEM_OF_UNDYING:
-                item = TotemOfUndying(c, t.SPECIAL, n.TOTEM_OF_UNDYING, 1, self.player)
+                item = TotemOfUndying(c, t.SPECIAL, n.TOTEM_OF_UNDYING, 1, entity)
             case n.MEDKIT:
-                item = Medkit(c, t.HEAL, n.MEDKIT, 1, self.player)
+                item = Medkit(c, t.HEAL, n.MEDKIT, 1, entity)
             case n.BANDAGE:
-                item = Bandage(c, t.HEAL, n.BANDAGE, 3, self.player)
+                item = Bandage(c, t.HEAL, n.BANDAGE, 3, entity)
             case n.POTION_HEAL:
-                item = HealPotion(c, t.POTION, n.POTION_HEAL, 1, self.player)
+                item = HealPotion(c, t.POTION, n.POTION_HEAL, 1, entity)
             case n.POTION_SHIELD:
-                item = ShieldPotion(c, t.POTION, n.POTION_SHIELD, 1, self.player)
+                item = ShieldPotion(c, t.POTION, n.POTION_SHIELD, 1, entity)
             case n.WEAPON_AK47:
-                item = AK47(c, t.WEAPON, n.WEAPON_AK47, 30, self.player)
+                item = AK47(c, t.WEAPON, n.WEAPON_AK47, 30, entity)
             case n.WEAPON_DEAGLE:
-                item = Deagle(c, t.WEAPON, n.WEAPON_DEAGLE, 7, self.player)
+                item = Deagle(c, t.WEAPON, n.WEAPON_DEAGLE, 7, entity)
             case n.WEAPON_UZI:
-                item = Uzi(c, t.WEAPON, n.WEAPON_UZI, 32, self.player)
+                item = Uzi(c, t.WEAPON, n.WEAPON_UZI, 32, entity)
             case n.AMMO_BOX:
                 item = AmmoBox(config=c, item_type=t.AMMO, item_name=n.AMMO_BOX, spawn_quantity=30)
             case n.BULLET_BIG:
@@ -47,6 +48,6 @@ class ItemInitializer:
             case n.BULLET_SMALL:
                 item = SmallBullet(config=c, item_type=t.AMMO, item_name=n.BULLET_SMALL, spawn_quantity=32)
             case _:
-                print("Achievement unlocked: How did we get here?")
+                printc("Achievement unlocked: How did we get here?", color="red")
 
         return item

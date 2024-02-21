@@ -181,7 +181,7 @@ class FlappyBird:
                 elif event.key == pygame.K_d:
                     self.inventory.use_item(inventory_slot_index=4)
                 elif event.key == pygame.K_r:
-                    self.inventory.use_item(inventory_slot_index=1)  # ammo slot
+                    self.inventory.use_item(inventory_slot_index=0)  # gun slot
             return False
 
     def handle_held_buttons(self):

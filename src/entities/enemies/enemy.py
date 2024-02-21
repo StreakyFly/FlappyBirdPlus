@@ -15,6 +15,7 @@ class Enemy(Entity):
         self.hp_manager = AttributeBar(config=self.config, max_value=150, color=(255, 0, 0, 222),
                                        x=self.x, y=int(self.y) - 25, w=self.w, h=10)
         self.is_gone = False
+        self.rotation = 0
 
     def tick(self):
         if self.x < -200:
@@ -53,6 +54,7 @@ class EnemyGroup:
         self.x = x
         self.y = y
         self.members = []
+        self.spawn_members()
 
     def tick(self):
         for member in self.members:
@@ -63,7 +65,5 @@ class EnemyGroup:
     def is_empty(self) -> bool:
         return not self.members
 
-    def spawn_enemy(self, animation: Animation) -> None:
-        # TODO implement this
-        # self.members.append(Enemy(self.config, animation, x=self.x, y=self.y))
-        pass
+    def spawn_members(self) -> None:
+        raise NotImplementedError("spawn_members method must be implemented in subclass")

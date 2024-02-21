@@ -37,7 +37,7 @@ class Player(Entity):
         self.crashed = False
         self.crash_entity = None
         self.flapped = False
-        self.rot = None
+        self.rotation = None
 
         self.mode = PlayerMode.SHM
         self.invincibility_frames = 0
@@ -68,7 +68,7 @@ class Player(Entity):
         self.min_vel_y = -15  # min vel along Y, max ascend speed
         self.acc_y = 1.875  # players downward acceleration
 
-        self.rot = 80  # player's current rotation
+        self.rotation = 80  # player's current rotation
         self.vel_rot = -2.7  # player's rotation speed
         self.rot_min = -90  # player's min rotation angle
         self.rot_max = 20  # player's max rotation angle
@@ -82,7 +82,7 @@ class Player(Entity):
         self.min_vel_y = -7.5  # min vel along Y, max ascend speed
         self.acc_y = 0.9375  # players downward acceleration
 
-        self.rot = 0  # player's current rotation
+        self.rotation = 0  # player's current rotation
         self.vel_rot = 0  # player's rotation speed
         self.rot_min = 0  # player's min rotation angle
         self.rot_max = 0  # player's max rotation angle
@@ -132,7 +132,7 @@ class Player(Entity):
             self.change_hp(2)
 
     def rotate(self) -> None:
-        self.rot = pygame.math.clamp(self.rot + self.vel_rot, self.rot_min, self.rot_max)
+        self.rotation = pygame.math.clamp(self.rotation + self.vel_rot, self.rot_min, self.rot_max)
 
     def draw(self) -> None:
         self.image = self.animation.update()
@@ -149,7 +149,7 @@ class Player(Entity):
         self.draw_player()
 
     def draw_player(self) -> None:
-        rotated_image = pygame.transform.rotate(self.image, self.rot)
+        rotated_image = pygame.transform.rotate(self.image, self.rotation)
         rotated_rect = rotated_image.get_rect(center=self.rect.center)
         self.config.screen.blit(rotated_image, rotated_rect)
 
@@ -157,7 +157,7 @@ class Player(Entity):
         if self.y > self.min_y:
             self.vel_y = self.flap_acc
             self.flapped = True
-            self.rot = self.rot_max
+            self.rotation = self.rot_max
             self.config.sounds.play_random(self.config.sounds.flap)
 
     def crossed(self, pipe: Pipe) -> bool:

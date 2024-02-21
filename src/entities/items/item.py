@@ -67,6 +67,7 @@ class Item(Entity):
         item_name: ItemName,
         spawn_quantity: int = 1,
         entity=None,  # in case the Item needs to access attributes/methods of Entity instance, for example its HP
+        flipped: bool = False,  # flips the image horizontally, so enemies can use items too
         **kwargs
     ) -> None:
         super().__init__(config, **kwargs)
@@ -75,6 +76,7 @@ class Item(Entity):
         self.spawn_quantity = spawn_quantity
         self._quantity = spawn_quantity
         self.entity = entity
+        self.flipped = flipped
         item_name_suffix = "_inventory" if item_name.value + "_inventory" in self.config.images.items else ""
         self.inventory_image = config.images.items[item_name.value + item_name_suffix]
         if self.type == ItemType.WEAPON:
@@ -91,10 +93,7 @@ class Item(Entity):
 
     @quantity.setter
     def quantity(self, value):
-        if value < 0:
-            self._quantity = 0
-        else:
-            self._quantity = value
+        self._quantity = max(0, value)
 
     def use(self, *args):
         self.quantity -= 1
@@ -107,3 +106,7 @@ class Item(Entity):
         # overrides Entity.draw() as Items should not be drawn on their own, unless it's a weapon or other special item
         # that needs to be drawn on the game canvas, not just in the inventory
         pass
+
+    def flip(self) -> None:
+        self.flipped = not self.flipped
+        self.image = pygame.transform.flip(self.image, True, False)
