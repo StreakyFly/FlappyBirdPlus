@@ -32,6 +32,7 @@ class Bullet(Item):
         # for unique bullets set bullet_front_length in subclass
         self.bullet_front_length = 4  # the length/height of the bullet's front-most part (the part that hits first)
 
+        self.original_image = self.image
         self.original_image_dimensions = self.image.get_width(), self.image.get_height()
         self.velocity = self.calculate_velocity()
         self.update_image(pygame.transform.rotate(self.image, angle))
@@ -48,6 +49,14 @@ class Bullet(Item):
         self.pipe_to_ignore = None
         self.intersections = dict()
 
+    def flip(self):
+        self.update_image(self.original_image)
+        super().flip()
+        self.update_image(pygame.transform.rotate(self.image, self.angle))
+        self.set_spawn_position(bullet_offset=pygame.Vector2(self.w, self.h / 2))
+        self.speed = -self.speed
+        self.velocity = self.calculate_velocity()
+
     def tick(self) -> None:
         if not self.real:  # so the inventory slot's bullet doesn't update for no reason
             return
@@ -63,7 +72,7 @@ class Bullet(Item):
 
     def draw(self) -> None:
         self.config.screen.blit(self.image, self.rect)
-        # self.debug_draw()
+        self.debug_draw()
 
     def debug_draw(self) -> None:
         for pipe in self.pipes:
@@ -138,9 +147,10 @@ class Bullet(Item):
         for enemy in self.enemies:
             if not self.collide(enemy):
                 continue
-            self.hit_entity = 'enemy'
-            enemy.change_life(-self.damage)
-            return
+            if self.bounced or self.frame > 3: # or self.entity != enemy:
+                self.hit_entity = 'enemy'
+                enemy.change_life(-self.damage)
+                return
 
         # handle hitting player
         if self.player and self.collide(self.player):
@@ -156,7 +166,7 @@ class Bullet(Item):
         angle_rad = math.radians(-self.angle)
 
         # calculate the offsets for the front point when the angle is 0
-        offset_x = self.original_image_dimensions[0] / 2
+        offset_x = self.original_image_dimensions[0] / 2 if not self.flipped else -self.original_image_dimensions[0] / 2
         # offset_y = 0  # no vertical offset since we're starting from the center
 
         rotated_offset_x = offset_x * math.cos(angle_rad)  # - offset_y * math.sin(angle_rad)  # as offset_y = 0
@@ -186,10 +196,17 @@ class Bullet(Item):
         bfp = self.calculate_bullet_front_position()
 
         # calculate intersection points with each side of the pipe
-        intersection_left = pygame.Vector2(pipe.x, bfp.y + self.velocity.y * ((pipe.x - bfp.x) / self.velocity.x))
-        intersection_right = pygame.Vector2(pipe.x + pipe.w, bfp.y + self.velocity.y * ((pipe.x + pipe.w - bfp.x) / self.velocity.x))
-        intersection_top = pygame.Vector2(bfp.x + self.velocity.x * ((pipe.y - bfp.y) / self.velocity.y), pipe.y)
-        intersection_bottom = pygame.Vector2(bfp.x + self.velocity.x * ((pipe.y + pipe.h - bfp.y) / self.velocity.y), pipe.y + pipe.h)
+        if self.velocity.x == 0:
+            intersection_left = intersection_right = pygame.Vector2(-1000, -1000)
+        else:
+            intersection_left = pygame.Vector2(pipe.x, bfp.y + self.velocity.y * ((pipe.x - bfp.x) / self.velocity.x))
+            intersection_right = pygame.Vector2(pipe.x + pipe.w, bfp.y + self.velocity.y * ((pipe.x + pipe.w - bfp.x) / self.velocity.x))
+
+        if self.velocity.y == 0:
+            intersection_top = intersection_bottom = pygame.Vector2(-1000, -1000)
+        else:
+            intersection_top = pygame.Vector2(bfp.x + self.velocity.x * ((pipe.y - bfp.y) / self.velocity.y), pipe.y)
+            intersection_bottom = pygame.Vector2(bfp.x + self.velocity.x * ((pipe.y + pipe.h - bfp.y) / self.velocity.y), pipe.y + pipe.h)
 
         valid_intersections = []
         # intersection is valid if its x or y lies on the pipe's side

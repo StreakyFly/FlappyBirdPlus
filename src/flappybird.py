@@ -78,7 +78,7 @@ class FlappyBird:
         self.score.reset()
 
         while True:
-            self.monitor_fps_drops(fps_threshold=26)
+            self.monitor_fps_drops(fps_threshold=27)
             for i, pipe in enumerate(self.pipes.upper):
                 if self.player.crossed(pipe):
                     self.score.add()
@@ -109,6 +109,7 @@ class FlappyBird:
         self.pipes.stop()
         self.floor.stop()
         self.item_manager.stop()
+        self.enemy_manager.stop()
 
         while True:
             for event in pygame.event.get():
@@ -152,6 +153,11 @@ class FlappyBird:
         # TODO add all existing bullets to current_bullets, even those from enemy guns!
         if self.inventory.inventory_slots[0].item.name != ItemName.EMPTY and self.inventory.inventory_slots[0].item.shot_bullets:
             current_bullets.extend(self.inventory.inventory_slots[0].item.shot_bullets)
+        if self.enemy_manager.spawned_enemy_groups:
+            for group in self.enemy_manager.spawned_enemy_groups:
+                for enemy in group.members:
+                    if enemy.gun.shot_bullets:
+                        current_bullets.extend(enemy.gun.shot_bullets)
 
         for bullet in current_bullets:
             bullet.set_entities(self.player, spawned_enemies, (self.pipes.upper + self.pipes.lower))

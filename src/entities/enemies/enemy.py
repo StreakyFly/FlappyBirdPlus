@@ -12,7 +12,7 @@ class Enemy(Entity):
         super().__init__(config, *args, **kwargs)
         self.animation: Animation = animation
         self.update_image(self.animation.update())
-        self.hp_manager = AttributeBar(config=self.config, max_value=150, color=(255, 0, 0, 222),
+        self.hp_manager = AttributeBar(config=self.config, max_value=100, color=(255, 0, 0, 222),
                                        x=self.x, y=int(self.y) - 25, w=self.w, h=10)
         self.is_gone = False
         self.rotation = 0
@@ -27,6 +27,10 @@ class Enemy(Entity):
         self.hp_manager.x = self.x
         self.hp_manager.tick()
         super().tick()
+
+    def set_max_hp(self, max_value: int) -> None:
+        self.hp_manager.max_value = max_value
+        self.hp_manager.current_value = max_value
 
     def change_life(self, amount: int) -> None:
         self.hp_manager.change_value(amount)

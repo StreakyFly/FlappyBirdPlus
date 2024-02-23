@@ -15,11 +15,6 @@ be pushed back and up incrementally, reflecting a more realistic behavior.
 """
 
 
-# TODO self.flipped attribute has been added to Item, but it is NOT taken into account in any of the methods
-#  do some research if it's possible to somehow flip the entire object with positions, not just the image...
-#  it would save me so much trouble now and in the future if I decide to change anything
-
-
 class Gun(Item):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -85,13 +80,24 @@ class Gun(Item):
             if bullet.should_remove():
                 self.shot_bullets.remove(bullet)
 
+    def flip(self) -> None:
+        super().flip()
+        self.pivot = pygame.Vector2(self.w - self.pivot.x, self.pivot.y)
+        self.barrel_end_pos = pygame.Vector2(self.w - self.barrel_end_pos.x, self.barrel_end_pos.y)
+        self.set_recoil(-self.recoil_distance, self.recoil_duration, -self.recoil_rotation)
+
     def draw(self) -> None:
-        # pivot_point = pygame.Vector2(self.entity.x + self.pivot.x, self.entity.y + self.pivot.y)  # different weapon animation relative to the player (Ctrl+F: DWARP1)
         pivot_point = pygame.Vector2(self.x + self.pivot.x, self.y + self.pivot.y)
-        origin_point = self.rect.center
-        rotated_image, rotated_rect = rotate_on_pivot(self.image, self.rotation, pivot_point, origin_point)
+        rotated_image, rotated_rect = rotate_on_pivot(self.image, self.rotation, pivot_point, self.rect.center)
         self.config.screen.blit(rotated_image, rotated_rect)
-        # pygame.draw.circle(self.config.screen, (255, 0, 0), self.calculate_initial_bullet_position(), 10, width=5)  # for debugging & explanation!
+        # self.debug_draw()
+
+    def debug_draw(self) -> None:
+        RED = (255, 0, 0); GREEN = (0, 255, 0); BLUE = (0, 0, 255); BLACK = (0, 0, 0)
+        screen = self.config.screen
+        pygame.draw.circle(screen, RED, self.calculate_initial_bullet_position(), 8, width=4)
+        pygame.draw.circle(screen, BLACK, (self.x + self.barrel_end_pos.x, self.y + self.barrel_end_pos.y), 6, width=3)
+        pygame.draw.circle(screen, RED, (self.x + self.pivot.x, self.y + self.pivot.y), 4)
 
     def update_transform(self) -> None:
         self.x = self.entity.x + self.offset.x + self.animation_offset.x
@@ -106,6 +112,9 @@ class Gun(Item):
         self.pivot = pivot
         self.barrel_end_pos = barrel_end_pos
         self.update_transform()
+
+    def update_offset(self, offset) -> None:
+        self.offset = pygame.Vector2(offset)
 
     def set_properties(self, ammo_name: ItemName, ammo_class: callable, damage: int, ammo_speed: int, magazine_size: int,
                        shoot_cooldown: int, reload_cooldown: int) -> None:
@@ -194,16 +203,13 @@ class Gun(Item):
         # calculate the position where the ammo spawns
         pos_x = self.x + world_barrel_end_pos.x
         pos_y = self.y + world_barrel_end_pos.y
-        # rotated_offset = self.offset.rotate(-self.rotation)  # different weapon animation relative to the player (Ctrl+F: DWARP1)
-        # pos_x = self.entity.x + world_barrel_end_pos.x + rotated_offset.x
-        # pos_y = self.entity.y + world_barrel_end_pos.y + rotated_offset.y
-        position = pygame.Vector2(pos_x, pos_y)
-        return position
+        return pygame.Vector2(pos_x, pos_y)
 
     def spawn_bullet(self) -> None:
         bullet = self.ammo_class(config=self.config, item_name=self.ammo_name, item_type=ItemType.AMMO,
                                  damage=self.damage, spawn_position=self.calculate_initial_bullet_position(),
-                                 speed=self.ammo_speed, angle=self.entity.rotation + self.animation_rotation)
+                                 speed=self.ammo_speed, angle=self.rotation)
+        bullet.entity = self.entity
         if self.flipped:
             bullet.flip()
         self.shot_bullets.add(bullet)

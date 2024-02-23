@@ -19,6 +19,11 @@ class CloudSkimmer(Enemy):
         self.frequency = 0.15  # oscillation frequency
         self.sin_y = 50  # initial relative vertical position
 
+        # self.set_max_hp(150)
+        self.set_max_hp(1000)
+
+        self.rotation = random.randint(-30, 50)
+
         self.gun: Union[Gun, Item] = None
 
     def tick(self):
@@ -54,18 +59,18 @@ class CloudSkimmerGroup(EnemyGroup):
         positions = [(self.x + 90, self.y - 125),
                      (self.x, self.y),
                      (self.x + 90, self.y + 125)]
-        weapons = [ItemName.WEAPON_AK47,
-                   ItemName.WEAPON_DEAGLE,
-                   ItemName.WEAPON_AK47]
-        ammo = [self.item_initializer.init_item(ItemName.EMPTY),  # doesn't really matter which item,
-                self.item_initializer.init_item(ItemName.EMPTY),  # we just need an object with quantity attribute
-                self.item_initializer.init_item(ItemName.EMPTY)]  # -.-
-        ammo_quantity = [900, 210, 900]
 
-        for pos, weapon, ammo_item, ammo_quantity in zip(positions, weapons, ammo, ammo_quantity):
+        # second argument is ammo item - it doesn't really matter which item it is,
+        #  as we just need an object with quantity attribute -.-
+        weapons = [(ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 10)),
+                   (ItemName.WEAPON_DEAGLE, self.item_initializer.init_item(ItemName.EMPTY), 210, (0, 20)),
+                   (ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 10))]
+
+        for pos, (weapon, ammo_item, ammo_quantity, weapon_offset) in zip(positions, weapons):
             member = CloudSkimmer(self.config, x=pos[0], y=pos[1])
             gun: Union[Item, Gun] = self.item_initializer.init_item(weapon, member)
             gun.flip()
+            gun.update_offset(weapon_offset)
             ammo_item.quantity = ammo_quantity
             member.set_gun(gun, ammo_item)
             self.members.append(member)
