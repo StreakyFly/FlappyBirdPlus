@@ -72,7 +72,7 @@ class Bullet(Item):
 
     def draw(self) -> None:
         self.config.screen.blit(self.image, self.rect)
-        self.debug_draw()
+        # self.debug_draw()
 
     def debug_draw(self) -> None:
         for pipe in self.pipes:
@@ -130,7 +130,7 @@ class Bullet(Item):
         # stop the bullet if it hits the floor
         if self.y > self.config.window.height - 163 - self.h / 2:
             self.hit_entity = 'floor'
-            self.stop()
+            self.move_with_background()
             return
 
         # TODO maybe make the bullets bounce only once every few hits? Like 20% bounce rate?
@@ -159,6 +159,10 @@ class Bullet(Item):
             return
 
     def stop(self):
+        self.stopped = True
+        self.velocity = pygame.Vector2(0, 0)
+
+    def move_with_background(self):
         self.stopped = True
         self.velocity = self.BACKGROUND_VELOCITY
 

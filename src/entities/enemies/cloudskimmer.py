@@ -19,22 +19,28 @@ class CloudSkimmer(Enemy):
         self.frequency = 0.15  # oscillation frequency
         self.sin_y = 50  # initial relative vertical position
 
-        # self.set_max_hp(150)
-        self.set_max_hp(1000)
+        self.set_max_hp(300)
 
         self.rotation = random.randint(-30, 50)
 
         self.gun: Union[Gun, Item] = None
 
     def tick(self):
-        self.time += 1
-        self.x += self.vel_x
-        self.sin_y = self.amplitude * math.sin(self.frequency * self.time)
-        self.y = self.initial_y + self.sin_y
-        super().tick()
+        if self.running:
+            self.time += 1
+            self.x += self.vel_x
+            self.sin_y = self.amplitude * math.sin(self.frequency * self.time)
+            self.y = self.initial_y + self.sin_y
         self.gun.tick()
-        self.gun.use(0)  # TODO only for testing, later it won't constantly shoot, but more randomly
-                         #  also, it will actually aim at the player, not just fire in the same direction
+
+        if self.running:
+            self.gun.use(0)  # TODO only for testing, later the shooting and aiming will be controlled by an AI agent
+        super().tick()
+
+    def stop(self) -> None:
+        for bullet in self.gun.shot_bullets:
+            bullet.stop()
+        super().stop()
 
     def set_gun(self, gun: Union[Item, Gun], ammo_item) -> None:
         self.gun = gun

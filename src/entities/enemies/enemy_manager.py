@@ -17,6 +17,10 @@ class EnemyManager:
                 self.spawned_enemy_groups.remove(group)
             group.tick()
 
+    def stop(self):
+        for group in self.spawned_enemy_groups:
+            group.stop()
+
     def can_spawn_enemy(self) -> bool:
         if self.spawned_enemy_groups:
             return False

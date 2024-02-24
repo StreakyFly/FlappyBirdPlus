@@ -15,6 +15,7 @@ class Enemy(Entity):
         self.hp_manager = AttributeBar(config=self.config, max_value=100, color=(255, 0, 0, 222),
                                        x=self.x, y=int(self.y) - 25, w=self.w, h=10)
         self.is_gone = False
+        self.running: bool = True
         self.rotation = 0
 
     def tick(self):
@@ -27,6 +28,9 @@ class Enemy(Entity):
         self.hp_manager.x = self.x
         self.hp_manager.tick()
         super().tick()
+
+    def stop(self) -> None:
+        self.running = False
 
     def set_max_hp(self, max_value: int) -> None:
         self.hp_manager.max_value = max_value
@@ -65,6 +69,10 @@ class EnemyGroup:
             if member.is_gone:
                 self.members.remove(member)
             member.tick()
+
+    def stop(self) -> None:
+        for member in self.members:
+            member.stop()
 
     def is_empty(self) -> bool:
         return not self.members
