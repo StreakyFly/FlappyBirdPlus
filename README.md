@@ -16,7 +16,7 @@ Part of the basic Flappy Bird code stolen from https://github.com/sourabhv/FlapP
 
 <br/>
 
-Training the CloudSkinner AI agents:
+Training the CloudSkimmer AI agents:
 
 Input:
  - player position
