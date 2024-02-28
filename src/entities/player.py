@@ -43,7 +43,7 @@ class Player(Entity):
         self.invincibility_frames = 0
         self.set_mode(PlayerMode.SHM)
         self.gsm = gsm
-        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=500, color=(255, 0, 0, 222),
+        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(255, 0, 0, 222),
                                        x=self.x, y=int(self.y) - 25, w=self.w, h=10)
         self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(20, 50, 255, 222),
                                            x=self.x, y=int(self.y) - 40, w=self.w, h=10)
@@ -172,11 +172,11 @@ class Player(Entity):
             self.crash_entity = "floor"
             self.deal_damage(3)
 
-        # for pipe in pipes.upper + pipes.lower:
-        #     if self.collide(pipe):
-        #         self.crashed = True
-        #         self.crash_entity = "pipe"
-        #         self.deal_damage(200)
+        for pipe in pipes.upper + pipes.lower:
+            if self.collide(pipe):
+                self.crashed = True
+                self.crash_entity = "pipe"
+                self.deal_damage(200)
 
     def collided_items(self, spawned_items: List[SpawnedItem]) -> List[SpawnedItem]:
         """returns spawned item(s) if player collides with them"""

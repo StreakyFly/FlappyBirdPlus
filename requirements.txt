@@ -1,5 +1,5 @@
 pygame==2.5.2
 numpy==1.26.3
-gym==0.26.2
+gymnasium==0.29.1
 torch==2.2.1
 stable-baselines3==2.2.1
