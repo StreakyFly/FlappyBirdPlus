@@ -13,6 +13,7 @@ class ItemManager:
         self.inventory = inventory
         self.pipes = pipes
         self.spawned_items: List[SpawnedItem] = []
+        self.spawn_cooldown: int = self.config.fps * 5
 
     def tick(self) -> None:
         # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
@@ -47,18 +48,22 @@ class ItemManager:
         self.last_pipe = self.pipes.lower[-1]
         # return True
 
-        if self.config.window.width - (self.last_pipe.x + self.last_pipe.w) > self.last_pipe.w * 1.9:
-            return random.random() <= 1.4  # 0.4  # 40% chance of returning True to spawn an item
-        return False
+        if self.spawn_cooldown > 0:
+            self.spawn_cooldown -= 1
+            return False
+
+        second = self.config.fps
+        self.spawn_cooldown = random.randint(second * 2, second * 5)
+        return True
 
     def spawn_item(self) -> None:
         item_name: ItemName = self.get_random_spawn_item()
-        x = random.randint(800, 1200)
-        # TODO improve this placement (if you uncomment return True in can_spawn_item() the spawned stream
-        #  should run through the gaps, and not lag behind like it does now...) - maybe calculate spawn location
-        #  by coming up with a good position at X where the bird is in the screen, and then reverse calculate the
-        #  position where it should be spawned (include the amplitude and frequency of the spawned item)
-        y = random.randint(self.last_pipe.y - self.pipes.pipe_gap - 50, self.last_pipe.y)
+        # TODO further improve spawn position - calculate where the player will be able to collect the spawned
+        #  item, and then adjust the spawn position accordingly, so that the player can collect the item and it doesn't
+        #  end within the pipe when it reaches the player. Basically reverse calculate the position where the item
+        #  should be spawned (take into account the amplitude and frequency of the spawned item).
+        x = random.randint(1100, 1300)
+        y = random.randint(self.last_pipe.y - self.pipes.vertical_gap - 50, self.last_pipe.y)
 
         spawned_item = SpawnedItem(config=self.config, item_name=item_name,
                                    x=x, y=y, image=self.config.images.item_spawn_bubble)

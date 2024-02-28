@@ -11,7 +11,7 @@ class Deagle(Gun):
         self.set_properties(
             ammo_name=ItemName.BULLET_MEDIUM,
             ammo_class=MediumBullet,
-            damage=95,
+            damage=85,
             ammo_speed=50,
             magazine_size=7,
             shoot_cooldown=int(self.config.fps * 0.9),

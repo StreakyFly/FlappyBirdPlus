@@ -43,7 +43,7 @@ class Player(Entity):
         self.invincibility_frames = 0
         self.set_mode(PlayerMode.SHM)
         self.gsm = gsm
-        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=10000, color=(255, 0, 0, 222),
+        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=1000, color=(255, 0, 0, 222),
                                        x=self.x, y=int(self.y) - 25, w=self.w, h=10)
         self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(20, 50, 255, 222),
                                            x=self.x, y=int(self.y) - 40, w=self.w, h=10)
@@ -170,13 +170,13 @@ class Player(Entity):
         if self.collide(floor):
             self.crashed = True
             self.crash_entity = "floor"
-            self.change_life(-3)
+            self.deal_damage(3)
 
         # for pipe in pipes.upper + pipes.lower:
         #     if self.collide(pipe):
         #         self.crashed = True
         #         self.crash_entity = "pipe"
-        #         self.change_life(-200)
+        #         self.deal_damage(200)
 
     def collided_items(self, spawned_items: List[SpawnedItem]) -> List[SpawnedItem]:
         """returns spawned item(s) if player collides with them"""
@@ -186,13 +186,13 @@ class Player(Entity):
                 items.append(item)
         return items
 
-    def change_life(self, amount: int) -> None:
-        if self.shield_manager.current_value >= -amount:
-            self.change_shield(amount)
+    def deal_damage(self, amount: int) -> None:
+        if self.shield_manager.current_value >= amount:
+            self.change_shield(-amount)
         else:
             remaining_damage = amount - self.shield_manager.current_value
             self.shield_manager.set_value(0)
-            self.change_hp(remaining_damage)
+            self.change_hp(-remaining_damage)
 
     def change_hp(self, amount: int) -> None:
         self.hp_manager.change_value(amount)

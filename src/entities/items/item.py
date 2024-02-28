@@ -37,11 +37,6 @@ class SpawnedItem(Entity):
         self.item_img_x: int = (self.image.get_height() - 56) // 2
         self.item_img_y: int = (self.image.get_width() - 56) // 2
 
-    # def draw(self) -> None:  # old draw, for 'stationary' spawned items (self.vel_x = -7.5)
-    #     self.x += self.vel_x
-    #     self.config.screen.blit(self.item_image, (self.rect.x + self.item_img_x, self.rect.y + self.item_img_y))
-    #     super().draw()
-
     def draw(self) -> None:
         self.x += self.vel_x
         self.sin_y = self.amplitude * math.sin(self.frequency * self.x)

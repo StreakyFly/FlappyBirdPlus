@@ -147,15 +147,15 @@ class Bullet(Item):
         for enemy in self.enemies:
             if not self.collide(enemy):
                 continue
-            if self.bounced or self.frame > 3: # or self.entity != enemy:
+            if self.bounced or self.frame > 3:
                 self.hit_entity = 'enemy'
-                enemy.change_life(-self.damage)
+                enemy.deal_damage(self.damage)
                 return
 
         # handle hitting player
         if self.player and self.collide(self.player):
             self.hit_entity = 'player'
-            self.player.change_life(-self.damage)
+            self.player.deal_damage(self.damage)
             return
 
     def stop(self):
