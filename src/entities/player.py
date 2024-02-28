@@ -43,7 +43,7 @@ class Player(Entity):
         self.invincibility_frames = 0
         self.set_mode(PlayerMode.SHM)
         self.gsm = gsm
-        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=1000, color=(255, 0, 0, 222),
+        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=500, color=(255, 0, 0, 222),
                                        x=self.x, y=int(self.y) - 25, w=self.w, h=10)
         self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(20, 50, 255, 222),
                                            x=self.x, y=int(self.y) - 40, w=self.w, h=10)

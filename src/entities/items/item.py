@@ -105,3 +105,6 @@ class Item(Entity):
     def flip(self) -> None:
         self.flipped = not self.flipped
         self.image = pygame.transform.flip(self.image, True, False)
+
+    def stop(self) -> None:
+        pass

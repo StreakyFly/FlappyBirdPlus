@@ -99,6 +99,10 @@ class Gun(Item):
         pygame.draw.circle(screen, BLACK, (self.x + self.barrel_end_pos.x, self.y + self.barrel_end_pos.y), 6, width=3)
         pygame.draw.circle(screen, RED, (self.x + self.pivot.x, self.y + self.pivot.y), 4)
 
+    def stop(self) -> None:
+        for bullet in self.shot_bullets:
+            bullet.stop()
+
     def update_transform(self) -> None:
         self.x = self.entity.x + self.offset.x + self.animation_offset.x
         self.y = self.entity.y + self.offset.y + self.animation_offset.y

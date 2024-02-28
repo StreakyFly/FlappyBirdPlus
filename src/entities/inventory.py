@@ -84,6 +84,10 @@ class Inventory(Entity):
         for slot in self.inventory_slots:
             slot.tick()
 
+    def stop(self) -> None:
+        for slot in self.inventory_slots:
+            slot.item.stop()
+
     def add_item(self, item_name: ItemName) -> None:
         for slot in self.inventory_slots:
             if slot.item.name == item_name:
@@ -144,7 +148,7 @@ class Inventory(Entity):
         if slot.item.type == ItemType.EMPTY:
             return
 
-        if inventory_slot_index == 0:
+        if inventory_slot_index in [0, 1]:
             weapon_item: Union[Item, Gun] = self.inventory_slots[0].item
             ammo_item = self.inventory_slots[1].item
             weapon_item.update_ammo_object(ammo_item)  # so the gun can properly reload

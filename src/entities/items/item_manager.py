@@ -14,8 +14,12 @@ class ItemManager:
         self.pipes = pipes
         self.spawned_items: List[SpawnedItem] = []
         self.spawn_cooldown: int = self.config.fps * 5
+        self.stopped = False
 
     def tick(self) -> None:
+        if self.stopped:
+            return
+
         # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
         #                            x=800, y=700, image=self.config.images.item_spawn_bubble))
         # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
@@ -41,6 +45,7 @@ class ItemManager:
         self.despawn_items()
 
     def stop(self) -> None:
+        self.stopped = True
         for item in self.spawned_items:
             item.stop()
 
