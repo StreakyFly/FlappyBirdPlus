@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 import numpy as np
 
@@ -15,12 +16,15 @@ class FlappyBird:
         pygame.init()
         pygame.display.set_caption("Flappy Bird by @StreakyFly")
         window = Window(width=720, height=960)
-        screen = pygame.display.set_mode((window.width, window.height), flags=pygame.SCALED)
+        if os.environ.get('SDL_VIDEODRIVER') == 'dummy':
+            screen = pygame.display.set_mode((window.width, window.height))
+        else:
+            screen = pygame.display.set_mode((window.width, window.height), flags=pygame.SCALED)
 
         self.config = GameConfig(
             screen=screen,
             clock=pygame.time.Clock(),
-            fps=100,  # TODO change fps
+            fps=900,  # default = 30
             window=window,
             images=Images(),
             sounds=Sounds(),
@@ -89,6 +93,7 @@ class FlappyBird:
         self.score.reset()
 
         while True:
+            self.get_state()
             self.monitor_fps_drops(fps_threshold=27)
             for i, pipe in enumerate(self.pipes.upper):
                 if self.player.crossed(pipe):
@@ -195,7 +200,7 @@ class FlappyBird:
         if died:
             reward = -100
         elif passed_pipe:
-            reward = 50
+            reward = 100
         elif action == 1:
             reward = -1
 
@@ -208,7 +213,7 @@ class FlappyBird:
 
         vertical_distance_to_next_pipe_center = abs(self.player.y - next_pipe_y)
         if vertical_distance_to_next_pipe_center < 100:
-            reward += 5
+            reward += 3
 
         return reward
 

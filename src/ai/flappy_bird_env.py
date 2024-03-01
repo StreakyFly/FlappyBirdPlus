@@ -18,8 +18,8 @@ class FlappyBirdEnv(gym.Env):
         # self.action_space = gym.spaces.MultiDiscrete([2, 3])  # for multiple actions
 
         self.observation_space = gym.spaces.Box(
-            low=np.array([-120, -90, -300, 0, -300, 0, -300, 0, -300, 0], dtype=np.float32),  # min values for each observation
-            high=np.array([755, 20, 1200, 960, 1200, 960, 1200, 960, 1200, 960], dtype=np.float32),  # max values for each observation
+            low=np.array([-120, -90, -265, 200, 125, 200, 515, 200, 905, 200], dtype=np.float32),
+            high=np.array([755, 20, 300, 600, 510, 600, 900, 600, 1290, 600], dtype=np.float32),
             dtype=np.float32
         )
 
@@ -27,8 +27,7 @@ class FlappyBirdEnv(gym.Env):
         observation, reward, terminated, truncated = self.game.step(action)
         info = {}  # populate with additional info if necessary
 
-        if reward > 0:
-            print(reward)
+        observation = np.clip(observation, self.observation_space.low, self.observation_space.high)
 
         return observation, reward, terminated, truncated, info
 
