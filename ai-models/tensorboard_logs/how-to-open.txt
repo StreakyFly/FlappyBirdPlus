@@ -1,0 +1,5 @@
+cd path/to/your/project
+
+conda activate your_env_name (if you use conda)
+
+tensorboard --logdir=./ai-models/tensorboard_logs/

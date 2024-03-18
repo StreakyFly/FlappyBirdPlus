@@ -27,7 +27,7 @@ Input:
  - fired bullet positions (only bullets they fired)
 
 Output:
- - rotation (of the enemy/gun) - must be limited to a certain change per frame
+ - rotation - rotate up or down
  - fire or not
 
 The agent should be rewarded when their bullet hits the player, and penalized when it hits them or another enemy.

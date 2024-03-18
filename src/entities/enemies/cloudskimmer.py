@@ -21,7 +21,7 @@ class CloudSkimmer(Enemy):
 
         self.set_max_hp(300)
 
-        self.rotation = random.randint(-30, 50)
+        self.rotation = random.randint(-30, 50)  # TODO only for testing, later the rotation will be controlled by an AI agent
 
         self.gun: Union[Gun, Item] = None
 
