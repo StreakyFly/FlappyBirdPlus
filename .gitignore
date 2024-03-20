@@ -3,4 +3,7 @@ test_scripts
 EXAMPLES
 
 
+# model training data (I'll delete most of it, only keep da best/interesting ones) and push them later
+*ai-models
+
 __pycache__

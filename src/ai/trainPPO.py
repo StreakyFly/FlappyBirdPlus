@@ -3,7 +3,7 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.callbacks import CheckpointCallback
 
-from .flappy_bird_env import FlappyBirdEnvManager
+from .env_manager import EnvManager
 
 
 MODEL_NAME = 'flappy_bird'
@@ -69,7 +69,7 @@ def evaluate() -> None:
 
 
 def create_environments(n_envs: int = 1):
-    env = make_vec_env(lambda: FlappyBirdEnvManager().get_env(), n_envs=n_envs)
+    env = make_vec_env(lambda: EnvManager().get_env(), n_envs=n_envs)
     return env
 
 

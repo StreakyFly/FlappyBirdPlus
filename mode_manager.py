@@ -6,6 +6,7 @@ from modes import Mode
 from config import config
 from src.utils import printc
 from src.flappybird import FlappyBird
+from src.ai.env_manager import EnvManager
 
 
 class ModeExecutor:
@@ -15,22 +16,26 @@ class ModeExecutor:
 
     @staticmethod
     def test_env_mode():
-        config['env_manager'].test_env()
+        EnvManager(env_type=config['env_type']).test_env()
 
     @staticmethod
     def train_mode():
+        config['model'].set_env_type(config['env_type'])
         config['model'].train()
 
     @staticmethod
     def continue_training_mode():
+        config['model'].set_env_type(config['env_type'])
         config['model'].continue_training()
 
     @staticmethod
     def run_model_mode():
+        config['model'].set_env_type(config['env_type'])
         config['model'].run()
 
     @staticmethod
     def evaluate_model_mode():
+        config['model'].set_env_type(config['env_type'])
         config['model'].evaluate()
 
 
@@ -44,11 +49,19 @@ MODES = {
 }
 
 
+def print_config():
+    printc(f"Environment type: {config['env_type']}", color='blue')
+    printc(f"Options: {config['options']}", color='green')
+    printc(f"Model: {config['model'].__name__}", color='blue')
+
+
 def validate_mode():
     if config['mode'] in Mode.__members__.values():
         printc(f"Mode: {config['mode']}", color='green')
     else:
         printc(f"Invalid mode: {config['mode']}", color='red')
+
+    print_config()
 
 
 def execute_mode():

@@ -10,7 +10,7 @@ Part of the basic Flappy Bird code stolen from https://github.com/sourabhv/FlapP
 
 1. guns - add animation and sound for shooting and reloading
 2. multiple types of enemies controlled by trained agents
-3. 3rd inventory slot - maybe add hunder and food? Or some other item type.
+3. 3rd inventory slot - maybe add hunger and food? Or some other item type.
 4. traps...?
 5. make the scene speed easily adjustable
 

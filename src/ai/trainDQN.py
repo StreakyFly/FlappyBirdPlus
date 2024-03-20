@@ -4,7 +4,7 @@ from stable_baselines3.common.vec_env import VecNormalize, VecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.evaluation import evaluate_policy
 
-from .flappy_bird_env import FlappyBirdEnvManager
+from .env_manager import EnvManager
 
 
 EXTRA_NAME = "7500000_steps"
@@ -17,6 +17,13 @@ MODEL_PATH = f"{DIR_CHECKPOINTS}/{MODEL_NAME}_{EXTRA_NAME}"
 # NORMALIZATION_STATS_PATH = f"{DIR_CHECKPOINTS}/{MODEL_NAME}_{EXTRA_NAME}_{NORMALIZATION_STATS_END}"
 NORMALIZATION_STATS_PATH = f"{DIR_CHECKPOINTS}/{MODEL_NAME}_vecnormalize_{EXTRA_NAME}.pkl"
 REPLAY_BUFFER_PATH = f"{DIR_CHECKPOINTS}/{MODEL_NAME}_replay_buffer_{EXTRA_NAME}.pkl"
+
+env_type = None
+
+
+def set_env_type(_env_type):
+    global env_type
+    env_type = _env_type
 
 
 def train(norm_env=None, model=None, continue_training: bool = False) -> None:
@@ -79,12 +86,18 @@ def evaluate() -> None:
     norm_env = load_normalization_stats(path=NORMALIZATION_STATS_PATH, env=env, for_training=False)
     model = load_model(MODEL_PATH, env=norm_env)
 
-    mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
+    print("WARNING! Each episode ends after termination. If termination never happens, the episode will never end.")
+
+    mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10, deterministic=True, reward_threshold=None)
     print(f"mean_reward: {mean_reward: .2f} +/- {std_reward: .2f}")
+    norm_env.close()
 
 
 def create_environments(n_envs: int = 1) -> VecEnv:
-    env = make_vec_env(lambda: FlappyBirdEnvManager().get_env(), n_envs=n_envs)
+    if env_type is None:
+        raise ValueError("env_type must be set before creating the environment")
+
+    env = make_vec_env(lambda: EnvManager(env_type).get_env(), n_envs=n_envs)
     return env
 
 
