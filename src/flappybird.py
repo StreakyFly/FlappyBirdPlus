@@ -28,6 +28,11 @@ class FlappyBird:
             images=Images(),
             sounds=Sounds(),
         )
+
+        from .config import Config  # to avoid circular import
+        if Config.options['mute']:
+            self.set_mute(True)
+
         self.gsm = GameStateManager()
         self.background = None
         self.floor = None
@@ -42,10 +47,7 @@ class FlappyBird:
 
         self.next_closest_pipe_pair = None
 
-        if os.environ.get('SDL_VIDEODRIVER') == 'dummy':
-            self.reset_sounds(mute=True)
-
-    def reset_sounds(self, mute: bool = False):
+    def set_mute(self, mute: bool = False):
         if mute:
             self.config.sounds = Sounds(num_channels=0)
             self.config.sounds.set_muted(True)
@@ -128,37 +130,6 @@ class FlappyBird:
             await asyncio.sleep(0)
             self.config.tick()
 
-    def init_env(self):
-        """
-        Initialize the game environment.
-        :return: nothing
-        """
-        self.reset()
-        self.reset_sounds(True)
-        self.gsm.set_state(GameState.PLAY)
-        self.player.set_mode(PlayerMode.NORMAL)
-
-    def reset_env(self):
-        """
-        Reset the game environment.
-        :return: nothing
-        """
-        self.reset()
-        self.gsm.set_state(GameState.PLAY)
-        self.player.set_mode(PlayerMode.NORMAL)
-
-    def get_pipe_pair_center(self, pipe_pair) -> (float, float):
-        upper = pipe_pair[0]
-        lower = pipe_pair[1]
-        vertical_center = (upper.y + upper.h + lower.y) / 2  # TODO confirm whether this is correct
-        return upper.cx, vertical_center
-
-    def get_next_pipe_pair(self):
-        return (
-            self.pipes.upper[self.pipes.upper.index(self.next_closest_pipe_pair[0]) + 1],
-            self.pipes.lower[self.pipes.lower.index(self.next_closest_pipe_pair[1]) + 1]
-        )
-
     async def game_over(self):
         self.gsm.set_state(GameState.END)
         self.player.set_mode(PlayerMode.CRASH)
@@ -187,9 +158,22 @@ class FlappyBird:
         self.floor.tick()
         self.item_manager.tick()
         self.player.tick()
-        # self.enemy_manager.tick()  # TODO uncomment for enemies
+        self.enemy_manager.tick()
         self.inventory.tick()
         self.score.tick()
+
+    @staticmethod
+    def get_pipe_pair_center(pipe_pair) -> (float, float):
+        upper = pipe_pair[0]
+        lower = pipe_pair[1]
+        vertical_center = (upper.y + upper.h + lower.y) / 2  # TODO confirm whether this is correct
+        return upper.cx, vertical_center
+
+    def get_next_pipe_pair(self):
+        return (
+            self.pipes.upper[self.pipes.upper.index(self.next_closest_pipe_pair[0]) + 1],
+            self.pipes.lower[self.pipes.lower.index(self.next_closest_pipe_pair[1]) + 1]
+        )
 
     def is_player_dead(self) -> bool:
         if self.player.hp_manager.current_value <= 0:

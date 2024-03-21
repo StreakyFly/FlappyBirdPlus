@@ -1,14 +1,5 @@
-from enum import Enum
-
 from .gym_env import GymEnv
-from ..game_envs import BasicFlappyEnv, EnemyCloudskimmerEnv, AdvancedFlappyEnv
-
-
-class EnvType(Enum):
-    BASIC_FLAPPY = "basic_flappy"  # env for training only the basic flappy bird
-    ENEMY_CLOUDSKIMMER = "enemy_cloudskimmer"  # env for training the enemy cloudskimmer with basic flappy bird
-    ENEMY_AEROTHIEF = "enemy_aerothief"  # env for training the enemy aerothief with basic flappy bird
-    ADVANCED_FLAPPY = "advanced_flappy"  # env for training the advanced flappy bird with both enemy agents
+from .game_envs import EnvType, BasicFlappyEnv, EnemyCloudskimmerEnv, AdvancedFlappyEnv
 
 
 class EnvManager:

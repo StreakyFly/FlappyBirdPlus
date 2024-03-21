@@ -1,4 +1,4 @@
-from mode_manager import validate_mode, execute_mode, ModeExecutor  # noqa: F401  # ModeExecutor must be imported for profiling to work
+from src.mode_manager import validate_mode, execute_mode, ModeExecutor  # noqa: F401  # ModeExecutor must be imported for profiling to work
 
 
 def main():
