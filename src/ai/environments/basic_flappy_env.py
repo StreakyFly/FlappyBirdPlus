@@ -1,11 +1,10 @@
-import sys
-import gymnasium as gym
 import numpy as np
+import gymnasium as gym
 
 import pygame
-from pygame import QUIT
 
 from .base_env import BaseEnv
+from .basic_flappy_state import get_state
 
 
 class BasicFlappyEnv(BaseEnv):
@@ -13,11 +12,15 @@ class BasicFlappyEnv(BaseEnv):
         super().__init__()
 
     def get_action_and_observation_space(self):
-        # self.action_space = gym.spaces.MultiDiscrete([2, 3])  # for multiple actions
-        action_space = gym.spaces.Discrete(2)  # 0: do nothing, 1: flap the wings
+        # 0: do nothing, 1: flap the wings
+        action_space = gym.spaces.Discrete(2)
+
+        # index 0 -> player y position
+        # index 1 -> player y velocity
+        # index 2 -> horizontal distance from player to the next pipe's right-most point
+        # index 3 -> vertical distance from player to the next pipe's vertical center
+        # index 4 -> vertical distance from player to the second next pipe's vertical center
         observation_space = gym.spaces.Box(
-            # low=np.array([-120, -15, -90, -265, 200, 125, 200, 515, 200, 905, 200], dtype=np.float32),
-            # high=np.array([755, 19, 20, 300, 600, 510, 600, 900, 600, 1290, 600], dtype=np.float32),
             low=np.array([-120, -17, 0, -650, -650], dtype=np.float32),
             high=np.array([755, 21, 500, 550, 550], dtype=np.float32),
             dtype=np.float32
@@ -41,9 +44,7 @@ class BasicFlappyEnv(BaseEnv):
             terminated = True
 
         for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
+            self.handle_quit(event)
 
         self.background.tick()
         self.pipes.tick()
@@ -59,40 +60,18 @@ class BasicFlappyEnv(BaseEnv):
         return self.get_state(), reward, terminated, False
 
     def get_state(self):
-        next_pipe_pair = next_next_pipe_pair = None
-        for i, pipe in enumerate(self.pipes.upper):
-            if pipe.x + pipe.w < self.player.x:
-                continue
-
-            next_pipe_pair = (pipe, self.pipes.lower[i])
-            next_next_pipe_pair = (self.pipes.upper[i + 1], self.pipes.lower[i + 1])
-            break
-
-        horizontal_distance_to_next_pipe = next_pipe_pair[0].x + next_pipe_pair[0].w - self.player.x
-        next_pipe_vertical_center = self.get_pipe_pair_center(next_pipe_pair)[1]
-        next_next_pipe_vertical_center = self.get_pipe_pair_center(next_next_pipe_pair)[1]
-
-        vertical_distance_to_next_pipe_center = self.player.cy - next_pipe_vertical_center
-        vertical_distance_to_next_next_pipe_center = self.player.cy - next_next_pipe_vertical_center
-
-        distances_to_pipe = [horizontal_distance_to_next_pipe,
-                             vertical_distance_to_next_pipe_center,
-                             vertical_distance_to_next_next_pipe_center
-                             ]
-
-        game_state = np.array([self.player.y, self.player.vel_y] + distances_to_pipe, dtype=np.float32)
-        return game_state
+        return get_state(self.player, self.pipes, self.get_pipe_pair_center)
 
     def calculate_reward(self, action, died, passed_pipe) -> int:
         reward = 0
         if died:
-            reward -= 1000  # 400 (first 10M steps was 400, then 1000)
+            reward -= 1000
         else:
-            reward += 1  # 2
+            reward += 1
         if passed_pipe:
-            reward += 100  # 200
+            reward += 100
         if action == 1:
-            reward -= 0.2  # 0.5
+            reward -= 0.2
 
         for i, pipe in enumerate(self.pipes.upper):
             if pipe.x + pipe.w < self.player.x:

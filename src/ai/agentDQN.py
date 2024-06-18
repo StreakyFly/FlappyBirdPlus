@@ -7,11 +7,14 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from .env_manager import EnvManager
 
 
+# Dumbass me learnt that DQN doesn't work with MultiDiscrete observation spaces after training and perfecting
+# the (almost) only agent that doesn't need MultiDiscrete OS.
+
 class AgentDQN:
     EXTRA_NAME = "7500000_steps"
 
     MODEL_NAME = 'flappy_bird'
-    DIR_MODELS = './ai-models'
+    DIR_MODELS = './ai-models/DQN'
     DIR_CHECKPOINTS = f"{DIR_MODELS}/model_checkpoints"
     NORMALIZATION_STATS_END = "normalization_stats.pkl"
     MODEL_PATH = f"{DIR_CHECKPOINTS}/{MODEL_NAME}_{EXTRA_NAME}"
@@ -67,12 +70,13 @@ class AgentDQN:
         model = self.load_model(self.MODEL_PATH, env=norm_env)
 
         obs = norm_env.reset()
-        for _ in range(10_000):
+        # for _ in range(10_000):
+        while True:
             action, _ = model.predict(obs, deterministic=True)
             obs, _, done, _ = norm_env.step(action)
             if done:
                 obs = norm_env.reset()
-        norm_env.close()
+        # norm_env.close()
 
     def evaluate(self) -> None:
         env = self.create_environments(n_envs=6)

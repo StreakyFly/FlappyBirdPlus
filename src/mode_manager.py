@@ -46,10 +46,10 @@ class ModeExecutor:
         model = None
         if Config.model == 'DQN':
             from .ai.agentDQN import AgentDQN
-            model = AgentDQN(Config.env_type)
+            model = AgentDQN(env_type=Config.env_type)
         elif Config.model == 'PPO':
             from .ai.agentPPO import AgentPPO
-            model = AgentPPO(env_type=Config.env_type)
+            model = AgentPPO(env_type=Config.env_type, run_id=Config.run_id)
 
         return model
 

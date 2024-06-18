@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 
-from .game_envs import BaseEnv
+from .environments import BaseEnv
 from ..utils import printc
 
 

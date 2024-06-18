@@ -73,7 +73,7 @@ class Images:
 
     def _load_enemy_images(self) -> None:
         self.enemies = dict()
-        enemy_names = ('enemy-temp_1', 'enemy-temp_2', )
+        enemy_names = ('enemy-temp_1', 'enemy-temp_2', 'enemy-cloudskimmer_1')
 
         for enemy_name in enemy_names:
             base_name = enemy_name.rsplit('_', 1)[0]

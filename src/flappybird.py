@@ -8,6 +8,7 @@ from pygame.locals import K_SPACE, KEYDOWN, QUIT
 from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds
 from .entities import Background, Floor, Player, PlayerMode, Pipes, Score, WelcomeMessage, GameOver, \
     Inventory, ItemManager, ItemName, EnemyManager
+# from .config import Config <-- imported later to avoid circular import
 
 
 class FlappyBird:
@@ -20,16 +21,17 @@ class FlappyBird:
         else:
             screen = pygame.display.set_mode((window.width, window.height), flags=pygame.SCALED)
 
+        from .config import Config  # imported here to avoid circular import
+
         self.config = GameConfig(
             screen=screen,
             clock=pygame.time.Clock(),
-            fps=2000,  # default = 30
+            fps=Config.FPS_CAP,
             window=window,
             images=Images(),
             sounds=Sounds(),
         )
 
-        from .config import Config  # to avoid circular import
         if Config.options['mute']:
             self.set_mute(True)
 
@@ -166,7 +168,7 @@ class FlappyBird:
     def get_pipe_pair_center(pipe_pair) -> (float, float):
         upper = pipe_pair[0]
         lower = pipe_pair[1]
-        vertical_center = (upper.y + upper.h + lower.y) / 2  # TODO confirm whether this is correct
+        vertical_center = (upper.y + upper.h + lower.y) / 2
         return upper.cx, vertical_center
 
     def get_next_pipe_pair(self):
@@ -205,9 +207,7 @@ class FlappyBird:
             bullet.set_entities(self.player, spawned_enemies, (self.pipes.upper + self.pipes.lower))
 
     def handle_events(self, event) -> bool:
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
+        self.handle_quit(event)
 
         if self.player.mode == PlayerMode.SHM:
             if event.type == KEYDOWN and event.key == K_SPACE:
@@ -231,6 +231,13 @@ class FlappyBird:
                 elif event.key == pygame.K_r:
                     self.inventory.use_item(inventory_slot_index=1)  # ammo slot
             return False
+
+    @staticmethod
+    def handle_quit(event):
+        if event.type == QUIT:
+            print("Quitting...")
+            pygame.quit()
+            sys.exit()
 
     def handle_held_buttons(self):
         m_left, _, _ = pygame.mouse.get_pressed()

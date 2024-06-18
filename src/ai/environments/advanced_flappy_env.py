@@ -1,6 +1,6 @@
 import sys
-import gymnasium as gym
 import numpy as np
+import gymnasium as gym
 
 import pygame
 from pygame import QUIT

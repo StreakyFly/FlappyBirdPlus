@@ -10,7 +10,7 @@ from .enemy import Enemy, EnemyGroup
 
 class CloudSkimmer(Enemy):
     def __init__(self, config: GameConfig, *args, **kwargs):
-        super().__init__(config, Animation(config.images.enemies['enemy-temp']), *args, **kwargs)
+        super().__init__(config, Animation(config.images.enemies['enemy-cloudskimmer']), *args, **kwargs)
         self.time = 0
         self.initial_y = self.y
         self.vel_x = -8
@@ -31,11 +31,11 @@ class CloudSkimmer(Enemy):
             self.x += self.vel_x
             self.sin_y = self.amplitude * math.sin(self.frequency * self.time)
             self.y = self.initial_y + self.sin_y
+        super().tick()
         self.gun.tick()
 
         if self.running:
             self.gun.use(0)  # TODO only for testing, later the shooting and aiming will be controlled by an AI agent
-        super().tick()
 
     def stop(self) -> None:
         for bullet in self.gun.shot_bullets:

@@ -33,7 +33,7 @@ class AttributeBar(Entity):
             self.bg_color = tuple([int(channel * 0.4) for channel in color[:3]] + [self.color[3]])
         if self.color[3] != self.bg_color[3]:
             printc("The alpha channel of bg_color will be ignored. "
-                          "Current implementation uses the alpha channel of 'color' for the entire bar.", color="yellow")
+                   "Current implementation uses the alpha channel of 'color' for the entire bar.", color="yellow")
         self.update_bar_surface()
 
     def change_value(self, amount) -> None:
