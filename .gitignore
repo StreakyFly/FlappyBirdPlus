@@ -4,6 +4,8 @@ EXAMPLES
 
 
 # model training data (I'll delete most of it, only keep da best/interesting ones) and push them later
-*ai-models
+ai-models/DQN
+ai-models/PPO/basic_flappy/run*
+
 
 __pycache__
