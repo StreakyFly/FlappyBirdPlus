@@ -50,15 +50,14 @@ class Pipes(Entity):
     def manage_pipes(self):
         # remove the first pair of pipes if they're out of the screen
         extra = self.upper[0].w * 1.5
-        for num, pipe in enumerate(self.upper):
-            if pipe.x < -pipe.w - extra:
-                self.upper.remove(pipe)
-                self.lower.remove(self.lower[num])
+        first_pipe = self.upper[0]
+        if first_pipe.x < -first_pipe.w - extra:
+            self.upper.remove(self.upper[0])
+            self.lower.remove(self.lower[0])
 
-                # spawn a new pair of pipes self.horizontal_gap pixels away from the last pipe
-                pipe_x = self.upper[-1].x + self.horizontal_gap
-                self.spawn_new_pipes(x=pipe_x)
-                break  # there shouldn't be multiple pipes out of the screen at once, so no need to check the rest
+            # spawn a new pair of pipes self.horizontal_gap pixels away from the last pipe
+            pipe_x = self.upper[-1].x + self.horizontal_gap
+            self.spawn_new_pipes(x=pipe_x)
 
     def spawn_initial_pipes(self):
         pipe_x = self.config.window.width + self.horizontal_gap
