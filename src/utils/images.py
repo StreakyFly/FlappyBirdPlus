@@ -90,7 +90,7 @@ def _load_item_image(item_name) -> pygame.Surface:
     return _load_image(f'items/{item_name}')
 
 
-def _get_armament_names() -> Tuple[str]:
+def _get_armament_names() -> Tuple[str, ...]:
     DIR_PREFIXES = ['weapons', 'weapons/ammo']
     weapons = ('ak-47', 'deagle', 'uzi', )
     ammunition = ('ammo-box', 'small-bullet', 'medium-bullet', 'big-bullet', )
