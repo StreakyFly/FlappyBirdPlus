@@ -2,6 +2,10 @@ from ..utils import GameConfig
 from .entity import Entity
 
 
+# TODO: Add parallax scrolling to the background
+#  so the trees, buildings, and clouds move at slightly different speeds.
+
+
 class Background(Entity):
     def __init__(self, config: GameConfig) -> None:
         super().__init__(

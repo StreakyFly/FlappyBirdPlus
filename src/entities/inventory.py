@@ -58,6 +58,8 @@ class Inventory(Entity):
         self.item_initializer = ItemInitializer(config, player)
         self.create_inventory_slots()
         self.empty_item = self.item_initializer.init_item(ItemName.EMPTY)
+        self.inventory_slots[0].item = self.item_initializer.init_item(ItemName.WEAPON_AK47)
+        self.inventory_slots[0].item.quantity = 1000
 
     def create_inventory_slots(self) -> None:
         num_slots = 6
@@ -67,7 +69,7 @@ class Inventory(Entity):
         default_item_types = [
             ItemType.EMPTY_WEAPON,
             ItemType.EMPTY_AMMO,
-            ItemType.EMPTY,  # TODO -> FOOD...? Or grenades, bombs? Or maybe something else.
+            ItemType.EMPTY,  # TODO -> FOOD...? Or grenades, bombs? Or maybe something else - spells that freeze enemies or something like that, maybe even poison like in COC?
             ItemType.EMPTY_POTION,
             ItemType.EMPTY_HEAL,
             ItemType.EMPTY_SPECIAL

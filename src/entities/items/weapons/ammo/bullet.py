@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Callable, Union, Optional
 import math
 
 import pygame
@@ -8,17 +8,37 @@ from ...item import Item
 
 # TODO Simple collision animation/explosion when colliding with objects.
 
+"""
+Whether the bullet is flying to the right or left, it's always "gliding" with the background's x velocity (-7.5).
 
-# TODO self.flipped attribute has been added to Item, but it is NOT taken into account in any of the methods
-#  do some research if it's possible to somehow flip the entire object with positions, not just the image...
-#  it would save me so much trouble now and in the future if I decide to change anything
+Imagine you're looking through a camera. The camera is linked with the player's X axis (horizontally).
+When the player moves to the right, the camera moves to the right as well,
+so visually the player stays still, while the background moves to the left.
+
+So, if the camera moves to the right, and the bullet moves to the right, the bullet visually
+moves to the right less than it would if the camera were stationary. So the bullet's visual x velocity
+(relative to the camera) is the sum of the bullet's real x velocity and the background's x velocity.
+For example, if the bullet's real x velocity is 15, and the background's x velocity is -7.5, the bullet's
+visual (relative to the camera - how much it actually moves on screen) x velocity is 15 + (-7.5) = 7.5.
+
+If the camera moves to the right, and the bullet moves to the left, the bullet visually
+moves to the left more than it would if the camera were stationary. So the bullet's visual x velocity
+(relative to the camera) is the sum of the bullet's real x velocity and the background's x velocity.
+For example, if the bullet's real x velocity is -15, and the background's x velocity is -7.5, the bullet's
+visual (relative to the camera - how much it actually moves on the screen) x velocity is -15 + (-7.5) = -22.5.
+
+VISUAL velocity: relative to the camera - how much the bullet actually moves on the screen.
+REAL velocity: how much the bullet moves in the game world.
+"""
 
 
 class Bullet(Item):
     BACKGROUND_VELOCITY = pygame.Vector2(-7.5, 0)
 
     def __init__(self, spawn_position: pygame.Vector2 = pygame.Vector2(0, 0), damage: int = 0,
-                 speed: float = 0, angle: float = 0, *args, **kwargs):
+                 speed: float = 0, angle: float = 0, flipped: bool = False,
+                 spawn_pos_offset: Optional[Union[pygame.Vector2, Callable[['Bullet'], pygame.Vector2]]] = None,
+                 *args, **kwargs):
         self.real = not (damage == speed == angle == 0 and spawn_position == pygame.Vector2(0, 0))
         super().__init__(*args, **kwargs)
 
@@ -27,35 +47,48 @@ class Bullet(Item):
         self.angle = angle
         self.spawn_position = spawn_position
 
-        # for unique bullets call set_spawn_position() in subclass
-        self.set_spawn_position(bullet_offset=pygame.Vector2(-self.w, -self.h / 2))
-        # for unique bullets set bullet_front_length in subclass
-        self.bullet_front_length = 4  # the length/height of the bullet's front-most part (the part that hits first)
-
         self.original_image = self.image
-        self.original_image_dimensions = self.image.get_width(), self.image.get_height()
+        self.original_image_dimensions = pygame.Vector2(self.image.get_width(), self.image.get_height())
         self.velocity = self.calculate_velocity()
         self.update_image(pygame.transform.rotate(self.image, angle))
 
+        self.bounced: bool = False
+        self.stopped: bool = False
         self.pipes = []
         self.enemies = []
         self.player = None
         self.hit_entity: Optional[str] = None  # the entity the bullet hit
-        self.previous_front_pos = self.calculate_bullet_front_position()
-        self.bounced: bool = False
-        self.stopped: bool = False
-
-        self.frame = 0
+        self.frame: int = 0
         self.pipe_to_ignore = None
         self.intersections = dict()
+
+        # for unique bullets set bullet_front_length in subclass
+        self.bullet_front_length = 4  # the length/height of the bullet's front-most part (the part that hits first)
+
+        # Must be set after updating the image, so callable can access image dimensions, like self.w, if necessary.
+        # Subclass usage: super().__init__(spawn_pos_offset=lambda x: pygame.Vector2(-self.w / 2, 0), *args, **kwargs)
+        if spawn_pos_offset:
+            self.spawn_pos_offset = spawn_pos_offset(self) if callable(spawn_pos_offset) else spawn_pos_offset
+        else:
+            self.spawn_pos_offset = pygame.Vector2(self.w / 2, 0)
+
+        if flipped:
+            self.flip()
+
+        self.set_spawn_position()
+
+        self.previous_front_pos = self.calculate_bullet_front_position()
+
+        self.tick()  # yes, this is necessary, otherwise the bullet is misplaced a bit
 
     def flip(self):
         self.update_image(self.original_image)
         super().flip()
-        self.update_image(pygame.transform.rotate(self.image, self.angle))
-        self.set_spawn_position(bullet_offset=pygame.Vector2(self.w, self.h / 2))
+        self.original_image = self.image
+        self.update_image(pygame.transform.rotate(self.original_image, self.angle))
         self.speed = -self.speed
         self.velocity = self.calculate_velocity()
+        self.spawn_pos_offset.x = -self.spawn_pos_offset.x
 
     def tick(self) -> None:
         if not self.real:  # so the inventory slot's bullet doesn't update for no reason
@@ -75,6 +108,7 @@ class Bullet(Item):
         # self.debug_draw()
 
     def debug_draw(self) -> None:
+        # rename big-bullet_debug.png to big-bullet.png to see the debug drawing
         for pipe in self.pipes:
             pygame.draw.circle(self.config.screen, (255, 211, 0), (pipe.x, pipe.y), 10, width=4)
             pygame.draw.circle(self.config.screen, (255, 211, 0), (pipe.x + pipe.w, pipe.y), 10, width=4)
@@ -82,6 +116,8 @@ class Bullet(Item):
             pygame.draw.circle(self.config.screen, (255, 211, 0), (pipe.x + pipe.w, pipe.y + pipe.h), 10, width=4)
 
         pygame.draw.circle(self.config.screen, (200, 0, 100), self.calculate_bullet_front_position(), 7, width=3)
+        pygame.draw.circle(self.config.screen, (0, 25, 255), self.calculate_bullet_front_position(), 14, width=8)
+        # pygame.draw.circle(self.config.screen, (0, 255, 55), self.spawn_position, 18, width=11)
 
         for is_valid, intersections in self.intersections.items():
             for intersection in intersections:
@@ -89,21 +125,35 @@ class Bullet(Item):
                 intersection.x += self.BACKGROUND_VELOCITY.x
                 pygame.draw.circle(self.config.screen, color, intersection, 10, width=4)
 
-        prev_front_pos = self.previous_front_pos + self.BACKGROUND_VELOCITY
-        pygame.draw.line(self.config.screen, (255, 0, 0), prev_front_pos, self.calculate_bullet_front_position(), width=3)
+        prev_front_pos_real = self.previous_front_pos + self.BACKGROUND_VELOCITY  # how much the bullet moved in the game world
+        prev_front_pos_visual = self.previous_front_pos  # how much the bullet moved on the screen
+        pygame.draw.line(self.config.screen, (0, 255, 0), prev_front_pos_real, self.calculate_bullet_front_position(), width=3)
+        pygame.draw.line(self.config.screen, (255, 0, 0), prev_front_pos_visual, self.calculate_bullet_front_position(), width=3)
 
     def calculate_velocity(self):
         angle_rad = math.radians(-self.angle)
 
-        vel_x = self.speed * math.cos(angle_rad) + self.BACKGROUND_VELOCITY.x
+        vel_x = self.speed * math.cos(angle_rad) + self.BACKGROUND_VELOCITY.x  # account for the camera movement
         vel_y = self.speed * math.sin(angle_rad)
 
         return pygame.Vector2(vel_x, vel_y)
 
-    def set_spawn_position(self, bullet_offset: pygame.Vector2):
-        rotated_offset = bullet_offset.rotate(self.angle)
-        self.x = self.spawn_position.x + rotated_offset.x
-        self.y = self.spawn_position.y - rotated_offset.y
+    def set_spawn_position(self):
+        front_pos_offset = self.calculate_bullet_front_position()
+        offset_x = self.spawn_position.x - front_pos_offset.x
+        offset_y = self.spawn_position.y - front_pos_offset.y
+
+        if self.spawn_pos_offset:
+            angle_rad = math.radians(-self.angle)
+            rotated_offset = pygame.Vector2(
+                self.spawn_pos_offset.x * math.cos(angle_rad) - self.spawn_pos_offset.y * math.sin(angle_rad),
+                self.spawn_pos_offset.x * math.sin(angle_rad) + self.spawn_pos_offset.y * math.cos(angle_rad)
+            )
+            offset_x += rotated_offset.x
+            offset_y += rotated_offset.y
+
+        self.x = offset_x
+        self.y = offset_y
 
     def set_entities(self, player, enemies, pipes):
         self.player = player
@@ -112,9 +162,10 @@ class Bullet(Item):
 
     def should_remove(self) -> bool:
         # remove the bullet if it's out of the game window
-        extra = self.config.window.height * 0.2
+        extra = self.config.window.height * 0.2  # TODO adjust this extra, right now the bullets probably fly so far they won't hit anything for sho' (check where da pipes and enemies are)
         if self.x > self.config.window.width + 2 * extra or self.x < -extra or \
-           self.y > self.config.window.height + extra:  # or self.y < -extra: <- this should never happen as the bullet gets stopped when it hits the floor
+           self.y < -self.image.get_height():  # the moment the bullet goes above screen, remove it, as it can't bounce back down or hit anything up there
+           # or self.y > self.config.window.height + extra:  <- this should never happen as the bullet gets stopped when it hits the floor
             return True
 
         # remove the bullet if it hit the player or any of the enemies
@@ -147,10 +198,12 @@ class Bullet(Item):
         for enemy in self.enemies:
             if not self.collide(enemy):
                 continue
-            if self.bounced or self.frame > 3:
-                self.hit_entity = 'enemy'
-                enemy.deal_damage(self.damage)
-                return
+            if enemy == self.entity and not self.bounced:  # the enemy can't hit itself unless the bullet bounces
+                continue
+
+            self.hit_entity = 'enemy'
+            enemy.deal_damage(self.damage)
+            return
 
         # handle hitting player
         if self.player and self.collide(self.player):
@@ -170,10 +223,10 @@ class Bullet(Item):
         angle_rad = math.radians(-self.angle)
 
         # calculate the offsets for the front point when the angle is 0
-        offset_x = self.original_image_dimensions[0] / 2 if not self.flipped else -self.original_image_dimensions[0] / 2
+        offset_x = self.original_image_dimensions.x / 2 if not self.flipped else -self.original_image_dimensions.x / 2
         # offset_y = 0  # no vertical offset since we're starting from the center
 
-        rotated_offset_x = offset_x * math.cos(angle_rad)  # - offset_y * math.sin(angle_rad)  # as offset_y = 0
+        rotated_offset_x = offset_x * math.cos(angle_rad)  # - offset_y * math.sin(angle_rad)  # no need as offset_y = 0
         rotated_offset_y = offset_x * math.sin(angle_rad)  # + offset_y * math.cos(angle_rad)
 
         # calculate the absolute position of the front of the bullet
@@ -237,18 +290,21 @@ class Bullet(Item):
 
         return True
 
-    def bounce(self, x: bool, y: bool) -> None:
+    def bounce(self, flip_x: bool, flip_y: bool) -> None:
         self.bounced = True
-        self.velocity *= 0.9  # reduce the bullet's speed after bouncing
 
-        if x:
-            self.velocity.x = -self.velocity.x + self.BACKGROUND_VELOCITY.x * 2
-            self.angle = (180 - self.angle) % 360
-            self.update_image(pygame.transform.flip(self.image, True, False))
-        if y:
+        if flip_x:
+            self.velocity.x = -self.velocity.x
+            self.angle = (-self.angle - 180) % 360
+            self.velocity.x += self.BACKGROUND_VELOCITY.x * 2  # once to cancel the background velocity, once to move against it
+            self.velocity.x *= 0.9  # apply restitution factor to reduce speed after bouncing
+        if flip_y:
             self.velocity.y = -self.velocity.y
+            # self.angle = -math.degrees(math.atan2(self.velocity.y, self.velocity.x))
             self.angle = -self.angle
-            self.update_image(pygame.transform.flip(self.image, False, True))
+            self.velocity.y *= 0.9  # apply restitution factor to reduce speed after bouncing
+
+        self.update_image(pygame.transform.rotate(self.original_image, self.angle))
 
     def is_pipe_corner_hit(self, pipe, tolerance=3.0) -> bool:
         # figure out which corner of the pipe was possibly hit
@@ -268,10 +324,11 @@ class Bullet(Item):
             pipe_corner = pygame.Vector2(pipe.x + pipe.w, pipe.y)
 
         current_front_pos = self.calculate_bullet_front_position()
-        tolerance2 = self.bullet_front_length / 2 + 3  # 3 = margin of error
+        tolerance2 = self.bullet_front_length / 2 + 3  # 3 = tolerance
         return self.is_point_on_line(self.previous_front_pos, current_front_pos, pipe_corner, tolerance2)
 
-    def is_point_on_line(self, p1, p2, p3, tolerance=1.0) -> bool:
+    @staticmethod
+    def is_point_on_line(p1, p2, p3, tolerance=1.0) -> bool:
         # calculate the coefficients of the line passing through point1 and point2: Ax + By + C = 0
         A = p2.y - p1.y
         B = p1.x - p2.x

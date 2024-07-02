@@ -1,5 +1,3 @@
-import os
-
 import pygame
 
 from .images import Images
@@ -16,6 +14,7 @@ class GameConfig:
         window: Window,
         images: Images,
         sounds: Sounds,
+        debug: bool = False,
     ) -> None:
         self.screen = screen
         self.clock = clock
@@ -23,7 +22,7 @@ class GameConfig:
         self.window = window
         self.images = images
         self.sounds = sounds
-        self.debug = os.environ.get("DEBUG", False)
+        self.debug = debug
 
     def tick(self) -> None:
         self.clock.tick(self.fps)

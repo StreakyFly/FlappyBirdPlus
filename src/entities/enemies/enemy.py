@@ -14,9 +14,9 @@ class Enemy(Entity):
         self.update_image(self.animation.update())
         self.hp_manager = AttributeBar(config=self.config, max_value=100, color=(255, 0, 0, 222),
                                        x=self.x, y=int(self.y) - 25, w=self.w, h=10)
+        self.rotation = 0
         self.is_gone = False
         self.running: bool = True
-        self.rotation = 0
 
     def tick(self):
         if self.x < -200:
@@ -49,6 +49,9 @@ class Enemy(Entity):
     def play_death_animation(self) -> None:
         # TODO implement this
 
+        # death animation code
+
+        # if death animation is done set is_gone to True
         self.is_gone = True
 
     def play_spawn_animation(self) -> None:
@@ -65,10 +68,10 @@ class EnemyGroup:
         self.spawn_members()
 
     def tick(self):
-        for member in self.members:
+        for member in set(self.members):
+            member.tick()
             if member.is_gone:
                 self.members.remove(member)
-            member.tick()
 
     def stop(self) -> None:
         for member in self.members:

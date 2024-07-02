@@ -57,7 +57,7 @@ class Entity:
             # write x and y at top of rect
             font = pygame.font.SysFont("Arial", 14, True)
             text = font.render(
-                f"x: {self.x:.1f}, y: {self.y:.1f} | {self.w:.1f} x {self.h:.1f}",
+                f"x: {self.x: .1f}, y: {self.y: .1f} | {self.w: .1f} x {self.h: .1f}",
                 True,
                 (255, 255, 255),
             )

@@ -1,5 +1,6 @@
 from ...utils import GameConfig
 
+from .enemy import EnemyGroup
 from .cloudskimmer import CloudSkimmerGroup
 
 
@@ -29,4 +30,11 @@ class EnemyManager:
 
     def spawn_enemy(self) -> None:
         # TODO implement this
+        self.spawn_cloudskimmer()  # temporary
+
+    def spawn_cloudskimmer(self):
         self.spawned_enemy_groups.append(CloudSkimmerGroup(self.config, x=1000, y=350))
+
+    def spawn_aerothief(self):
+        # TODO implement this
+        pass

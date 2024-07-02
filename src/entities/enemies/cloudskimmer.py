@@ -21,21 +21,20 @@ class CloudSkimmer(Enemy):
 
         self.set_max_hp(300)
 
-        self.rotation = random.randint(-30, 50)  # TODO only for testing, later the rotation will be controlled by an AI agent
-
         self.gun: Union[Gun, Item] = None
+        # self.gun_rotation = 0
+        self.gun_rotation = random.randint(-60, 60)  # TODO remove duh
+        # self.gun_rotation = -15
+        self.gun_rotation_speed = 6
 
     def tick(self):
         if self.running:
             self.time += 1
             self.x += self.vel_x
             self.sin_y = self.amplitude * math.sin(self.frequency * self.time)
-            self.y = self.initial_y + self.sin_y
+            self.y = round(self.initial_y + self.sin_y)  # without rounding this, the gun is jittery
         super().tick()
         self.gun.tick()
-
-        if self.running:
-            self.gun.use(0)  # TODO only for testing, later the shooting and aiming will be controlled by an AI agent
 
     def stop(self) -> None:
         for bullet in self.gun.shot_bullets:
@@ -46,11 +45,34 @@ class CloudSkimmer(Enemy):
         self.gun = gun
         gun.update_ammo_object(ammo_item)
 
+    def set_amplitude(self, amplitude: int) -> None:
+        self.amplitude = amplitude
+
     def stop_advancing(self) -> None:
         self.vel_x = 0
 
     def slow_down(self, total_distance: int, remaining_distance: float) -> None:
-        self.vel_x = self.initial_vel_x * ((remaining_distance + 25) / (total_distance + 25))
+        self.vel_x = round(self.initial_vel_x * ((remaining_distance + 25) / (total_distance + 25)))  # without rounding this, the gun is jittery
+
+    def shoot(self) -> None:
+        # if self.x > 670:  # if the enemy is not on the screen yet, don't shoot
+        #     return
+        self.gun.use(0)
+
+    def reload(self) -> None:
+        self.gun.use(1)
+
+    def rotate_gun(self, action: int = 0) -> None:  # 0: do nothing, 1: rotate up, 2: rotate down
+        # TODO try to smooth this out if it looks too jittery after training (rotation smoothing - inertia)
+        # if action == 0:
+        #     return
+        # elif action == 1:
+        #     self.gun_rotation -= self.gun_rotation_speed
+        # elif action == 2:
+        #     self.gun_rotation += self.gun_rotation_speed
+
+        # self.gun_rotation = max(min(self.gun_rotation, 60), -60)  # ensure rotation stays within bounds
+        pass
 
 
 class CloudSkimmerGroup(EnemyGroup):
@@ -66,19 +88,22 @@ class CloudSkimmerGroup(EnemyGroup):
                      (self.x, self.y),
                      (self.x + 90, self.y + 125)]
 
+        amplitudes = [18, 15, 18]
+
         # second argument is ammo item - it doesn't really matter which item it is,
         #  as we just need an object with quantity attribute -.-
-        weapons = [(ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 10)),
-                   (ItemName.WEAPON_DEAGLE, self.item_initializer.init_item(ItemName.EMPTY), 210, (0, 20)),
-                   (ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 10))]
+        weapons = [(ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 35)),
+                   (ItemName.WEAPON_DEAGLE, self.item_initializer.init_item(ItemName.EMPTY), 210, (-13, 35)),
+                   (ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 35))]
 
-        for pos, (weapon, ammo_item, ammo_quantity, weapon_offset) in zip(positions, weapons):
+        for pos, amplitude, (weapon, ammo_item, ammo_quantity, weapon_offset) in zip(positions, amplitudes, weapons):
             member = CloudSkimmer(self.config, x=pos[0], y=pos[1])
             gun: Union[Item, Gun] = self.item_initializer.init_item(weapon, member)
             gun.flip()
             gun.update_offset(weapon_offset)
             ammo_item.quantity = ammo_quantity
             member.set_gun(gun, ammo_item)
+            member.set_amplitude(amplitude)
             self.members.append(member)
 
     def tick(self):

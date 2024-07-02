@@ -42,23 +42,6 @@ class Pipes(Entity):
         for pipe in self.upper + self.lower:
             pipe.vel_x = 0
 
-    def spawn_new_pipes(self, x: int = None) -> None:
-        upper, lower = self.make_random_pipes(x)
-        self.upper.append(upper)
-        self.lower.append(lower)
-
-    def manage_pipes(self):
-        # remove the first pair of pipes if they're out of the screen
-        extra = self.upper[0].w * 1.5
-        first_pipe = self.upper[0]
-        if first_pipe.x < -first_pipe.w - extra:
-            self.upper.remove(self.upper[0])
-            self.lower.remove(self.lower[0])
-
-            # spawn a new pair of pipes self.horizontal_gap pixels away from the last pipe
-            pipe_x = self.upper[-1].x + self.horizontal_gap
-            self.spawn_new_pipes(x=pipe_x)
-
     def spawn_initial_pipes(self):
         pipe_x = self.config.window.width + self.horizontal_gap
         self.spawn_new_pipes(pipe_x)
@@ -67,15 +50,48 @@ class Pipes(Entity):
             pipe_x = self.upper[-1].x + self.horizontal_gap
             self.spawn_new_pipes(pipe_x)
 
+    def spawn_initial_pipes_like_its_midgame(self):
+        """
+        Method solely for training purposes.
+        Enemies don't spawn immediately at the beginning of the game, but a bit later.
+        So in order to skip the beginning of the game, we need to spawn pipes as if it's mid-game.
+        """
+        self.upper = []
+        self.lower = []
+
+        pipe_x = random.randint(-330, 53)  # between -330 and 52.5 (possible x position of the first pipe mid-game)
+        self.spawn_new_pipes(pipe_x)
+
+        for i in range(3):
+            pipe_x = self.upper[-1].x + self.horizontal_gap
+            self.spawn_new_pipes(pipe_x)
+
+    def manage_pipes(self):
+        extra = self.upper[0].w * 1.5
+        first_pipe = self.upper[0]
+        if first_pipe.x < -first_pipe.w - extra:
+            # remove the first pair of pipes if they're out of the screen
+            self.upper.remove(self.upper[0])
+            self.lower.remove(self.lower[0])
+
+            # spawn a new pair of pipes self.horizontal_gap pixels away from the last pipe
+            pipe_x = self.upper[-1].x + self.horizontal_gap
+            self.spawn_new_pipes(x=pipe_x)
+
+    def spawn_new_pipes(self, x: int = None) -> None:
+        upper, lower = self.make_random_pipes(x)
+        self.upper.append(upper)
+        self.lower.append(lower)
+
     def make_random_pipes(self, x: int = None):
         base_y = self.config.window.viewport_height
 
         # at what y does the gap start at top (gap_y is top line, gap_y + self.pipe_gap is bottom line)
-        gap_y = random.randrange(0, int(base_y * 0.6 - self.vertical_gap)) + int(base_y * 0.2)
+        upper_pipe_bottom_y = random.randrange(0, int(base_y * 0.6 - self.vertical_gap)) + int(base_y * 0.2)
         pipe_height = self.config.images.pipe[0].get_height()
         pipe_x = x or self.config.window.width + 10
 
-        upper_pipe = Pipe(self.config, self.config.images.pipe[0], pipe_x, gap_y - pipe_height)
-        lower_pipe = Pipe(self.config, self.config.images.pipe[1], pipe_x, gap_y + self.vertical_gap)
+        upper_pipe = Pipe(self.config, self.config.images.pipe[0], pipe_x, upper_pipe_bottom_y - pipe_height)
+        lower_pipe = Pipe(self.config, self.config.images.pipe[1], pipe_x, upper_pipe_bottom_y + self.vertical_gap)
 
         return upper_pipe, lower_pipe

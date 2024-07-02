@@ -82,8 +82,8 @@ class Gun(Item):
 
     def flip(self) -> None:
         super().flip()
-        self.pivot = pygame.Vector2(self.w - self.pivot.x, self.pivot.y)
-        self.barrel_end_pos = pygame.Vector2(self.w - self.barrel_end_pos.x, self.barrel_end_pos.y)
+        self.pivot.x = self.w - self.pivot.x
+        self.barrel_end_pos.x = self.w - self.barrel_end_pos.x
         self.set_recoil(-self.recoil_distance, self.recoil_duration, -self.recoil_rotation)
 
     def draw(self) -> None:
@@ -97,7 +97,7 @@ class Gun(Item):
         screen = self.config.screen
         pygame.draw.circle(screen, RED, self.calculate_initial_bullet_position(), 8, width=4)
         pygame.draw.circle(screen, BLACK, (self.x + self.barrel_end_pos.x, self.y + self.barrel_end_pos.y), 6, width=3)
-        pygame.draw.circle(screen, RED, (self.x + self.pivot.x, self.y + self.pivot.y), 4)
+        pygame.draw.circle(screen, GREEN, (self.x + self.pivot.x, self.y + self.pivot.y), 4)
 
     def stop(self) -> None:
         for bullet in self.shot_bullets:
@@ -106,7 +106,14 @@ class Gun(Item):
     def update_transform(self) -> None:
         self.x = self.entity.x + self.offset.x + self.animation_offset.x
         self.y = self.entity.y + self.offset.y + self.animation_offset.y
-        self.rotation = self.entity.rotation + self.animation_rotation
+        self.rotation = self.get_raw_rotation() + self.animation_rotation
+
+    def get_raw_rotation(self) -> int:
+        """
+        Animation rotation is not taken into account here.
+        :return: the rotation of the gun in degrees, entity.gun_rotation if it exists, otherwise entity.rotation
+        """
+        return self.entity.gun_rotation if hasattr(self.entity, "gun_rotation") else self.entity.rotation
 
     def update_ammo_object(self, ammo_item: Item) -> None:
         self.ammo_item = ammo_item
@@ -115,6 +122,7 @@ class Gun(Item):
         self.offset = offset
         self.pivot = pivot
         self.barrel_end_pos = barrel_end_pos
+
         self.update_transform()
 
     def update_offset(self, offset) -> None:
@@ -131,7 +139,10 @@ class Gun(Item):
         self.reload_cooldown = reload_cooldown
         self.quantity_after_reload = magazine_size
 
-    def use(self, action, *args) -> None:
+    def use(self, action, *args) -> None:  # TODO I don't think we need *args here anymore, do we?
+        """
+        :param action: 0=shoot, 1=reload
+        """
         if action == 0:
             self.handle_shooting()
             return
@@ -155,7 +166,7 @@ class Gun(Item):
         if self.remaining_reload_cooldown > 0:
             return
 
-        if self.ammo_item.quantity <= 0 or self.quantity == self.magazine_size:
+        if self.quantity == self.magazine_size or self.ammo_item.quantity <= 0:
             return
 
         # if we have more ammo, reload as much as possible
@@ -212,11 +223,9 @@ class Gun(Item):
     def spawn_bullet(self) -> None:
         bullet = self.ammo_class(config=self.config, item_name=self.ammo_name, item_type=ItemType.AMMO,
                                  damage=self.damage, spawn_position=self.calculate_initial_bullet_position(),
-                                 speed=self.ammo_speed, angle=self.rotation)
-        bullet.entity = self.entity
-        if self.flipped:
-            bullet.flip()
+                                 speed=self.ammo_speed, angle=self.rotation, flipped=self.flipped, entity=self.entity)
         self.shot_bullets.add(bullet)
+        self.draw()  # draw the gun over the bullet, as the bullet calls tick() on initialization
 
     def set_recoil(self, distance: int, duration: int, rotation: int) -> None:
         self.recoil_distance = distance
@@ -245,7 +254,7 @@ class Gun(Item):
         recoil_progress = abs(1 - abs(half_duration - self.remaining_recoil_duration + 1) / half_duration)
         recoil_offset = self.recoil_speed * (half_duration - abs(half_duration - self.remaining_recoil_duration + 1)) * 2
 
-        rotation_rad = math.radians(-self.entity.rotation)
+        rotation_rad = math.radians(-self.get_raw_rotation())
         self.animation_offset.x = -recoil_offset * math.cos(rotation_rad)
         self.animation_offset.y = -recoil_offset * math.sin(rotation_rad)
 

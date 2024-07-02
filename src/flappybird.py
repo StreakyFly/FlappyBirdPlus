@@ -26,10 +26,11 @@ class FlappyBird:
         self.config = GameConfig(
             screen=screen,
             clock=pygame.time.Clock(),
-            fps=Config.FPS_CAP,
+            fps=Config.fps_cap,
             window=window,
             images=Images(),
             sounds=Sounds(),
+            debug=Config.debug
         )
 
         if Config.options['mute']:
@@ -60,7 +61,7 @@ class FlappyBird:
     async def start(self):
         while True:
             self.reset()
-            await self.start_screen()
+            # await self.start_screen()
             await self.play()
             await self.game_over()
 
@@ -101,6 +102,8 @@ class FlappyBird:
         self.player.set_mode(PlayerMode.NORMAL)
         self.score.reset()
 
+        count = 0
+
         while True:
             self.monitor_fps_drops(fps_threshold=27)
             # for i, pipe in enumerate(self.pipes.upper):
@@ -110,12 +113,11 @@ class FlappyBird:
                 self.next_closest_pipe_pair = self.get_next_pipe_pair()
                 self.score.add()
 
-            self.player.handle_bad_collisions(self.pipes, self.floor)
-            if self.is_player_dead():
-                return
+            # self.player.handle_bad_collisions(self.pipes, self.floor)
+            # if self.is_player_dead():
+            #     return
 
-            collided_items = self.player.collided_items(
-                self.item_manager.spawned_items)  # collided with a spawned item(s)
+            collided_items = self.player.collided_items(self.item_manager.spawned_items)  # collided with a spawned item(s)
             self.item_manager.collect_items(collided_items)
             self.update_bullet_info()
 
@@ -123,8 +125,12 @@ class FlappyBird:
                 if self.handle_events(event):
                     return
 
-            self.handle_held_buttons()
+            if count % 19 == 0:
+                self.player.flap()
+            count += 1
+
             self.game_tick()
+            self.handle_held_buttons()
 
             # self.get_state()  # TODO just a heads up that this is called here
 
@@ -189,22 +195,22 @@ class FlappyBird:
         return False
 
     def update_bullet_info(self):
-        spawned_enemies = []
+        # TODO Any idea how to optimize passing info to bullets?
+        spawned_enemies = set()
+        current_bullets = set()
+        inventory_slot = self.inventory.inventory_slots[0]
+
+        if inventory_slot.item.name != ItemName.EMPTY and inventory_slot.item.shot_bullets:
+            current_bullets.update(inventory_slot.item.shot_bullets)
+
         for group in self.enemy_manager.spawned_enemy_groups:
-            spawned_enemies.extend(group.members)
+            spawned_enemies.update(group.members)
+            for enemy in group.members:
+                current_bullets.update(enemy.gun.shot_bullets)
 
-        current_bullets = []
-        # TODO add all existing bullets to current_bullets, even those from enemy guns!
-        if self.inventory.inventory_slots[0].item.name != ItemName.EMPTY and self.inventory.inventory_slots[0].item.shot_bullets:
-            current_bullets.extend(self.inventory.inventory_slots[0].item.shot_bullets)
-        if self.enemy_manager.spawned_enemy_groups:
-            for group in self.enemy_manager.spawned_enemy_groups:
-                for enemy in group.members:
-                    if enemy.gun.shot_bullets:
-                        current_bullets.extend(enemy.gun.shot_bullets)
-
+        pipes = self.pipes.upper + self.pipes.lower
         for bullet in current_bullets:
-            bullet.set_entities(self.player, spawned_enemies, (self.pipes.upper + self.pipes.lower))
+            bullet.set_entities(self.player, list(spawned_enemies), pipes)
 
     def handle_events(self, event) -> bool:
         self.handle_quit(event)
@@ -241,6 +247,7 @@ class FlappyBird:
 
     def handle_held_buttons(self):
         m_left, _, _ = pygame.mouse.get_pressed()
+        m_left = True # TODO remove
         if m_left:
             self.inventory.use_item(inventory_slot_index=0)  # gun slot
 

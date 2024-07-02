@@ -12,7 +12,7 @@ class GymEnv(gym.Env):
         super().__init__()
 
         self.game_env = game_env
-        self.game_env.init_env()
+        # self.game_env.init_env()  # commented this out because I added it in base_env.py
 
         self.action_space, self.observation_space = self.game_env.get_action_and_observation_space()
 
