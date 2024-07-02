@@ -6,6 +6,10 @@ Part of the basic Flappy Bird code stolen from https://github.com/sourabhv/FlapP
 
 <br/>
 
+
+Would it be possible to run the game in a browser? With pygbag?
+https://pypi.org/project/pygbag/
+
 # TODO:
 
 1. guns - add animation and sound for shooting and reloading

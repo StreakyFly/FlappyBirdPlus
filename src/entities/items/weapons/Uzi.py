@@ -12,10 +12,10 @@ class Uzi(Gun):
             ammo_name=ItemName.BULLET_SMALL,
             ammo_class=SmallBullet,
             damage=17,
-            ammo_speed=25,
+            ammo_speed=24,
             magazine_size=32,
-            shoot_cooldown=int(self.config.fps * 0.1),
-            reload_cooldown=int(self.config.fps * 2)
+            shoot_cooldown=3,
+            reload_cooldown=60
         )
         self.set_positions(
             offset=pygame.Vector2(20, 10),

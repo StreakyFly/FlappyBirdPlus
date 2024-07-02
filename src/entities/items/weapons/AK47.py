@@ -12,10 +12,10 @@ class AK47(Gun):
             ammo_name=ItemName.BULLET_BIG,
             ammo_class=BigBullet,
             damage=35,
-            ammo_speed=30,
+            ammo_speed=34,
             magazine_size=30,
-            shoot_cooldown=int(self.config.fps * 0.23),
-            reload_cooldown=int(self.config.fps * 2.8)
+            shoot_cooldown=6,   # int(self.config.fps * 0.23), fps being 30  <-- we don't want it tied to the fps
+            reload_cooldown=84  # int(self.config.fps * 2.8), fps being 30  <-- as we're using fixed time steps
         )
         self.set_positions(
             offset=pygame.Vector2(4, 14),  # << beak; pygame.Vector2(-20, 60)  # << legs

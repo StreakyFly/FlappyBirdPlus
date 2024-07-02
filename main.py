@@ -3,6 +3,7 @@ from src.mode_manager import validate_mode, execute_mode, ModeExecutor  # noqa: 
 
 def main():
     validate_mode()
+    print()
     execute_mode()
 
 

@@ -14,8 +14,8 @@ class Deagle(Gun):
             damage=85,
             ammo_speed=50,
             magazine_size=7,
-            shoot_cooldown=int(self.config.fps * 0.9),
-            reload_cooldown=int(self.config.fps * 2.1)
+            shoot_cooldown=27,
+            reload_cooldown=63
         )
         self.set_positions(
             offset=pygame.Vector2(30, 20),

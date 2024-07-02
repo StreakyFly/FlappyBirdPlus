@@ -13,7 +13,7 @@ class ItemManager:
         self.inventory = inventory
         self.pipes = pipes
         self.spawned_items: List[SpawnedItem] = []
-        self.spawn_cooldown: int = self.config.fps * 5
+        self.spawn_cooldown: int = 150  # self.config.fps * 5 <-- we don't want it tied to the fps
         self.stopped = False
 
     def tick(self) -> None:
@@ -57,8 +57,7 @@ class ItemManager:
             self.spawn_cooldown -= 1
             return False
 
-        second = self.config.fps
-        self.spawn_cooldown = random.randint(second * 2, second * 5)
+        self.spawn_cooldown = random.randint(60, 150)  # 2-5 seconds if fps is 30
         return True
 
     def spawn_item(self) -> None:
