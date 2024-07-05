@@ -238,10 +238,10 @@ class Bullet(Item):
 
     def should_remove(self) -> bool:
         # remove the bullet if it's out of the game window
-        extra = self.config.window.height * 0.2  # TODO adjust this extra, right now the bullets probably fly so far they won't hit anything for sho' (check where da pipes and enemies are)
-        if self.x > self.config.window.width + 2 * extra or self.x < -extra or \
-           self.y < -self.image.get_height():  # the moment the bullet goes above screen, remove it, as it can't bounce back down or hit anything up there
-           # or self.y > self.config.window.height + extra:  <- this should never happen as the bullet gets stopped when it hits the floor
+        # bullet can't bounce back to the screen after 1225 (last pipe), or before -200 (first pipe)
+        if self.x > 1225 or self.x < -200 or \
+           self.y < -self.h:  # the moment the bullet goes above screen, remove it, as it can't bounce back down or hit anything up there
+           # or self.y > self.config.window.height:  <- this should never happen as the bullet gets stopped when it hits the floor
             return True
 
         # remove the bullet if it hit the player or any of the enemies
