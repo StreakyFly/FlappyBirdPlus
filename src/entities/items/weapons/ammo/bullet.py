@@ -9,31 +9,93 @@ from ...item import Item
 # TODO Simple collision animation/explosion when colliding with objects.
 
 """
-Whether the bullet is flying to the right or left, it's always "gliding" with the background's x velocity (-7.5).
+Special bullet velocity calculations
+====================================
+Brief explanation:
+  The x velocity of the entity that fired the gun is only partially considered, while its y velocity
+  is completely disregarded, as it doesn't suit the game's visual style.
+  
+Some interesting videos on the topic, for better understanding:
+    - https://www.youtube.com/watch?v=eQwVjREMp5s
+    - https://www.youtube.com/watch?v=436i_cTdtVo
+    - https://www.youtube.com/watch?v=ZH7GpYJoptU   
 
-Imagine you're looking through a camera. The camera is linked with the player's X axis (horizontally).
-When the player moves to the right, the camera moves to the right as well,
-so visually the player stays still, while the background moves to the left.
+Key considerations:
+  The entity's y velocity when firing the gun is not taken into account for two reasons:
+   1. to simplify both code and gameplay
+   2. it looks weird, as the player's y velocity is very volatile, making the bullet's path too hard to predict
 
-So, if the camera moves to the right, and the bullet moves to the right, the bullet visually
-moves to the right less than it would if the camera were stationary. So the bullet's visual x velocity
-(relative to the camera) is the sum of the bullet's real x velocity and the background's x velocity.
-For example, if the bullet's real x velocity is 15, and the background's x velocity is -7.5, the bullet's
-visual (relative to the camera - how much it actually moves on screen) x velocity is 15 + (-7.5) = 7.5.
+  The entity's x velocity when firing the gun is taken into account, but only partially, for two reasons:
+   1. ignoring the x velocity entirely looks out of place (unlike with y velocity)
+   2. since the y velocity isn't considered, incorporating the full x velocity seems weird, so we only account for half
+         
+Detailed explanation with examples and formulas:
+  Player's x velocity in the game world is 7.5 but visually, on the screen (relative to the camera), it's 0.
+  Other entities, like enemies (Cloudskimmer), have the same x velocity as the player once they get into position.
+  We'll neglect the x velocity prior to getting in position (for example Cloudskimmer's initial velocity).
+    
+  Here are the numbers we'll use for example calculations:
+    (REAL velocity: how much the object moves in the game world)
+    (VISUAL velocity: relative to the camera - how much the object moves on the screen)
+   RAW_BULLET_VELOCITY is set for each gun, while other velocities are constants.
+   RAW_BULLET_VELOCITY = (15, 0)  # at what velocity does the gun fire the bullet (other velocities aren't included)
+   REAL_ENTITY_VELOCITY = (7.5, 0)  # how much the entity that fired the gun moves in the game world
+   REAL_CAMERA_VELOCITY = (7.5, 0)  # how much the camera moves in the game world
+   VISUAL_BACKGROUND_VELOCITY = (-7.5, 0)  # how much the background moves on the screen
+   Moreover, REAL_ENTITY_VELOCITY.x = REAL_CAMERA_VELOCITY.x = -VISUAL_BACKGROUND_VELOCITY.x = 7.5
+    
+  Whether the bullet is flying to the right or left, it's always "gliding" with half of VISUAL_BACKGROUND_VELOCITY.x.
 
-If the camera moves to the right, and the bullet moves to the left, the bullet visually
-moves to the left more than it would if the camera were stationary. So the bullet's visual x velocity
-(relative to the camera) is the sum of the bullet's real x velocity and the background's x velocity.
-For example, if the bullet's real x velocity is -15, and the background's x velocity is -7.5, the bullet's
-visual (relative to the camera - how much it actually moves on the screen) x velocity is -15 + (-7.5) = -22.5.
+  Imagine you're looking through a camera. The camera is linked with the player's X axis (horizontally).
+  When the player moves to the right, the camera moves to the right as well,
+  so visually the player stays still, while the background moves to the left.
 
-VISUAL velocity: relative to the camera - how much the bullet actually moves on the screen.
-REAL velocity: how much the bullet moves in the game world.
+  So, if the entity (& camera) moves to the right and the bullet moves to either left/right, what will its x velocity be?
+   If the camera moves to the right, and the bullet moves to the right, the bullet visually (relative to the camera)
+     moves to the right less than it would if the camera were stationary.
+   If the camera moves to the right, and the bullet moves to the left, the bullet visually (relative to the camera)
+     moves to the left more than it would if the camera were stationary
+  
+   Keep in mind for these examples we'll use full entity's x velocity, not half of it, so it's easier to understand.
+    1. BEFORE bouncing; bullet moves to the Right; RAW_BULLET_VELOCITY = (15, 0)
+     How fast does the bullet move in the game world?
+      REAL_BULLET_VELOCITY.x = RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x
+      REAL_BULLET_VELOCITY.x = 15 + 7.5 = 22.5
+     How fast does the bullet move on the screen?
+      VISUAL_BULLET_VELOCITY.x = RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x - REAL_CAMERA_VELOCITY.x
+      VISUAL_BULLET_VELOCITY.x = RAW_BULLET_VELOCITY.x  # as REAL_ENTITY_VELOCITY.x == REAL_CAMERA_VELOCITY.x, so they cancel out
+      VISUAL_BULLET_VELOCITY.x = 15
+  
+    2. BEFORE bouncing; bullet moves to the Left; RAW_BULLET_VELOCITY = (-15, 0)
+     How fast does the bullet move in the game world?
+      REAL_BULLET_VELOCITY.x = RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x
+      REAL_BULLET_VELOCITY.x = -15 + 7.5 = -7.5
+     How fast does the bullet move on the screen?
+      VISUAL_BULLET_VELOCITY.x = RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x - REAL_CAMERA_VELOCITY.x
+      VISUAL_BULLET_VELOCITY.x = RAW_BULLET_VELOCITY.x  # as REAL_ENTITY_VELOCITY.x == REAL_CAMERA_VELOCITY.x, so they cancel out
+      VISUAL_BULLET_VELOCITY.x = -15
+    
+    3. AFTER bouncing; bullet moves to the Left; RAW_BULLET_VELOCITY = (15, 0)
+     How fast does the bullet move in the game world?
+      REAL_BULLET_VELOCITY.x = -(RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x)
+      REAL_BULLET_VELOCITY.x = -(15 + 7.5) = -22.5
+     How fast does the bullet move on the screen?
+      VISUAL_BULLET_VELOCITY.x = -(RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x + REAL_CAMERA_VELOCITY.x)
+      VISUAL_BULLET_VELOCITY.x = -(15 + 7.5 + 7.5) = -30
+
+    4. AFTER bouncing; bullet moves to the Right; RAW_BULLET_VELOCITY = (-15, 0)
+     How fast does the bullet move in the game world?
+      REAL_BULLET_VELOCITY.x = -(RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x)
+      REAL_BULLET_VELOCITY.x = -(-15 + 7.5) = -(-7.5) = 7.5
+     How fast does the bullet move on the screen?
+      VISUAL_BULLET_VELOCITY.x = -(RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x + REAL_CAMERA_VELOCITY.x)
+      VISUAL_BULLET_VELOCITY.x = -(-15 + 7.5 + 7.5) = -(0) = 0  # it is 0 by coincidence, it is not always 0
 """
 
 
 class Bullet(Item):
-    BACKGROUND_VELOCITY = pygame.Vector2(-7.5, 0)
+    VISUAL_BACKGROUND_VELOCITY = pygame.Vector2(-7.5, 0)  # how much the background moves on the screen
+    REAL_CAMERA_VELOCITY = pygame.Vector2(7.5, 0)  # how much the camera moves in the game world
 
     def __init__(self, spawn_position: pygame.Vector2 = pygame.Vector2(0, 0), damage: int = 0,
                  speed: float = 0, angle: float = 0, flipped: bool = False,
@@ -66,11 +128,11 @@ class Bullet(Item):
         self.bullet_front_length = 4  # the length/height of the bullet's front-most part (the part that hits first)
 
         # Must be set after updating the image, so callable can access image dimensions, like self.w, if necessary.
-        # Subclass usage: super().__init__(spawn_pos_offset=lambda x: pygame.Vector2(-self.w / 2, 0), *args, **kwargs)
+        # Subclass usage: super().__init__(spawn_pos_offset=lambda x: pygame.Vector2(-self.w * 0.4, 0), *args, **kwargs)
         if spawn_pos_offset:
             self.spawn_pos_offset = spawn_pos_offset(self) if callable(spawn_pos_offset) else spawn_pos_offset
         else:
-            self.spawn_pos_offset = pygame.Vector2(self.w / 2, 0)
+            self.spawn_pos_offset = pygame.Vector2(self.w * 0.4, 0)
 
         if flipped:
             self.flip()
@@ -122,10 +184,10 @@ class Bullet(Item):
         for is_valid, intersections in self.intersections.items():
             for intersection in intersections:
                 color = (0, 100, 200) if is_valid == "valid" else (255, 0, 0)
-                intersection.x += self.BACKGROUND_VELOCITY.x
+                intersection.x += self.VISUAL_BACKGROUND_VELOCITY.x
                 pygame.draw.circle(self.config.screen, color, intersection, 10, width=4)
 
-        prev_front_pos_real = self.previous_front_pos + self.BACKGROUND_VELOCITY  # how much the bullet moved in the game world
+        prev_front_pos_real = self.previous_front_pos - self.REAL_CAMERA_VELOCITY * 0.5  # how much the bullet moved in the game world
         prev_front_pos_visual = self.previous_front_pos  # how much the bullet moved on the screen
         pygame.draw.line(self.config.screen, (0, 255, 0), prev_front_pos_real, self.calculate_bullet_front_position(), width=3)
         pygame.draw.line(self.config.screen, (255, 0, 0), prev_front_pos_visual, self.calculate_bullet_front_position(), width=3)
@@ -133,7 +195,21 @@ class Bullet(Item):
     def calculate_velocity(self):
         angle_rad = math.radians(-self.angle)
 
-        vel_x = self.speed * math.cos(angle_rad) + self.BACKGROUND_VELOCITY.x  # account for the camera movement
+        # More realistic, as entity's x velocity is taken into account (considering entity is visually static on screen,
+        # like the player or CloudSkimmer enemy (once it gets into position)).
+        # How is it taken into account if we don't add anything else, other than the bullet's x velocity? The background
+        # is visually moving to the left at the speed of player's x velocity, so we don't have to add anything.
+        # However, this "realism" looks a bit weird as entity's y velocity is not taken into account, and because the
+        # bullets travel at such slow speeds in this game. That's why I decided not to use this formula.
+        # vel_x = self.speed * math.cos(angle_rad)  # <-- bullet's x velocity
+
+        # Less realistic, as only half of entity's x velocity is taken into account, but it fits the style a bit better.
+        # Subtracting REAL_CAMERA_VELOCITY.x * 1 would take into account full camera movement, which would entirely
+        # cancel out the entity's x velocity, but we're only taking half of it into account.
+        vel_x = self.speed * math.cos(angle_rad) - self.REAL_CAMERA_VELOCITY.x * 0.5
+
+        # Camera/background is not moving vertically, so entity's y velocity is not taken into account,
+        # neither visually on screen nor in game world.
         vel_y = self.speed * math.sin(angle_rad)
 
         return pygame.Vector2(vel_x, vel_y)
@@ -217,7 +293,7 @@ class Bullet(Item):
 
     def move_with_background(self):
         self.stopped = True
-        self.velocity = self.BACKGROUND_VELOCITY
+        self.velocity = self.VISUAL_BACKGROUND_VELOCITY
 
     def calculate_bullet_front_position(self) -> pygame.Vector2:
         angle_rad = math.radians(-self.angle)
@@ -294,14 +370,16 @@ class Bullet(Item):
         self.bounced = True
 
         if flip_x:
-            self.velocity.x = -self.velocity.x
             self.angle = (-self.angle - 180) % 360
-            self.velocity.x += self.BACKGROUND_VELOCITY.x * 2  # once to cancel the background velocity, once to move against it
+            # this formula basically, we just used VISUAL_BACKGROUND_VELOCITY.x instead of camera and entity velocity,
+            # because: VISUAL_BACKGROUND_VELOCITY.x = -REAL_CAMERA_VELOCITY.x = -REAL_ENTITY_VELOCITY.x = -7.5
+            #   VISUAL_BULLET_VELOCITY.x = -(RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x + REAL_CAMERA_VELOCITY.x)
+            self.velocity.x = -self.velocity.x + self.VISUAL_BACKGROUND_VELOCITY.x * 2  # once to cancel the background velocity, once to move against it
             self.velocity.x *= 0.9  # apply restitution factor to reduce speed after bouncing
         if flip_y:
-            self.velocity.y = -self.velocity.y
             # self.angle = -math.degrees(math.atan2(self.velocity.y, self.velocity.x))
             self.angle = -self.angle
+            self.velocity.y = -self.velocity.y
             self.velocity.y *= 0.9  # apply restitution factor to reduce speed after bouncing
 
         self.update_image(pygame.transform.rotate(self.original_image, self.angle))
