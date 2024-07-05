@@ -19,8 +19,8 @@ class AK47(Gun):
         )
         self.set_positions(
             offset=pygame.Vector2(4, 14),  # << beak; pygame.Vector2(-20, 60)  # << legs
-            pivot=pygame.Vector2(self.w * 0.36, self.h * 0.68),
-            barrel_end_pos=pygame.Vector2(self.w, self.h * 0.25)
+            pivot=pygame.Vector2(39, 34),  # self.w * 0.36, self.h * 0.68
+            barrel_end_pos=pygame.Vector2(110, 13)  # self.w, self.h * 0.25 (round it up as it looks better)
         )
         self.set_recoil(
             distance=15,

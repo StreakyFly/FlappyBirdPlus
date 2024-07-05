@@ -19,8 +19,8 @@ class Deagle(Gun):
         )
         self.set_positions(
             offset=pygame.Vector2(30, 20),
-            pivot=pygame.Vector2(self.w * 0.42, self.h * 0.5),
-            barrel_end_pos=pygame.Vector2(self.w, self.h * 0.1875)
+            pivot=pygame.Vector2(25, 20),  # self.w * 0.42, self.h * 0.5
+            barrel_end_pos=pygame.Vector2(60, 8)  # self.w, self.h * 0.1875 (round it up as it looks better)
         )
         self.set_recoil(
             distance=16,

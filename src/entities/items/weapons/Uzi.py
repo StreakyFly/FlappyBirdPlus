@@ -19,8 +19,8 @@ class Uzi(Gun):
         )
         self.set_positions(
             offset=pygame.Vector2(20, 10),
-            pivot=pygame.Vector2(self.w * 0.5, self.h * 0.45),
-            barrel_end_pos=pygame.Vector2(self.w, self.h * 0.35)
+            pivot=pygame.Vector2(37, 22),  # self.w * 0.5, self.h * 0.45
+            barrel_end_pos=pygame.Vector2(75, 18)  # self.w, self.h * 0.35 (round it up as it looks better)
         )
         self.set_recoil(
             distance=10,
