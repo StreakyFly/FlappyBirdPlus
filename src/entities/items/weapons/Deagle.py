@@ -14,7 +14,7 @@ class Deagle(Gun):
             damage=85,
             ammo_speed=50,
             magazine_size=7,
-            shoot_cooldown=27,
+            shoot_cooldown=28,
             reload_cooldown=63
         )
         self.set_positions(

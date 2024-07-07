@@ -18,6 +18,7 @@ class InventorySlot(Entity):
     def tick(self) -> None:
         self.item.tick()
         super().tick()
+        self.item.decrement_cooldown()
 
     def draw(self) -> None:
         blit_list = [
@@ -42,9 +43,6 @@ class InventorySlot(Entity):
             self.config.screen.blit(text_surface, text_rect)
 
     def create_cooldown_overlay(self) -> [pygame.Surface, int]:
-        if self.item.remaining_cooldown == 0:
-            return
-
         height = (self.rect.height - 15) * (self.item.remaining_cooldown / self.item.total_cooldown)
         cooldown_overlay = pygame.Surface((self.rect.width - 15, height), pygame.SRCALPHA)
         cooldown_overlay.fill((0, 0, 0, 150))

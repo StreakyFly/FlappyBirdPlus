@@ -19,7 +19,7 @@ class FlappyBird:
         if os.environ.get('SDL_VIDEODRIVER') == 'dummy':
             screen = pygame.display.set_mode((window.width, window.height))
         else:
-            screen = pygame.display.set_mode((window.width, window.height), flags=pygame.SCALED)
+            screen = pygame.display.set_mode((window.width, window.height), flags=pygame.SCALED)  # , vsync=1)
 
         from .config import Config  # imported here to avoid circular import
 
@@ -105,10 +105,8 @@ class FlappyBird:
         count = 0
 
         while True:
+            print("START")
             self.monitor_fps_drops(fps_threshold=27)
-            # for i, pipe in enumerate(self.pipes.upper):
-            #     if self.player.crossed(pipe):
-            #         self.score.add()
             if self.player.crossed(self.next_closest_pipe_pair[0]):
                 self.next_closest_pipe_pair = self.get_next_pipe_pair()
                 self.score.add()
@@ -124,19 +122,24 @@ class FlappyBird:
             for event in pygame.event.get():
                 if self.handle_events(event):
                     return
+            self.handle_held_buttons()
 
             if count % 19 == 0:
                 self.player.flap()
             count += 1
 
             self.game_tick()
-            self.handle_held_buttons()
-
-            # self.get_state()  # TODO just a heads up that this is called here
 
             pygame.display.update()
             await asyncio.sleep(0)
             self.config.tick()
+
+            inventory_slot = self.inventory.inventory_slots[0]
+            if inventory_slot.item.name != ItemName.EMPTY and inventory_slot.item.shot_bullets:
+                print([(b.x, b.y) for b in inventory_slot.item.shot_bullets])
+            print(self.player.y, self.floor.x)
+            print("END")
+            print()
 
     async def game_over(self):
         self.gsm.set_state(GameState.END)
@@ -200,9 +203,11 @@ class FlappyBird:
         current_bullets = set()
         inventory_slot = self.inventory.inventory_slots[0]
 
+        # player bullets
         if inventory_slot.item.name != ItemName.EMPTY and inventory_slot.item.shot_bullets:
             current_bullets.update(inventory_slot.item.shot_bullets)
 
+        # enemy bullets
         for group in self.enemy_manager.spawned_enemy_groups:
             spawned_enemies.update(group.members)
             for enemy in group.members:

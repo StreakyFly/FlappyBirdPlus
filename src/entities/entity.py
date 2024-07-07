@@ -51,24 +51,27 @@ class Entity:
 
     def tick(self) -> None:
         self.draw()
-        rect = self.rect
         if self.config.debug:
-            pygame.draw.rect(self.config.screen, (255, 0, 0), rect, 1)
-            # write x and y at top of rect
-            font = pygame.font.SysFont("Arial", 14, True)
-            text = font.render(
-                f"x: {self.x: .1f}, y: {self.y: .1f} | {self.w: .1f} x {self.h: .1f}",
-                True,
-                (255, 255, 255),
-            )
-            self.config.screen.blit(
-                text,
-                (
-                    rect.x + rect.w / 2 - text.get_width() / 2,
-                    rect.y - text.get_height(),
-                ),
-            )
+            self.debug_draw()
 
     def draw(self) -> None:
         if self.image:
             self.config.screen.blit(self.image, self.rect)
+
+    def debug_draw(self) -> None:
+        rect = self.rect
+        pygame.draw.rect(self.config.screen, (255, 0, 0), rect, 1)
+        # write x and y at top of rect
+        font = pygame.font.SysFont("Arial", 14, True)
+        text = font.render(
+            f"x: {self.x: .1f}, y: {self.y: .1f} | {self.w: .1f} x {self.h: .1f}",
+            True,
+            (255, 255, 255),
+        )
+        self.config.screen.blit(
+            text,
+            (
+                rect.x + rect.w / 2 - text.get_width() / 2,
+                rect.y - text.get_height(),
+            ),
+        )

@@ -49,36 +49,14 @@ class Gun(Item):
 
         self.shot_bullets = set()
 
-    def tick(self) -> None:
-        self.update_transform()
-        self.shoot_animation()
-        self.tick_ammo()
-        super().tick()
-
-        if not self.interaction_in_progress:
-            return
-
-        if self.remaining_shoot_cooldown == 0 and self.remaining_reload_cooldown == 0:
-            self.interaction_in_progress = False
-            return
-
-        if self.remaining_shoot_cooldown > 0:
-            self.remaining_shoot_cooldown -= 1
-
-        if self.remaining_reload_cooldown > 0:
-            self.remaining_reload_cooldown -= 1
-            self.remaining_shoot_cooldown = 0
-            if self.remaining_reload_cooldown == 0:
-                self.quantity = self.quantity_after_reload
-
-        if self.remaining_cooldown > 0:
-            self.remaining_cooldown -= 1
-
-    def tick_ammo(self) -> None:
-        for bullet in set(self.shot_bullets):
-            bullet.tick()
-            if bullet.should_remove():
-                self.shot_bullets.remove(bullet)
+        # First we handle user input, then update the game state, including the position & rotation of the entity
+        # holding the gun and the gun's position & rotation. If we fired the gun immediately when the user pressed
+        # the fire button, the bullet's spawn_position would be calculated from the gun's position before it was
+        # updated for that frame, leading to a one frame delay in the bullet's spawn position. To avoid this, we
+        # use a flag should_fire to indicate that the gun should fire on the next tick() call (after the gun's
+        # position has been updated). This way, the gun fires when it's tick() method is called, not when the user
+        # pressed the fire button.
+        self.should_fire = False
 
     def flip(self) -> None:
         super().flip()
@@ -86,11 +64,38 @@ class Gun(Item):
         self.barrel_end_pos.x = self.w - self.barrel_end_pos.x
         self.set_recoil(-self.recoil_distance, self.recoil_duration, -self.recoil_rotation)
 
+    def tick(self) -> None:
+        if self.total_cooldown:
+            print("interaction in progress?", self.interaction_in_progress, self.remaining_cooldown, self.total_cooldown)
+
+        if self.interaction_in_progress:
+            if self.remaining_shoot_cooldown > 0:
+                self.remaining_shoot_cooldown -= 1
+
+            if self.remaining_reload_cooldown > 0:
+                self.remaining_reload_cooldown -= 1
+                if self.remaining_reload_cooldown == 0:
+                    self.quantity = self.quantity_after_reload
+
+            if self.remaining_shoot_cooldown == 0 and self.remaining_reload_cooldown == 0:
+                self.interaction_in_progress = False
+
+        self.update_transform()
+        self.shoot_animation()
+        self.tick_ammo()
+        self.handle_should_fire()
+        super().tick()
+
+    def tick_ammo(self) -> None:
+        for bullet in set(self.shot_bullets):
+            bullet.tick()
+            if bullet.should_remove():
+                self.shot_bullets.remove(bullet)
+
     def draw(self) -> None:
         pivot_point = pygame.Vector2(self.x + self.pivot.x, self.y + self.pivot.y)
         rotated_image, rotated_rect = rotate_on_pivot(self.image, self.rotation, pivot_point, self.rect.center)
         self.config.screen.blit(rotated_image, rotated_rect)
-        # self.debug_draw()
 
     def debug_draw(self) -> None:
         RED = (255, 0, 0); GREEN = (0, 255, 0); BLUE = (0, 0, 255); BLACK = (0, 0, 0)
@@ -98,6 +103,7 @@ class Gun(Item):
         pygame.draw.circle(screen, RED, self.calculate_initial_bullet_position(), 8, width=4)
         pygame.draw.circle(screen, BLACK, (self.x + self.barrel_end_pos.x, self.y + self.barrel_end_pos.y), 6, width=3)
         pygame.draw.circle(screen, GREEN, (self.x + self.pivot.x, self.y + self.pivot.y), 4)
+        super().debug_draw()
 
     def stop(self) -> None:
         for bullet in self.shot_bullets:
@@ -144,16 +150,29 @@ class Gun(Item):
         :param action: 0=shoot, 1=reload
         """
         if action == 0:
-            self.handle_shooting()
+            if self.interaction_in_progress:
+                return
+            # Don't fire immediately, wait for the tick() method to handle this after the gun's position has been
+            # updated, otherwise the bullet's spawn_position is delayed by one frame.
+            # self.handle_shooting()
+            self.should_fire = True
             return
         elif action == 1:
             self.handle_reloading()
             return
 
-    def handle_shooting(self) -> None:
+    def handle_should_fire(self) -> None:
         if self.interaction_in_progress:
             return
 
+        if self.should_fire:
+            self.handle_shooting()
+            self.should_fire = False
+
+    def handle_shooting(self) -> None:
+        """
+        Before calling this method, make sure the gun is not on cooldown.
+        """
         # if weapon magazine isn't empty, shoot
         if self.quantity > 0:
             self.shoot()
@@ -196,7 +215,8 @@ class Gun(Item):
         self.interaction_in_progress = True
         self.remaining_reload_cooldown = self.reload_cooldown
         self.set_cooldown(self.reload_cooldown)
-        # TODO start reloading animation
+        self.remaining_shoot_cooldown = 0
+        # TODO start reload animation
         # TODO play reloading sound
 
     def calculate_initial_bullet_position(self) -> pygame.Vector2:
@@ -221,11 +241,19 @@ class Gun(Item):
         return pygame.Vector2(pos_x, pos_y)
 
     def spawn_bullet(self) -> None:
-        bullet = self.ammo_class(config=self.config, item_name=self.ammo_name, item_type=ItemType.AMMO,
-                                 damage=self.damage, spawn_position=self.calculate_initial_bullet_position(),
-                                 speed=self.ammo_speed, angle=self.rotation, flipped=self.flipped, entity=self.entity)
+        bullet = self.ammo_class(config=self.config,
+                                 item_name=self.ammo_name,
+                                 item_type=ItemType.AMMO,
+                                 damage=self.damage,
+                                 spawn_position=self.calculate_initial_bullet_position(),
+                                 speed=self.ammo_speed,
+                                 angle=self.rotation,
+                                 flipped=self.flipped,
+                                 entity=self.entity)
         self.shot_bullets.add(bullet)
-        self.draw()  # draw the gun over the bullet, as the bullet calls tick() on initialization
+        bullet.draw()  # don't tick() the bullet yet, it will be ticked in the next frame, just draw it for now
+        if self.config.debug:
+            bullet.debug_draw()
 
     def set_recoil(self, distance: int, duration: int, rotation: int) -> None:
         self.recoil_distance = distance
@@ -245,8 +273,10 @@ class Gun(Item):
         self.remaining_recoil_duration = self.recoil_duration
         self.animation_offset = pygame.Vector2(0, 0)
         self.animation_rotation = 0
+        self.shoot_animation()  # immediately apply the first frame of the animation
 
     def shoot_animation(self) -> None:
+        # TODO maybe make second half of the animation a bit slower?
         if self.remaining_recoil_duration == 0:
             return
 

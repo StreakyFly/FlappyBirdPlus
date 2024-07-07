@@ -34,21 +34,23 @@ class SpawnedItem(Entity):
             item_img = self.config.images.items[self.item_name.value]
             self.item_image = pygame.transform.scale(item_img, (56, 56))
 
-        self.item_img_x: int = (self.image.get_height() - 56) // 2
-        self.item_img_y: int = (self.image.get_width() - 56) // 2
+        self.item_img_x: int = (self.h - 56) // 2
+        self.item_img_y: int = (self.w - 56) // 2
 
-    def draw(self) -> None:
+    def tick(self) -> None:
         self.x += self.vel_x
         self.sin_y = self.amplitude * math.sin(self.frequency * self.x)
         self.y = self.initial_y + self.sin_y
+        super().tick()
 
+    def draw(self) -> None:
         # draw the item image
         item_x = self.rect.x + self.item_img_x
         item_y = self.rect.y + self.item_img_y
         self.config.screen.blit(self.item_image, (item_x, item_y))
 
         # draw the bubble
-        self.config.screen.blit(self.image, (self.rect.x, self.rect.y))
+        self.config.screen.blit(self.image, self.rect)
 
     def stop(self) -> None:
         self.vel_x = 0
@@ -80,7 +82,7 @@ class Item(Entity):
             self.image = self.config.images.items[self.name.value]
         self.image = self.config.images.items[self.name.value]
         self.total_cooldown = 0
-        self.remaining_cooldown = 0
+        self.remaining_cooldown = 0  # needs to be handled in the subclass
 
     @property
     def quantity(self):
@@ -97,9 +99,17 @@ class Item(Entity):
         self.total_cooldown = cooldown
         self.remaining_cooldown = cooldown
 
+    def decrement_cooldown(self):
+        """
+        Decrements the remaining cooldown by 1.
+        This needs to be called in the subclass's tick() method.
+        """
+        if self.remaining_cooldown > 0:
+            self.remaining_cooldown -= 1
+
     def draw(self) -> None:
-        # overrides Entity.draw() as Items should not be drawn on their own, unless it's a weapon or other special item
-        # that needs to be drawn on the game canvas, not just in the inventory
+        # Overrides Entity.draw() as Items should not be drawn on their own, unless it's a weapon or other
+        # special item that needs to be drawn in the game world, not just in the inventory.
         pass
 
     def flip(self) -> None:
@@ -107,4 +117,5 @@ class Item(Entity):
         self.image = pygame.transform.flip(self.image, True, False)
 
     def stop(self) -> None:
-        pass
+        # pass
+        NotImplementedError("stop() method must be implemented in the subclass")

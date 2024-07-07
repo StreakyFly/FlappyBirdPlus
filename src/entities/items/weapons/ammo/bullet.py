@@ -141,8 +141,6 @@ class Bullet(Item):
 
         self.previous_front_pos = self.calculate_bullet_front_position()
 
-        self.tick()  # yes, this is necessary, otherwise the bullet is misplaced a bit
-
     def flip(self):
         self.update_image(self.original_image)
         super().flip()
@@ -156,18 +154,17 @@ class Bullet(Item):
         if not self.real:  # so the inventory slot's bullet doesn't update for no reason
             return
 
-        super().tick()
-        self.handle_collision()
-
         self.previous_front_pos = self.calculate_bullet_front_position()
         self.x += self.velocity.x
         self.y += self.velocity.y
 
+        self.handle_collision()
+
         self.frame += 1
+        super().tick()
 
     def draw(self) -> None:
         self.config.screen.blit(self.image, self.rect)
-        # self.debug_draw()
 
     def debug_draw(self) -> None:
         # rename big-bullet_debug.png to big-bullet.png to see the debug drawing
@@ -191,6 +188,7 @@ class Bullet(Item):
         prev_front_pos_visual = self.previous_front_pos  # how much the bullet moved on the screen
         pygame.draw.line(self.config.screen, (0, 255, 0), prev_front_pos_real, self.calculate_bullet_front_position(), width=3)
         pygame.draw.line(self.config.screen, (255, 0, 0), prev_front_pos_visual, self.calculate_bullet_front_position(), width=3)
+        super().debug_draw()
 
     def calculate_velocity(self):
         angle_rad = math.radians(-self.angle)
@@ -237,8 +235,12 @@ class Bullet(Item):
         self.pipes = pipes
 
     def should_remove(self) -> bool:
-        # remove the bullet if it's out of the game window
-        # bullet can't bounce back to the screen after 1225 (last pipe), or before -200 (first pipe)
+        """
+        Check if the bullet should be removed from the game.
+        :return: True if the bullet should be removed, False otherwise
+        """
+        # remove the bullet if it flew out of the game window
+        # bullet can't bounce back to the screen after 1225 (last pipe's left side), or before -200 (first pipe's right side)
         if self.x > 1225 or self.x < -200 or \
            self.y < -self.h:  # the moment the bullet goes above screen, remove it, as it can't bounce back down or hit anything up there
            # or self.y > self.config.window.height:  <- this should never happen as the bullet gets stopped when it hits the floor
