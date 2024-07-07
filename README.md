@@ -1,7 +1,7 @@
 # FlappyBirdPlus
 Upgraded Flappy Bird with health, guns & enemies! Trained 'AI' included.
 
-Part of the basic Flappy Bird code stolen from https://github.com/sourabhv/FlapPyBird
+Part of the basic Flappy Bird code yoinked from https://github.com/sourabhv/FlapPyBird
 
 
 <br/>
@@ -13,10 +13,10 @@ https://pypi.org/project/pygbag/
 # TODO:
 
 1. guns - add animation and sound for shooting and reloading
-2. multiple types of enemies controlled by trained agents
-3. 3rd inventory slot - maybe add hunger and food? Or some other item type.
-4. traps...?
-5. make the scene speed easily adjustable
+2. multiple types of enemies controlled by trained agents - WIP
+3. 3rd inventory slot - maybe add hunger and food? Or spells that freeze enemies/something like that?
+4. traps...? Probably not.
+5. make the scene speed easily adjustable. Nevermind, would complicate stuff too much.
 
 <br/>
 
@@ -32,7 +32,7 @@ Input:
 
 Output:
  - rotation - rotate up or down
- - fire or not
+ - fire, rotate or do nothing
 
 The agent should be rewarded when their bullet hits the player, and penalized when it hits them or another enemy.
 

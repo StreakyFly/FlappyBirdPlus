@@ -52,12 +52,13 @@ class BasicFlappyEnv(BaseEnv):
         self.player.tick()
         self.score.tick()
 
-        reward = self.calculate_reward(action=action, died=terminated, passed_pipe=passed_pipe)
-
         pygame.display.update()
         self.config.tick()
 
-        return self.get_state(), reward, terminated, False
+        return (self.get_state(),
+                self.calculate_reward(action=action, died=terminated, passed_pipe=passed_pipe),
+                terminated,
+                False)
 
     def get_state(self):
         return get_state(self.player, self.pipes, self.get_pipe_pair_center)

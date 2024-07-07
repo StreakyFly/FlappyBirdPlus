@@ -33,6 +33,7 @@ class EnemyManager:
         self.spawn_cloudskimmer()  # temporary
 
     def spawn_cloudskimmer(self):
+        # TODO play sound effect when spawning enemy, for this one some ghost sound effect
         self.spawned_enemy_groups.append(CloudSkimmerGroup(self.config, x=1000, y=350))
 
     def spawn_aerothief(self):
