@@ -10,9 +10,9 @@ class Pipe(Entity):
         super().__init__(*args, **kwargs)
         self.vel_x = -7.5
 
-    def draw(self) -> None:
+    def tick(self) -> None:
         self.x += self.vel_x
-        super().draw()
+        super().tick()
 
 
 class Pipes(Entity):

@@ -134,21 +134,22 @@ class Player(Entity):
     def rotate(self) -> None:
         self.rotation = pygame.math.clamp(self.rotation + self.vel_rot, self.rot_min, self.rot_max)
 
+    def tick(self):
+        match self.mode:
+            case PlayerMode.SHM:
+                self.tick_shm()
+            case PlayerMode.NORMAL:
+                self.tick_normal()
+            case PlayerMode.CRASH:
+                self.tick_crash()
+
+        self.tick_hp()
+        super().tick()
+
     def draw(self) -> None:
         self.image = self.animation.update()
         # self.update_image(self.animation.update())
 
-        if self.mode == PlayerMode.SHM:
-            self.tick_shm()
-        elif self.mode == PlayerMode.NORMAL:
-            self.tick_normal()
-        elif self.mode == PlayerMode.CRASH:
-            self.tick_crash()
-
-        self.tick_hp()
-        self.draw_player()
-
-    def draw_player(self) -> None:
         rotated_image = pygame.transform.rotate(self.image, self.rotation)
         rotated_rect = rotated_image.get_rect(center=self.rect.center)
         self.config.screen.blit(rotated_image, rotated_rect)

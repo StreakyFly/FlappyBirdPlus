@@ -11,6 +11,6 @@ class Floor(Entity):
     def stop(self) -> None:
         self.vel_x = 0
 
-    def draw(self) -> None:
+    def tick(self) -> None:
         self.x = -((-self.x + self.vel_x) % self.x_extra)
-        super().draw()
+        super().tick()
