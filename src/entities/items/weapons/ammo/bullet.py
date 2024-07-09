@@ -28,7 +28,7 @@ Key considerations:
   The entity's x velocity when firing the gun is taken into account, but only partially, for two reasons:
    1. ignoring the x velocity entirely looks out of place (unlike with y velocity)
    2. since the y velocity isn't considered, incorporating the full x velocity seems weird, so we only account for half
-         
+
 Detailed explanation with examples and formulas:
   Player's x velocity in the game world is 7.5 but visually, on the screen (relative to the camera), it's 0.
   Other entities, like enemies (Cloudskimmer), have the same x velocity as the player once they get into position.
@@ -55,7 +55,7 @@ Detailed explanation with examples and formulas:
      moves to the right less than it would if the camera were stationary.
    If the camera moves to the right, and the bullet moves to the left, the bullet visually (relative to the camera)
      moves to the left more than it would if the camera were stationary
-  
+
    Keep in mind for these examples we'll use full entity's x velocity, not half of it, so it's easier to understand.
     1. BEFORE bouncing; bullet moves to the Right; RAW_BULLET_VELOCITY = (15, 0)
      How fast does the bullet move in the game world?
@@ -65,7 +65,7 @@ Detailed explanation with examples and formulas:
       VISUAL_BULLET_VELOCITY.x = RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x - REAL_CAMERA_VELOCITY.x
       VISUAL_BULLET_VELOCITY.x = RAW_BULLET_VELOCITY.x  # as REAL_ENTITY_VELOCITY.x == REAL_CAMERA_VELOCITY.x, so they cancel out
       VISUAL_BULLET_VELOCITY.x = 15
-  
+
     2. BEFORE bouncing; bullet moves to the Left; RAW_BULLET_VELOCITY = (-15, 0)
      How fast does the bullet move in the game world?
       REAL_BULLET_VELOCITY.x = RAW_BULLET_VELOCITY.x + REAL_ENTITY_VELOCITY.x
@@ -122,7 +122,9 @@ class Bullet(Item):
         self.hit_entity: Optional[str] = None  # the entity the bullet hit
         self.frame: int = 0
         self.pipe_to_ignore = None
-        self.intersections = dict()
+
+        if self.config.debug:
+            self.intersections = {"valid": [], "invalid": []}
 
         # for unique bullets set bullet_front_length in subclass
         self.bullet_front_length = 4  # the length/height of the bullet's front-most part (the part that hits first)
@@ -139,7 +141,8 @@ class Bullet(Item):
 
         self.set_spawn_position()
 
-        self.previous_front_pos = self.calculate_bullet_front_position()
+        self.prev_front_pos: pygame.Vector2 = self.calculate_bullet_front_position()
+        self.curr_front_pos: pygame.Vector2 = self.prev_front_pos
 
     def flip(self):
         self.update_image(self.original_image)
@@ -154,11 +157,13 @@ class Bullet(Item):
         if not self.real:  # so the inventory slot's bullet doesn't update for no reason
             return
 
-        self.previous_front_pos = self.calculate_bullet_front_position()
+        self.prev_front_pos = self.curr_front_pos
         self.x += self.velocity.x
         self.y += self.velocity.y
 
         self.handle_collision()
+
+        self.curr_front_pos = self.calculate_bullet_front_position()
 
         self.frame += 1
         super().tick()
@@ -168,26 +173,27 @@ class Bullet(Item):
 
     def debug_draw(self) -> None:
         # rename big-bullet_debug.png to big-bullet.png to see the debug drawing
+        screen = self.config.screen
         for pipe in self.pipes:
-            pygame.draw.circle(self.config.screen, (255, 211, 0), (pipe.x, pipe.y), 10, width=4)
-            pygame.draw.circle(self.config.screen, (255, 211, 0), (pipe.x + pipe.w, pipe.y), 10, width=4)
-            pygame.draw.circle(self.config.screen, (255, 211, 0), (pipe.x, pipe.y + pipe.h), 10, width=4)
-            pygame.draw.circle(self.config.screen, (255, 211, 0), (pipe.x + pipe.w, pipe.y + pipe.h), 10, width=4)
+            pygame.draw.circle(screen, (255, 211, 0), (pipe.x, pipe.y), 10, width=4)
+            pygame.draw.circle(screen, (255, 211, 0), (pipe.x + pipe.w, pipe.y), 10, width=4)
+            pygame.draw.circle(screen, (255, 211, 0), (pipe.x, pipe.y + pipe.h), 10, width=4)
+            pygame.draw.circle(screen, (255, 211, 0), (pipe.x + pipe.w, pipe.y + pipe.h), 10, width=4)
 
-        pygame.draw.circle(self.config.screen, (200, 0, 100), self.calculate_bullet_front_position(), 7, width=3)
-        pygame.draw.circle(self.config.screen, (0, 25, 255), self.calculate_bullet_front_position(), 14, width=8)
-        # pygame.draw.circle(self.config.screen, (0, 255, 55), self.spawn_position, 18, width=11)
+        pygame.draw.circle(screen, (200, 0, 100), self.curr_front_pos, 7, width=3)
+        pygame.draw.circle(screen, (0, 25, 255), self.curr_front_pos, 14, width=8)
+        # pygame.draw.circle(screen, (0, 255, 55), self.spawn_position, 18, width=11)
 
         for is_valid, intersections in self.intersections.items():
             for intersection in intersections:
                 color = (0, 100, 200) if is_valid == "valid" else (255, 0, 0)
+                pygame.draw.circle(screen, color, intersection, 10, width=4)
                 intersection.x += self.VISUAL_BACKGROUND_VELOCITY.x
-                pygame.draw.circle(self.config.screen, color, intersection, 10, width=4)
 
-        prev_front_pos_real = self.previous_front_pos - self.REAL_CAMERA_VELOCITY * 0.5  # how much the bullet moved in the game world
-        prev_front_pos_visual = self.previous_front_pos  # how much the bullet moved on the screen
-        pygame.draw.line(self.config.screen, (0, 255, 0), prev_front_pos_real, self.calculate_bullet_front_position(), width=3)
-        pygame.draw.line(self.config.screen, (255, 0, 0), prev_front_pos_visual, self.calculate_bullet_front_position(), width=3)
+        prev_front_pos_real = self.prev_front_pos - self.REAL_CAMERA_VELOCITY * 0.5  # how much the bullet moved in the game world
+        prev_front_pos_visual = self.prev_front_pos  # how much the bullet moved on the screen
+        pygame.draw.line(screen, (0, 255, 0), prev_front_pos_real, self.curr_front_pos, width=3)
+        pygame.draw.line(screen, (255, 0, 0), prev_front_pos_visual, self.curr_front_pos, width=3)
         super().debug_draw()
 
     def calculate_velocity(self):
@@ -239,15 +245,18 @@ class Bullet(Item):
         Check if the bullet should be removed from the game.
         :return: True if the bullet should be removed, False otherwise
         """
-        # remove the bullet if it flew out of the game window
-        # bullet can't bounce back to the screen after 1225 (last pipe's left side), or before -200 (first pipe's right side)
-        if self.x > 1225 or self.x < -200 or \
-           self.y < -self.h:  # the moment the bullet goes above screen, remove it, as it can't bounce back down or hit anything up there
-           # or self.y > self.config.window.height:  <- this should never happen as the bullet gets stopped when it hits the floor
+        # remove the bullet if it flew (far) out of the game window
+        # approximate range between -200 and 1230 is bouncable - roughly where the furthest pipes are
+        # (right side of first pipe: -200, left side of last pipe: 1230)
+        # + 60 extra for bullet's velocity and just to be safe
+        if self.x > 1290 or self.x < -260 or \
+           self.y < -self.h:  # the moment the bullet goes above the screen, remove it (the player can technically go
+            #  up to -120, but he's guaranteed to hit a pipe there, so removing bullets early shouldn't change much
+            # or self.y > self.config.window.height:  <- this should never happen as the bullet gets stopped when it hits the floor
             return True
 
         # remove the bullet if it hit the player or any of the enemies
-        if self.hit_entity and self.hit_entity in ['player', 'enemy']:
+        if self.hit_entity in ['player', 'enemy']:
             return True
 
         return False
@@ -322,8 +331,8 @@ class Bullet(Item):
 
         TOLERANCE = 5
         # check if the bullet hit any of the pipe's corners
-        if (self.previous_front_pos.y < pipe.y + TOLERANCE or self.previous_front_pos.y > pipe.y + pipe.h - TOLERANCE) and \
-           (self.previous_front_pos.x < pipe.x + TOLERANCE or self.previous_front_pos.x > pipe.x + pipe.w - TOLERANCE) and \
+        if (self.prev_front_pos.y < pipe.y + TOLERANCE or self.prev_front_pos.y > pipe.y + pipe.h - TOLERANCE) and \
+           (self.prev_front_pos.x < pipe.x + TOLERANCE or self.prev_front_pos.x > pipe.x + pipe.w - TOLERANCE) and \
            self.is_pipe_corner_hit(pipe):
             self.bounce(True, True)
             return True
@@ -355,11 +364,14 @@ class Bullet(Item):
             valid_intersections.append(intersection_bottom)
 
         invalid_intersections = [i for i in [intersection_left, intersection_right, intersection_top, intersection_bottom] if i not in valid_intersections]
-        self.intersections = {"valid": valid_intersections, "invalid": invalid_intersections}  # for debugging only
+
+        if self.config.debug:
+            self.intersections["valid"] = valid_intersections
+            self.intersections["invalid"] = invalid_intersections
 
         closest = None
         if valid_intersections:
-            closest = min(valid_intersections, key=lambda intersection: (intersection - self.previous_front_pos).length_squared())
+            closest = min(valid_intersections, key=lambda intersection: (intersection - self.prev_front_pos).length_squared())
 
         if closest in [intersection_left, intersection_right]:
             self.bounce(True, False)
@@ -391,21 +403,21 @@ class Bullet(Item):
         pipe_corner: pygame.Vector2 = pygame.Vector2(pipe.x, pipe.y + pipe.h)
 
         # bottom left corner
-        if self.previous_front_pos.y > pipe.y + pipe.h - tolerance and self.previous_front_pos.x < pipe.x + tolerance:
+        if self.prev_front_pos.y > pipe.y + pipe.h - tolerance and self.prev_front_pos.x < pipe.x + tolerance:
             pipe_corner = pygame.Vector2(pipe.x, pipe.y + pipe.h)
         # top left corner
-        elif self.previous_front_pos.y < pipe.y + tolerance and self.previous_front_pos.x < pipe.x + tolerance:
+        elif self.prev_front_pos.y < pipe.y + tolerance and self.prev_front_pos.x < pipe.x + tolerance:
             pipe_corner = pygame.Vector2(pipe.x, pipe.y)
         # bottom right corner
-        elif self.previous_front_pos.y > pipe.y + pipe.h - tolerance and self.previous_front_pos.x > pipe.x + pipe.w - tolerance:
+        elif self.prev_front_pos.y > pipe.y + pipe.h - tolerance and self.prev_front_pos.x > pipe.x + pipe.w - tolerance:
             pipe_corner = pygame.Vector2(pipe.x + pipe.w, pipe.y + pipe.h)
         # top right corner
-        elif self.previous_front_pos.y < pipe.y + tolerance and self.previous_front_pos.x > pipe.x + pipe.w - tolerance:
+        elif self.prev_front_pos.y < pipe.y + tolerance and self.prev_front_pos.x > pipe.x + pipe.w - tolerance:
             pipe_corner = pygame.Vector2(pipe.x + pipe.w, pipe.y)
 
         current_front_pos = self.calculate_bullet_front_position()
         tolerance2 = self.bullet_front_length / 2 + 3  # 3 = tolerance
-        return self.is_point_on_line(self.previous_front_pos, current_front_pos, pipe_corner, tolerance2)
+        return self.is_point_on_line(self.prev_front_pos, current_front_pos, pipe_corner, tolerance2)
 
     @staticmethod
     def is_point_on_line(p1, p2, p3, tolerance=1.0) -> bool:

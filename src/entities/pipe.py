@@ -60,6 +60,8 @@ class Pipes(Entity):
         self.lower = []
 
         pipe_x = random.randint(-330, 53)  # between -330 and 52.5 (possible x position of the first pipe mid-game)
+        pipe_x = (pipe_x // 7.5) * 7.5  # ensures pipe_x is divisible by 7.5 as this is always the case when
+        # pipes spawned by spawn_initial_pipes() move
         self.spawn_new_pipes(pipe_x)
 
         for i in range(3):
@@ -67,7 +69,7 @@ class Pipes(Entity):
             self.spawn_new_pipes(pipe_x)
 
     def manage_pipes(self):
-        extra = self.upper[0].w * 1.5
+        extra = self.horizontal_gap * 0.5  # so the bullets can bounce off the pipe a bit longer after it disappears
         first_pipe = self.upper[0]
         if first_pipe.x < -first_pipe.w - extra:
             # remove the first pair of pipes if they're out of the screen
@@ -78,7 +80,7 @@ class Pipes(Entity):
             pipe_x = self.upper[-1].x + self.horizontal_gap
             self.spawn_new_pipes(x=pipe_x)
 
-    def spawn_new_pipes(self, x: int = None) -> None:
+    def spawn_new_pipes(self, x: int | float = None) -> None:
         upper, lower = self.make_random_pipes(x)
         self.upper.append(upper)
         self.lower.append(lower)

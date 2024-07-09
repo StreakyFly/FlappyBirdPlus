@@ -19,13 +19,16 @@ Once that enemy dies, terminate the episode and select another one randomly.
 # TODO CHECK ALL TODO'S IN ALL SRC FILES BEFORE STARTING THE TRAINING,
 #  CUZ THERE'S SOME QUESTIONABLE STUFF I LEFT FOR LATER
 
-
 # TODO We should maybe end the episode if it lasts too long
-# TODO ghosts need to be better shaded, more detail
-# TODO (in cloudskimmer.py) ghost's eyes should follow the player (depending on gun rotation)
-# TODO ghosts should spawn in random colors
-#  as they get damaged, they should either change color orrr become more transparent
-#  when they die, the weapon should fall to the ground and the ghost should disappear
+# TODO Should the player fly more randomly for a part of training, not just between pipes? So the agents hopefully learn
+#  some bounce tricks to hit the player, instead of just aiming at the player's current position.
+
+"""
+Masking Bullet Data:
+During the later stages of training, static placeholder values for bullet info should be introduced.
+This step teaches the model to gradually ignore these inputs, which are not critical for decision-making post-training.
+It ensures that during deployment, the model can operate effectively even when bullet data is not provided.
+"""
 
 
 class EnemyCloudskimmerEnv(BaseEnv):
@@ -42,12 +45,6 @@ class EnemyCloudskimmerEnv(BaseEnv):
         self.spawn_enemies()
         self.pick_random_enemy()
 
-        self.temp_var_max_sizes = set()
-
-        self.count = 0  # TODO delete
-        self.wait_num = 1
-        self.wait_cooldown = 5
-
     def reset_env(self):
         super().reset_env()
         self.pipes.spawn_initial_pipes_like_its_midgame()
@@ -63,7 +60,7 @@ class EnemyCloudskimmerEnv(BaseEnv):
             self.enemy_index_dict[enemy] = i
 
     def pick_random_enemy(self):
-        self.controlled_enemy_id = 2 #np.random.randint(0, 3)  # TODO uncomment duh
+        self.controlled_enemy_id = np.random.randint(0, 3)
         self.controlled_enemy = self.enemy_manager.spawned_enemy_groups[0].members[self.controlled_enemy_id]
 
     def get_action_and_observation_space(self):
@@ -74,6 +71,11 @@ class EnemyCloudskimmerEnv(BaseEnv):
         # TODO if you decide to change cloudskimmers movement so they aren't "linked"
         #  add X positions of all cloud skimmers, not just the controlled one!
 
+        # TODO WARNING! You thought of putting placeholder values when entity like cloudskimmer or bullet is missing
+        #  but you fool forgot you clip and normalize the values, meaning putting a placeholder value would not be
+        #  clear enough that the entity is missing, as those values would still end up as valid values/positions.
+        # - I decided to add flags for each entity that can be missing.
+
         # index 0 -> player y position
         # index 1 -> player y velocity
         # index 2 -> which enemy is being controlled (0: top, 1: middle, 2: bottom);
@@ -83,29 +85,35 @@ class EnemyCloudskimmerEnv(BaseEnv):
         # index 5 -> remaining loaded bullets in the gun
         # index 6 -> gun rotation
         # index 7 -> x position of the controlled enemy
-        # index 8 -> y position of the top enemy
-        # index 9 -> y position of the middle enemy
-        # index 10 -> y position of the bottom enemy
-        # index 11 -> x position of vertical center of the first pipe (distance between pipes is always the same)
-        # index 12 -> y position of vertical center of the first pipe
-        # index 13 -> y position of vertical center of the second pipe
-        # index 14 -> y position of vertical center of the third pipe
-        # index 15 -> y position of vertical center of the fourth pipe
-        # TODO x and y positions of 10 bullets (previous_front_position(). Bullet positions should be fixed. When the bullet despawns, put placeholder values that would never happen.
-        #  For example if we have [pos1, pos2, empty_ph, pos4, empty_ph], and the agent fires another bullet, we put it in the first empty_ph slot we find.
-        #  If all slots are filled replace the oldest bullet.
-        #  If bullet hits the floor and stop is called, it should be excluded from the observation space.
-        # index 16 ->
-        # index 17 ->
-        # index 18 ->
-        # index 19 ->
-        # index 20 ->
-        # index 21 ->
+        # index 8 -> flag - does the top enemy exist (0: no, 1: yes)
+        # index 9 -> y position of the top enemy
+        # index 10 -> flag - does the middle enemy exist (0: no, 1: yes)
+        # index 11 -> y position of the middle enemy
+        # index 12 -> flag - does the bottom enemy exist (0: no, 1: yes)
+        # index 13 -> y position of the bottom enemy
+        # index 14 -> x position of vertical center of the first pipe (distance between pipes is always the same)
+        # index 15 -> y position of vertical center of the first pipe
+        # index 16 -> y position of vertical center of the second pipe
+        # index 17 -> y position of vertical center of the third pipe
+        # index 18 -> y position of vertical center of the fourth pipe
+        #
+        # Up - bullet gets removed off-screen => 0 + max height of bullet = -24 ~ -20 (can't be fired at 90 angle)
+        # Down - bullet gets stopped when hitting floor => 797
+        # Left - bullet before -256 is useless as it can't bounce back => -256
+        # Right - bullet after 1144 is useless as it can't bounce back => 1144 (1144, because that's the first point
+        #  where CloudSkimmers can fire from, if the x is larger, that means the bullet bounced and flew past them)
+        # index 19 -> flag - does b1 exist (0: no, 1: yes)
+        # index 20 -> b1.front_pos.x
+        # index 21 -> b1.front_pos.y
+        # index 22 -> flag - does b2 exist (0: no, 1: yes)
+        # index 23 -> b2.front_pos.x
+        # index 24 -> b2.front_pos.y
+        # index 25 -> ...
 
         observation_space = gym.spaces.Box(
-            #                      0    1  2  3   4  5    6     7    8    9   10    11   12   13   14   15
-            low=np.array([-120, -17, 0, 0, 0,  0, -60,  449, 457, 335, 207, -266, 272, 272, 272, 272, ], dtype=np.float32),
-            high=np.array([755,  21, 2, 1, 1, 30,  60, 1900, 493, 365, 243,  117, 528, 528, 528, 528, ], dtype=np.float32),
+            #                0    1  2  3  4  5    6    7   8   9  10  11  12   13    14      15 - 18    19   20   21 - 48
+            low=np.array([-120, -17, 0, 0, 0, 0, -60, 449,  0, 457, 0, 335, 0, 207, -265] + [272] * 4 + [0, -256, -20] * 10, dtype=np.float32),
+            high=np.array([755,  21, 2, 1, 1, 30, 60, 1900, 1, 493, 1, 365, 1, 243,  118] + [528] * 4 + [1, 1144, 797] * 10, dtype=np.float32),
             dtype=np.float32
         )
 
@@ -172,14 +180,13 @@ class EnemyCloudskimmerEnv(BaseEnv):
                 False)
 
     def get_state(self):
-        # initialize an array of length 3 with placeholder values that can never happen
-        enemy_y_positions = [0, 0, 0]
+        enemy_info = [0, 0] * 3  # 3 enemies max, flag whether that enemy exists, and its y position
         if self.enemy_manager.spawned_enemy_groups:
             for enemy in self.enemy_manager.spawned_enemy_groups[0].members:
                 # get the index the enemy had in the list when the episode started
                 enemy_index = self.enemy_index_dict[enemy]
-                # put the enemy's position in the array at that index
-                enemy_y_positions[enemy_index] = enemy.y
+                enemy_info[enemy_index    ] = 1
+                enemy_info[enemy_index + 1] = enemy.y
 
         first_pipe_center_x_position = self.pipes.upper[0].x + self.pipes.upper[0].w // 2
         pipe_center_y_positions = []
@@ -188,7 +195,6 @@ class EnemyCloudskimmerEnv(BaseEnv):
             pipe_center_y_positions.append(pipe_center[1])
 
         gun: Gun = self.controlled_enemy.gun
-        bullet_positions = self.get_bullet_positions(gun)
 
         game_state = np.array(
             [self.player.y,
@@ -199,10 +205,10 @@ class EnemyCloudskimmerEnv(BaseEnv):
              gun.quantity,  # remaining loaded bullets in the gun
              gun.rotation,
              self.controlled_enemy.x] +
-            enemy_y_positions +
+            enemy_info +
             [first_pipe_center_x_position] +
-            pipe_center_y_positions,
-            # bullet_positions,  # TODO bullet positions
+            pipe_center_y_positions +
+            self.get_bullet_info(gun),
             dtype=np.float32)
 
         return game_state
@@ -249,10 +255,6 @@ class EnemyCloudskimmerEnv(BaseEnv):
         #   if bullet.self.hit_entity == 'enemy':
         #       reward -= 100
 
-        # get gun object
-        CURRENTLY_TRAINED_CLOUDSKIMMER = 1  # 0, 1 or 2
-        # member = self.enemy_manager.spawned_enemy_groups[0].members[CURRENTLY_TRAINED_CLOUDSKIMMER]
-
         return reward
 
     def handle_basic_flappy(self):
@@ -261,54 +263,90 @@ class EnemyCloudskimmerEnv(BaseEnv):
         if flappy_action == 1:
             self.player.flap()
 
-    def get_bullet_positions(self, gun):
+    def get_bullet_info(self, gun):
+        """
+        Get information about bullets fired by the gun.
+        The information is stored in a list of size 30, where each bullet takes up 3 slots.
+        First slot is a flag whether that bullet exists or not, second and third are x and y position (curr_bullet_pos)
+        of the bullet. Bullets should always be put in the same slot in bullet_info as long as they exist.
+        If we have [pos1, pos2, empty_ph, pos4, empty_ph], and the agent fires another bullet,
+        we put it in the first empty_ph slot we find. If all slots are filled we replace the oldest bullet.
+        If bullet isn't useful, it shouldn't be included. For example if it hit the floor and got stopped.
+
+        :param gun: Gun object that fired the bullets
+        :return: List of bullet info (0: does the bullet exist, 1: bullet x position, 2: bullet y position) * 10 bullets
+        """
+
         new_bullet = None
-        # initialize an array of length 20 with placeholder values that can never happen
-        # bullet_positions = [0] * 20  # 10 bullets max, x and y position for each  # TODO figure out what the placeholders values should be - probably not 0!
-        bullet_positions = [0] * 6  # TODO remove and use line above (just for testing)
+        bullet_info = [0, 0, 0] * 10  # 10 bullets max, flag whether that bullet exists, and its x and y position
 
         # update the array with bullet positions of previously fired bullets (if they still exist)
         for bullet in gun.shot_bullets:
-            # exclude bullets that hit the floor
-            if bullet.stopped:
+            if not self.is_bullet_info_useful(bullet):
                 continue
 
             if bullet not in self.bullet_index_dict:
-                if bullet.frame == 0:
+                if bullet.frame == 0:  # if bullet.frame > 0, it means that bullet's slot was taken by a newer bullet
                     new_bullet = bullet
                 continue
 
             bullet_index = self.bullet_index_dict[bullet]
-            bullet_positions[bullet_index] = bullet.x
-            bullet_positions[bullet_index + 1] = bullet.y
+            bullet_info[bullet_index    ] = 1
+            bullet_info[bullet_index + 1] = bullet.curr_front_pos.x  # bullet.x
+            bullet_info[bullet_index + 2] = bullet.curr_front_pos.y  # bullet.y
 
         # if a new bullet was fired, put it in the first free slot or replace the oldest bullet if all slots are filled
         if new_bullet:
             try:  # replace the first free slot
-                replace_bullet_index = bullet_positions.index(0)
+                replace_bullet_index = bullet_info.index(0)
             # (this exception will be thrown very rarely, if ever, as it's very unlikely that all slots are filled)
             except ValueError:  # replace the oldest bullet
                 oldest_bullet = None
                 oldest_bullet_age = 0
                 for bullet in gun.shot_bullets:
-                    if bullet.stopped:
+                    if not self.is_bullet_info_useful(bullet):
                         continue
-                    print(bullet.frame)
+
                     if bullet.frame > oldest_bullet_age and bullet not in self.replaced_bullets:
                         oldest_bullet_age = bullet.frame
                         oldest_bullet = bullet
+
                 self.replaced_bullets.add(oldest_bullet)
                 replace_bullet_index = self.bullet_index_dict[oldest_bullet]
                 del self.bullet_index_dict[oldest_bullet]
-                print("age:", oldest_bullet_age, "index:", replace_bullet_index)
-                print("BULLETS:", len(gun.shot_bullets), gun.shot_bullets)
-                print("REPLACED:", len(self.replaced_bullets), self.replaced_bullets)
-                for b in self.replaced_bullets:
-                    print("pos:", b.x, b.y, b.frame)
+
+                print("################\nage:", oldest_bullet_age, "index:", replace_bullet_index)
 
             self.bullet_index_dict[new_bullet] = replace_bullet_index
-            bullet_positions[replace_bullet_index] = new_bullet.x
-            bullet_positions[replace_bullet_index + 1] = new_bullet.y
+            bullet_info[replace_bullet_index    ] = 1
+            bullet_info[replace_bullet_index + 1] = new_bullet.curr_front_pos.x  # new_bullet.x
+            bullet_info[replace_bullet_index + 2] = new_bullet.curr_front_pos.y  # new_bullet.y
 
-        print(bullet_positions)
-        return bullet_positions
+        print(bullet_info)
+        return bullet_info
+
+    def is_bullet_info_useful(self, bullet):
+        """
+        Check if the bullet is useful for the observation space.
+
+        Up: bullet is deleted after flying off-screen on top, no need to handle it here
+        Down: bullet hit the floor and got stopped
+        Right: bullet was flying to the left, bounced back and flew past all the CloudSkimmers to the right
+        Left: bullet was flying to the left, bounced off the top/bottom side of pipe and flew past the player to the left
+        """
+        # down - bullet hit the floor
+        if bullet.stopped:
+            print("STOPPED:", bullet.x, bullet.curr_front_pos.x)
+            return False
+
+        # right - bullet flew past CloudSkimmers and can't return
+        if bullet.bounced and bullet.x > (max(bullet.enemies, key=lambda enemy: enemy.x).x + bullet.enemies[0].w):
+            print("RIGHT:", bullet.x, bullet.curr_front_pos.x)
+            return False
+
+        # left - bullet flew past the player and can't return
+        if bullet.bounced and bullet.velocity.x < 0 and (bullet.x + bullet.w) < self.player.x:
+            print("LEFT:", bullet.x, bullet.curr_front_pos.x)
+            return False
+
+        return True
