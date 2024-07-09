@@ -137,7 +137,6 @@ class FlappyBird:
             inventory_slot = self.inventory.inventory_slots[0]
             if inventory_slot.item.name != ItemName.EMPTY and inventory_slot.item.shot_bullets:
                 print([(b.x, b.y) for b in inventory_slot.item.shot_bullets])
-            print(self.player.y, self.floor.x)
             print("END")
             print()
 

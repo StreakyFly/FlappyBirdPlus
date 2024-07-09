@@ -34,6 +34,8 @@ class EnemyManager:
 
     def spawn_cloudskimmer(self):
         # TODO play sound effect when spawning enemy, for this one some ghost sound effect
+
+        # Warning! Changing the x and y position will require additional training of the CloudSkimmer agent.
         self.spawned_enemy_groups.append(CloudSkimmerGroup(self.config, x=1000, y=350))
 
     def spawn_aerothief(self):

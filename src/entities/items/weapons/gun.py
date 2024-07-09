@@ -15,6 +15,9 @@ be pushed back and up incrementally, reflecting a more realistic behavior.
 """
 
 
+# TODO reload animation
+
+
 class Gun(Item):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -65,9 +68,6 @@ class Gun(Item):
         self.set_recoil(-self.recoil_distance, self.recoil_duration, -self.recoil_rotation)
 
     def tick(self) -> None:
-        if self.total_cooldown:
-            print("interaction in progress?", self.interaction_in_progress, self.remaining_cooldown, self.total_cooldown)
-
         if self.interaction_in_progress:
             if self.remaining_shoot_cooldown > 0:
                 self.remaining_shoot_cooldown -= 1

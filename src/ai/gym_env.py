@@ -23,7 +23,7 @@ class GymEnv(gym.Env):
         # if reward > 5:
         #     print(reward)
 
-        observation = np.clip(observation, self.observation_space.low, self.observation_space.high)  # TODO should we clip or not?
+        observation = np.clip(observation, self.observation_space.low, self.observation_space.high)
 
         return observation, reward, terminated, truncated, info
 

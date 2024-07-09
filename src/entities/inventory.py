@@ -18,7 +18,7 @@ class InventorySlot(Entity):
     def tick(self) -> None:
         self.item.tick()
         super().tick()
-        self.item.decrement_cooldown()
+        self.item.tick_cooldown()
 
     def draw(self) -> None:
         blit_list = [

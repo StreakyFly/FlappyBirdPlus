@@ -99,7 +99,7 @@ class Item(Entity):
         self.total_cooldown = cooldown
         self.remaining_cooldown = cooldown
 
-    def decrement_cooldown(self):
+    def tick_cooldown(self):
         """
         Decrements the remaining cooldown by 1.
         This needs to be called in the subclass's tick() method.

@@ -8,6 +8,11 @@ from ..items import ItemName, ItemInitializer, Item, Gun
 from .enemy import Enemy, EnemyGroup
 
 
+# TODO ghost's eyes should follow the player (depending on gun's rotation or player's position?).
+# TODO ghosts should spawn in random colors. As they get damaged, they could change color or become more transparent.
+#  When they die, the weapon should fall to the ground and the ghost should disappear.
+# TODO ghosts need to be better shaded, with more detail. Possibly even have a subtle sprite animation.
+
 class CloudSkimmer(Enemy):
     def __init__(self, config: GameConfig, *args, **kwargs):
         super().__init__(config, Animation(config.images.enemies['enemy-cloudskimmer']), *args, **kwargs)
@@ -21,10 +26,10 @@ class CloudSkimmer(Enemy):
         self.frequency = 0.15  # oscillation frequency
         self.sin_y = 0  # sin wave vertical position
 
-        self.set_max_hp(300) # 300
+        self.set_max_hp(300)
 
         self.gun: Union[Gun, Item] = None
-        self.gun_rotation = 0
+        self.gun_rotation = 10  # 0
         # self.gun_rotation = random.randint(-60, 60)  # TODO remove duh
         self.gun_rotation_speed = 6
 
@@ -70,7 +75,7 @@ class CloudSkimmer(Enemy):
         #     self.gun_rotation -= self.gun_rotation_speed
         # elif action == 2:
         #     self.gun_rotation += self.gun_rotation_speed
-
+        #
         # self.gun_rotation = max(min(self.gun_rotation, 60), -60)  # ensure rotation stays within bounds
         pass
 
