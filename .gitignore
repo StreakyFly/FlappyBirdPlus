@@ -5,7 +5,11 @@ EXAMPLES
 
 # model training data (I'll delete most of it, only keep da best/interesting ones) and push them later
 ai-models/DQN
-ai-models/PPO/basic_flappy/run*
+ai-models/**/run*
 
 
 __pycache__
+
+
+Pycharm stuff
+.idea/**

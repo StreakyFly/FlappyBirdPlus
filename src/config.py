@@ -6,9 +6,9 @@ from .ai.environments.env_types import EnvType
 
 class Config:
     fps_cap = 30  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
-    debug = True  # <-- change if you want to enable debug mode
+    debug = False  # <-- change if you want to enable debug mode
     model = 'PPO'  # <-- change the model here (DQN or PPO)
-    mode = Mode.TEST_ENV  # <-- change the mode here
+    mode = Mode.TRAIN  # <-- change the mode here
     env_type = EnvType.ENEMY_CLOUDSKIMMER  # <-- change environment type here
     run_id = None #"run_20240617_182959"  # <-- change the run id here (can be None in some cases)
 

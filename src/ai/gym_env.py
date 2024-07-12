@@ -6,13 +6,17 @@ from ..utils import printc
 
 
 class GymEnv(gym.Env):
-    metadata = {'render_modes': ['human']}  # this probably won't be used as rendering is handled by the game itself
+    metadata = {"render_modes": ["human"]}  # this probably won't be used as rendering is handled by the game env itself
 
     def __init__(self, game_env: BaseEnv):
         super().__init__()
+        # self.game_env.init_env()  # commented this out because I added it in base_env.py
 
         self.game_env = game_env
-        # self.game_env.init_env()  # commented this out because I added it in base_env.py
+
+        # self.requires_action_masking = getattr(self.game_env, 'requires_action_masking', False)
+        # self.action_masks = None
+        # https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/issues/49
 
         self.action_space, self.observation_space = self.game_env.get_action_and_observation_space()
 
@@ -37,6 +41,14 @@ class GymEnv(gym.Env):
         info = {}
 
         return game_state, info
+
+    def action_masks(self):
+        """
+        This method must be named "action_masks".
+        In order to use SubprocVecEnv with MaskablePPO, you must implement the action_masks inside the environment.
+        https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html
+        """
+        return self.game_env.get_action_masks()
 
     def render(self):
         # rendering is handled by the game itself

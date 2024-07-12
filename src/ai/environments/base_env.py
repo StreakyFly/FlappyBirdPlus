@@ -28,6 +28,10 @@ class BaseEnv(FlappyBird):
         self.player.set_mode(PlayerMode.NORMAL)
 
     def get_action_and_observation_space(self):
+        """
+        Get the action and observation space of the game.
+        :return: action space, observation space
+        """
         NotImplementedError("set_action_and_observation_space() method must be implemented in the subclass")
 
     def perform_step(self, action: int | list[int]):
@@ -44,6 +48,16 @@ class BaseEnv(FlappyBird):
         :return: game state
         """
         NotImplementedError("get_state() method must be implemented in the subclass")
+
+    def get_action_masks(self):
+        """
+        Get the action masks for the current game state.
+        Each mask corresponds to whether an action is feasible (1) or not (0).
+
+        This method is required ONLY if requires_action_masking is True.
+        :return: np.ndarray: A numpy array of shape (num_actions,) where each element is either 0 or 1.
+        """
+        NotImplementedError("get_action_masks() method must be implemented in the subclass")
 
     def calculate_reward(self, *args):
         """

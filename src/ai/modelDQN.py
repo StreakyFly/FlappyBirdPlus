@@ -10,7 +10,7 @@ from .env_manager import EnvManager
 # Dumbass me learnt that DQN doesn't work with MultiDiscrete observation spaces after training and perfecting
 # the (almost) only agent that doesn't need MultiDiscrete OS.
 
-class AgentDQN:
+class ModelDQN:
     EXTRA_NAME = "7500000_steps"
 
     MODEL_NAME = 'flappy_bird'

@@ -1,0 +1,29 @@
+https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/issues/49
+
+Possible fix, not properly tested yet:
+
+in utils.py modify get_action_masks() method:
+
+"""
+EXPECTED_METHOD_NAME = "action_masks"
+
+
+def get_action_masks(env: GymEnv) -> np.ndarray:
+    """
+    Checks whether gym env exposes a method returning invalid action masks
+
+    :param env: the Gym environment to get masks from
+    :return: A numpy array of the masks
+    """
+
+    if isinstance(env, VecEnv):
+        # BEFORE -> return np.stack(env.env_method(EXPECTED_METHOD_NAME))
+        print("stable_baselines3 utils.py:", env.unwrapped.get_attr(EXPECTED_METHOD_NAME))
+        return np.stack(env.unwrapped.get_attr(EXPECTED_METHOD_NAME))
+    else:
+        return getattr(env, EXPECTED_METHOD_NAME)()
+"""
+
+In gym_env.py comment action_masks() method.
+Ig gym_env.py and enemy_cloudskimmer_env.py() init method, add self.action_masks: list | np.ndarray attribute,
+that needs to be updated every step/frame.

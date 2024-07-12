@@ -32,6 +32,8 @@ It ensures that during deployment, the model can operate effectively even when b
 
 
 class EnemyCloudskimmerEnv(BaseEnv):
+    requires_action_masking = True
+
     def __init__(self):
         super().__init__()
         # self.basic_flappy_controller = BasicFlappyModelController()
@@ -63,57 +65,53 @@ class EnemyCloudskimmerEnv(BaseEnv):
         self.controlled_enemy_id = np.random.randint(0, 3)
         self.controlled_enemy = self.enemy_manager.spawned_enemy_groups[0].members[self.controlled_enemy_id]
 
-    def get_action_and_observation_space(self):
+    def get_action_and_observation_space(self) -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Box]:
         # index 0 -> 0: do nothing, 1: fire, 2: reload
         # index 1 -> 0: do nothing, 1: rotate up, 2: rotate down
         action_space = gym.spaces.MultiDiscrete([3, 3])
 
-        # TODO if you decide to change cloudskimmers movement so they aren't "linked"
+        # TODO if you decide to change CloudSkimmer's movement so they aren't "linked"
         #  add X positions of all cloud skimmers, not just the controlled one!
 
-        # TODO WARNING! You thought of putting placeholder values when entity like cloudskimmer or bullet is missing
-        #  but you fool forgot you clip and normalize the values, meaning putting a placeholder value would not be
-        #  clear enough that the entity is missing, as those values would still end up as valid values/positions.
-        # - I decided to add flags for each entity that can be missing.
+        # TODO removed gun shoot cooldown and reload cooldown from observation space,
+        #  as they're now handled by the action masks
 
         # index 0 -> player y position
         # index 1 -> player y velocity
         # index 2 -> which enemy is being controlled (0: top, 1: middle, 2: bottom);
         #             gun type can be derived from this as guns are always in the same order
-        # index 3 -> is the gun on shoot cooldown (would providing exact shoot cooldown time be better?)
-        # index 4 -> in the gun on reload cooldown (would providing exact reload cooldown time be better?)
-        # index 5 -> remaining loaded bullets in the gun
-        # index 6 -> gun rotation
-        # index 7 -> x position of the controlled enemy
-        # index 8 -> flag - does the top enemy exist (0: no, 1: yes)
-        # index 9 -> y position of the top enemy
-        # index 10 -> flag - does the middle enemy exist (0: no, 1: yes)
-        # index 11 -> y position of the middle enemy
-        # index 12 -> flag - does the bottom enemy exist (0: no, 1: yes)
-        # index 13 -> y position of the bottom enemy
-        # index 14 -> x position of vertical center of the first pipe (distance between pipes is always the same)
-        # index 15 -> y position of vertical center of the first pipe
-        # index 16 -> y position of vertical center of the second pipe
-        # index 17 -> y position of vertical center of the third pipe
-        # index 18 -> y position of vertical center of the fourth pipe
+        # index 3 -> remaining loaded bullets in the gun
+        # index 4 -> gun rotation
+        # index 5 -> x position of the controlled enemy
+        # index 6 -> flag - does the top enemy exist (0: no, 1: yes)
+        # index 7 -> y position of the top enemy
+        # index 8 -> flag - does the middle enemy exist (0: no, 1: yes)
+        # index 9 -> y position of the middle enemy
+        # index 10 -> flag - does the bottom enemy exist (0: no, 1: yes)
+        # index 11 -> y position of the bottom enemy
+        # index 12 -> x position of vertical center of the first pipe (distance between pipes is always the same)
+        # index 13 -> y position of vertical center of the first pipe
+        # index 14 -> y position of vertical center of the second pipe
+        # index 15 -> y position of vertical center of the third pipe
+        # index 16 -> y position of vertical center of the fourth pipe
         #
         # Up - bullet gets removed off-screen => 0 + max height of bullet = -24 ~ -20 (can't be fired at 90 angle)
         # Down - bullet gets stopped when hitting floor => 797
         # Left - bullet before -256 is useless as it can't bounce back => -256
         # Right - bullet after 1144 is useless as it can't bounce back => 1144 (1144, because that's the first point
         #  where CloudSkimmers can fire from, if the x is larger, that means the bullet bounced and flew past them)
-        # index 19 -> flag - does b1 exist (0: no, 1: yes)
-        # index 20 -> b1.front_pos.x
-        # index 21 -> b1.front_pos.y
-        # index 22 -> flag - does b2 exist (0: no, 1: yes)
-        # index 23 -> b2.front_pos.x
-        # index 24 -> b2.front_pos.y
-        # index 25 -> ...
+        # index 17 -> flag - does b1 exist (0: no, 1: yes)
+        # index 18 -> b1.front_pos.x
+        # index 19 -> b1.front_pos.y
+        # index 20 -> flag - does b2 exist (0: no, 1: yes)
+        # index 21 -> b2.front_pos.x
+        # index 22 -> b2.front_pos.y
+        # index 23 -> ...
 
         observation_space = gym.spaces.Box(
-            #                0    1  2  3  4  5    6    7   8   9  10  11  12   13    14      15 - 18    19   20   21 - 48
-            low=np.array([-120, -17, 0, 0, 0, 0, -60, 449,  0, 457, 0, 335, 0, 207, -265] + [272] * 4 + [0, -256, -20] * 10, dtype=np.float32),
-            high=np.array([755,  21, 2, 1, 1, 30, 60, 1900, 1, 493, 1, 365, 1, 243,  118] + [528] * 4 + [1, 1144, 797] * 10, dtype=np.float32),
+            #                0    1  2  3    4    5   6    7  8    9  10  11    12      13 - 16    17   18   19 - 46
+            low=np.array([-120, -17, 0, 0, -60, 449,  0, 457, 0, 335, 0, 207, -265] + [272] * 4 + [0, -256, -20] * 10, dtype=np.float32),
+            high=np.array([755,  21, 2, 30, 60, 1900, 1, 493, 1, 365, 1, 243,  118] + [528] * 4 + [1, 1144, 797] * 10, dtype=np.float32),
             dtype=np.float32
         )
 
@@ -200,8 +198,8 @@ class EnemyCloudskimmerEnv(BaseEnv):
             [self.player.y,
              self.player.vel_y,
              self.controlled_enemy_id,
-             int(bool(gun.remaining_shoot_cooldown)),  # is the gun on shoot cooldown (1) or not (0)
-             int(bool(gun.remaining_reload_cooldown)),  # is the gun on reload cooldown (1) or not (0)
+             # int(bool(gun.remaining_shoot_cooldown)),  # is the gun on shoot cooldown (1) or not (0)
+             # int(bool(gun.remaining_reload_cooldown)),  # is the gun on reload cooldown (1) or not (0)
              gun.quantity,  # remaining loaded bullets in the gun
              gun.rotation,
              self.controlled_enemy.x] +
@@ -213,12 +211,32 @@ class EnemyCloudskimmerEnv(BaseEnv):
 
         return game_state
 
+    def get_action_masks(self) -> np.ndarray:
+        # initialize masks for each action type, all actions are initially available
+        fire_reload_masks = np.ones(3, dtype=int)  # [do nothing, fire, reload]
+        rotation_masks = np.ones(3, dtype=int)  # [do nothing, rotate up, rotate down]
+
+        gun: Gun = self.controlled_enemy.gun
+
+        # gun can't be fired if it's on shoot cooldown
+        if gun.remaining_shoot_cooldown > 0:
+            fire_reload_masks[1] = 0  # fire action is at index 1
+
+        # gun can't be neither fired nor reloaded if it's on reload cooldown
+        if gun.remaining_reload_cooldown > 0:
+            fire_reload_masks[1] = 0  # fire action is at index 1
+            fire_reload_masks[2] = 0  # reload action is at index 2
+
+        action_masks = np.array([fire_reload_masks, rotation_masks])
+        print("MASKS:", action_masks)
+        return action_masks
+
     def calculate_reward(self, action) -> int:
+        reward = 0
+
         # TODO I think we can get all this info within the method, we don't have to pass it as an argument, do we?
         #  add boolean parameter something like shot_himself, if agent shoots itself, it should get punished
         #  add boolean parameter hit_pipe, so the agent gets a tiny reward if it hits a pipe
-
-        reward = 0
 
         # TODO implement this method
         #  Agent should be rewarded for:
