@@ -204,8 +204,8 @@ class Gun(Item):
         self.quantity -= 1
         self.remaining_shoot_cooldown = self.shoot_cooldown
         self.set_cooldown(self.shoot_cooldown)
-        self.spawn_bullet()
         self.start_shoot_animation()
+        self.spawn_bullet()
         # TODO play shooting sound
 
         if self.quantity == 0:
@@ -273,6 +273,7 @@ class Gun(Item):
         self.remaining_recoil_duration = self.recoil_duration
         self.animation_offset = pygame.Vector2(0, 0)
         self.animation_rotation = 0
+        self.update_transform()  # so the animation offset & rotation are immediately updated (reset to 0)
         self.shoot_animation()  # immediately apply the first frame of the animation
 
     def shoot_animation(self) -> None:
