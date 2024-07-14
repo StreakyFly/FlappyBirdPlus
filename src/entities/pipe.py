@@ -59,14 +59,19 @@ class Pipes(Entity):
         self.upper = []
         self.lower = []
 
-        pipe_x = random.randint(-330, 53)  # between -330 and 52.5 (possible x position of the first pipe mid-game)
-        pipe_x = (pipe_x // 7.5) * 7.5  # ensures pipe_x is divisible by 7.5 as this is always the case when
-        # pipes spawned by spawn_initial_pipes() move
-        self.spawn_new_pipes(pipe_x)
+        # possible x position of the first pipe mid-game: -330 to 52.5
+        self.spawn_new_pipes(self.get_random_number_divisible_by_7_5(-330, 52.5))
 
         for i in range(3):
             pipe_x = self.upper[-1].x + self.horizontal_gap
             self.spawn_new_pipes(pipe_x)
+
+    @staticmethod
+    def get_random_number_divisible_by_7_5(min_value: int | float, max_value: int | float) -> float:
+        steps = (max_value - min_value) / 7.5
+        random_step = random.randint(0, int(steps))
+        random_number = min_value + (random_step * 7.5)
+        return random_number
 
     def manage_pipes(self):
         extra = self.horizontal_gap * 0.5  # so the bullets can bounce off the pipe a bit longer after it disappears
@@ -91,7 +96,7 @@ class Pipes(Entity):
         # at what y does the gap start at top (gap_y is top line, gap_y + self.pipe_gap is bottom line)
         upper_pipe_bottom_y = random.randrange(0, int(base_y * 0.6 - self.vertical_gap)) + int(base_y * 0.2)
         pipe_height = self.config.images.pipe[0].get_height()
-        pipe_x = x or self.config.window.width + 10
+        pipe_x = x if x is not None else self.config.window.width + 10
 
         upper_pipe = Pipe(self.config, self.config.images.pipe[0], pipe_x, upper_pipe_bottom_y - pipe_height)
         lower_pipe = Pipe(self.config, self.config.images.pipe[1], pipe_x, upper_pipe_bottom_y + self.vertical_gap)
