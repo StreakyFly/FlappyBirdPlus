@@ -11,7 +11,8 @@ class BasicFlappyEnv(BaseEnv):
     def __init__(self):
         super().__init__()
 
-    def get_action_and_observation_space(self):
+    @staticmethod
+    def get_action_and_observation_space():
         # 0: do nothing, 1: flap the wings
         action_space = gym.spaces.Discrete(2)
 
@@ -27,6 +28,13 @@ class BasicFlappyEnv(BaseEnv):
         )
 
         return action_space, observation_space
+
+    @staticmethod
+    def get_observation_space_clip_modes() -> dict[str, int]:
+        observation_space_clip_modes = {
+            'box': 1
+        }
+        return observation_space_clip_modes
 
     def perform_step(self, action):
         if action == 1:
@@ -58,7 +66,8 @@ class BasicFlappyEnv(BaseEnv):
         return (self.get_state(),
                 self.calculate_reward(action=action, died=terminated, passed_pipe=passed_pipe),
                 terminated,
-                False)
+                False,
+                {})
 
     def get_state(self):
         return get_state(self.player, self.pipes, self.get_pipe_pair_center)

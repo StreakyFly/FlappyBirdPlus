@@ -27,12 +27,30 @@ class BaseEnv(FlappyBird):
         self.gsm.set_state(GameState.PLAY)
         self.player.set_mode(PlayerMode.NORMAL)
 
-    def get_action_and_observation_space(self):
+    @staticmethod
+    def get_action_and_observation_space():
         """
-        Get the action and observation space of the game.
+        Get the action and observation space of the environment.
         :return: action space, observation space
         """
         NotImplementedError("set_action_and_observation_space() method must be implemented in the subclass")
+
+    @staticmethod
+    def get_observation_space_clip_modes():
+        """
+        Get the observation space clipping modes for each part of the observation space.
+
+        Keys:
+        - if the observation space is a Box space, the key should be 'box'
+        - if the observation space is a Dict space, the keys should be the same as the keys in the Dict space
+        Modes (values):
+        -1: raise an error if the observation is out of bounds;
+        0: do nothing;
+        1: clip the observation to the valid range of the observation space;
+
+        :return: a dictionary containing the clipping modes for each part of the observation space
+        """
+        NotImplementedError("get_observation_space_clip_modes() method must be implemented in the subclass")
 
     def perform_step(self, action: int | list[int]):
         """

@@ -5,13 +5,16 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecNormalize, VecEnv, SubprocVecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
-from stable_baselines3.common.evaluation import evaluate_policy as evaluate_policy
+from stable_baselines3.common.evaluation import evaluate_policy as normal_evaluate_policy
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
 from sb3_contrib.common.maskable.evaluation import evaluate_policy as maskable_evaluate_policy
 
+from gymnasium import spaces
+
 from ..utils import printc
 from .env_manager import EnvManager
+from .custom_vecnormalize import BoxOnlyVecNormalize
 
 
 # TODO Action masking hasn't been tested yet, so it's possible that it hasn't been implemented properly.
@@ -30,7 +33,6 @@ class ModelPPO:
         env_class = EnvManager(self.env_type).get_env_class()
         self.use_action_masking = getattr(env_class, 'requires_action_masking', False)
         self.model_cls = MaskablePPO if self.use_action_masking else PPO
-        self.evaluate_policy = maskable_evaluate_policy if self.use_action_masking else evaluate_policy
 
         self.tensorboard_dir = None
         self.run_dir = None
@@ -57,12 +59,13 @@ class ModelPPO:
     def train(self, norm_env=None, model=None, continue_training: bool = False) -> None:
         if norm_env is None:
             env = self.create_environments(n_envs=6, use_subproc_vec_env=True)
-            # wrap the environment in a VecNormalize object
-            norm_env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0)
+            # wrap the environment with VecNormalize, which normalizes the observations and rewards
+            norm_env = BoxOnlyVecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0)
 
         if model is None:
-            # create the model, using the normalized environment; use cpu as it's faster than gpu in this case
-            model = self.model_cls('MlpPolicy', norm_env, verbose=1, device='cpu',
+            policy = 'MultiInputPolicy' if isinstance(norm_env.observation_space, spaces.Dict) else 'MlpPolicy'
+            # create the model using the normalized environment; use cpu as it's faster than gpu in this case
+            model = self.model_cls(policy, norm_env, verbose=1, device='cpu',
                                    tensorboard_log=self.tensorboard_dir,
                                    learning_rate=0.0002,
                                    n_steps=2048,
@@ -106,7 +109,8 @@ class ModelPPO:
         obs = norm_env.reset()
         while True:
             action, _ = model.predict(obs, deterministic=True)
-            # TODO Is action_masks argument necessary? I guess I'll find out.
+            # TODO Is action_masks argument necessary? I don't think so, but they might increase agent's
+            #  performance depending on how the agent was trained.
             #  https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html
             # action, _ = model.predict(obs, deterministic=True, action_masks=?)
             obs, _, done, _ = norm_env.step(action)
@@ -121,7 +125,8 @@ class ModelPPO:
         printc("WARNING! Each episode ends after termination. "
                "If termination never happens, the episode will never end.", color="yellow")
 
-        mean_reward, std_reward = self.evaluate_policy(model, model.get_env(), n_eval_episodes=10,
+        evaluate_policy = maskable_evaluate_policy if self.use_action_masking else normal_evaluate_policy
+        mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10,
                                                        deterministic=True, reward_threshold=None)
         print(f"mean_reward: {mean_reward: .2f} +/- {std_reward: .2f}")
         norm_env.close()
@@ -136,9 +141,9 @@ class ModelPPO:
 
         # TODO figure out how to fix this
         if use_subproc_vec_env and self.model_cls == MaskablePPO:
-            printc("\n\nWARNING! MaskablePPO doesn't work with SubprocVecEnv (yet):\n"
+            printc("\nWARNING! MaskablePPO doesn't work with SubprocVecEnv (yet):\n"
                    "https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/issues/49", color="yellow")
-            printc("Changing use_subproc_vec_env to False!\n\n", color="red")
+            printc("Changing use_subproc_vec_env to False!\n", color="red")
             use_subproc_vec_env = False
 
         vec_env_cls = SubprocVecEnv if use_subproc_vec_env else None
