@@ -53,23 +53,43 @@ def rotate_on_pivot(image, angle, pivot, origin):
     return surf, rect
 
 
-def printc(*message, color="blue"):
+def printc(*message, color="default", styles=None, end="\n"):
     """
     Print a message in color.
     :param message: The message to be printed.
     :param color: The color in which the message should be printed.
+    :param styles: A list of styles to apply to the message.
+    :param end: The string to print at the end.
     :return: None
     """
     color_codes = {
+        "default": "\033[39m",
+        "gray": "\033[37m",
+        "black": "\033[90m",
         "red": "\033[91m",
         "green": "\033[92m",
         "yellow": "\033[93m",
         "blue": "\033[94m",
-        "pink": "\033[95m"
+        "pink": "\033[95m",
+        "cyan": "\033[96m",
+        "white": "\033[97m",
     }
-    end_color = "\033[0m"
+    style_codes = {
+        "bold": "\033[1m",
+        "dim": "\033[2m",
+        "italic": "\033[3m",
+        "underline": "\033[4m",
+        "blink": "\033[5m",
+        "reverse": "\033[7m",
+    }
+    reset_all_code = "\033[0m"
 
-    if color in color_codes:
-        print(*[f"{color_codes[color]}{msg}{end_color}" for msg in message])
-    else:
-        raise Exception("Invalid color specified. Options: [red, yellow, green, blue, purple]")
+    if color not in color_codes:
+        raise Exception(f"Invalid color specified. Options: {list(color_codes.keys())}")
+    if styles is not None:
+        for style in styles:
+            if style not in style_codes:
+                raise Exception(f"Invalid style specified. Options: {list(style_codes.keys())}")
+
+    style_str = "".join([style_codes[style] for style in styles]) if styles is not None else ""
+    print(*[f"{color_codes[color]}{style_str}{msg}{reset_all_code}" for msg in message], end=end)

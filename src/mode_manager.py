@@ -64,17 +64,31 @@ MODES = {
 }
 
 
+def print_option_value_pair(option, value, color='default'):
+    printc(option, color=color, end=' ')
+    printc(value, color=color, styles=['bold'])
+
+
 def print_config():
-    printc(f"Environment type: {Config.env_type}", color='blue')
-    printc(f"Options: {Config.options}", color='green')
-    printc(f"Model: {Config.model}", color='blue')
+    print_option_value_pair("Mode:", Config.mode.name, color='green')
+    print_option_value_pair("Environment type:", Config.env_type.name, color='blue')
+
+    printc("Options:", color='yellow', end='')
+    printc(" { ", end='')
+    for key, value in Config.options.items():
+        value_color = 'green' if value else 'red'
+        printc("'", end='')
+        printc(key, color='yellow', end='')
+        printc("': ", end='')
+        printc(value, color=value_color, end=', ')
+    printc("}")
+
+    print_option_value_pair("Model:", Config.model, color='gray')
 
 
 def validate_mode():
-    if Config.mode in Mode.__members__.values():
-        printc(f"Mode: {Config.mode}", color='green')
-    else:
-        printc(f"Invalid mode: {Config.mode}", color='red')
+    if Config.mode not in Mode.__members__.values():
+        raise ValueError(f"Invalid mode: {Config.mode}")
 
     print_config()
 
