@@ -36,7 +36,7 @@ class GymEnv(GymnasiumEnv):
 
     def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[np.ndarray, dict]:
         if seed or options:
-            printc("WARNING: Seed and options are not supported in FlappyBird() yet.", color='yellow')
+            printc("WARNING! Seed and options are not supported in FlappyBird() yet.", color='yellow')
 
         self.game_env.reset_env()
 

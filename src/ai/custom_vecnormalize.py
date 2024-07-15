@@ -20,7 +20,7 @@ class BoxOnlyVecNormalize(VecNormalize):
                  epsilon: float = 1e-8,
                  ):
 
-        printc("INFO! Keep in mind that only spaces of type spaces.Box will be normalized.", color="yellow")
+        printc("INFO: Keep in mind that only spaces of type spaces.Box will be normalized.", color="blue")
 
         norm_obs_keys = None
         if isinstance(venv.observation_space, spaces.Dict):

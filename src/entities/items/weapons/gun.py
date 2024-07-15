@@ -145,7 +145,7 @@ class Gun(Item):
         self.reload_cooldown = reload_cooldown
         self.quantity_after_reload = magazine_size
 
-    def use(self, action, *args) -> None:  # TODO I don't think we need *args here anymore, do we?
+    def use(self, action) -> None:
         """
         :param action: 0=shoot, 1=reload
         """
@@ -265,7 +265,7 @@ class Gun(Item):
         self.animation_rotation = 0
 
         if self.recoil_duration > self.shoot_cooldown:
-            printc(f"WARNING: '{self.name}' - recoil duration is greater than shoot cooldown!", color="yellow")
+            printc(f"WARNING! '{self.name}' - recoil duration is greater than shoot cooldown!", color="yellow")
 
     def start_shoot_animation(self) -> None:
         # if self.remaining_recoil_duration > 0:

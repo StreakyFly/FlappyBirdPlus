@@ -72,7 +72,7 @@ class BasicFlappyEnv(BaseEnv):
     def get_state(self):
         return get_state(self.player, self.pipes, self.get_pipe_pair_center)
 
-    def calculate_reward(self, action, died, passed_pipe) -> int:
+    def calculate_reward(self, action, died, passed_pipe) -> float:
         reward = 0
         if died:
             reward -= 1000
