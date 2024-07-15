@@ -5,7 +5,7 @@ from .ai.environments.env_types import EnvType
 
 
 class Config:
-    fps_cap = 300  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
+    fps_cap = 0  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
     debug = False  # <-- change if you want to enable debug mode
     model = 'PPO'  # <-- change the model here (DQN or PPO)
     mode = Mode.TRAIN  # <-- change the mode here
@@ -24,11 +24,11 @@ class Config:
             raise ValueError(f"Invalid model: {cls.model}")
         if cls.options['headless']:
             if not cls.options['mute']:
-                printc("WARNING! Headless mode is enabled but audio is not muted.", color="yellow")
+                printc("CONFIG WARNING! Headless mode is enabled but audio is not muted.", color="orange")
             if cls.debug:
-                printc("WARNING! Headless mode is enabled along with debug mode.", color="yellow")
+                printc("CONFIG WARNING! Headless mode is enabled along with debug mode.", color="orange")
             if cls.fps_cap > 0:
-                printc("WARNING! Headless mode is enabled but FPS is capped. Use 0 for no FPS cap.", color="yellow")
+                printc("CONFIG WARNING! Headless mode is enabled but FPS is capped. Use 0 for no FPS cap.", color="orange")
         if cls.model == 'PPO' and cls.run_id is None and cls.mode not in [Mode.TRAIN, Mode.PLAY, Mode.TEST_ENV]:
             raise ValueError("The selected mode requires a run_id.")
         if cls.mode == Mode.TRAIN and cls.run_id is not None:

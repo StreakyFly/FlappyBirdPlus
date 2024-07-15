@@ -73,6 +73,7 @@ def printc(*message, color="default", styles=None, end="\n"):
         "pink": "\033[95m",
         "cyan": "\033[96m",
         "white": "\033[97m",
+        "orange": "\033[38;5;208m",
     }
     style_codes = {
         "bold": "\033[1m",

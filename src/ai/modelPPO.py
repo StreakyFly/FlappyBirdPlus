@@ -23,6 +23,9 @@ from .custom_vecnormalize import BoxOnlyVecNormalize
 #  Docs: https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html
 
 
+# TODO Add a way to set the model's hyperparameters from the environment class.
+
+
 class ModelPPO:
     def __init__(self, env_type=None, run_id=None) -> None:
         self.env_type = env_type
@@ -78,14 +81,14 @@ class ModelPPO:
 
         # save the model & normalization statistics every 100.000 steps
         checkpoint_callback = CheckpointCallback(
-            save_freq=25_000,  # this number is basically multiplied by n_envs
+            save_freq=15_000,  # this number is basically multiplied by n_envs
             save_path=self.checkpoints_dir,
             name_prefix=self.model_name,
             save_vecnormalize=True)
 
         # train the model
         model.learn(
-            total_timesteps=10_000_000,
+            total_timesteps=1_000_000,
             tb_log_name=self.model_name,
             callback=checkpoint_callback,
             reset_num_timesteps=not continue_training)

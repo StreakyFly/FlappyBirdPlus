@@ -6,7 +6,7 @@ import pygame
 
 from .base_env import BaseEnv
 from . import basic_flappy_state
-# from ..controllers.basic_flappy_controller import BasicFlappyModelController
+from ..controllers.basic_flappy_controller import BasicFlappyModelController
 from ...entities.enemies import CloudSkimmer
 from ...entities.items import Gun
 
@@ -19,9 +19,8 @@ Once that enemy dies, terminate the episode and select another one randomly.
 # TODO CHECK ALL TODO'S IN ALL SRC FILES BEFORE STARTING THE TRAINING,
 #  CUZ THERE'S SOME QUESTIONABLE STUFF I LEFT FOR LATER
 
-# TODO We should maybe end the episode if it lasts too long
 # TODO Should the player fly more randomly for a part of training, not just between pipes? So the agents hopefully learn
-#  some bounce tricks to hit the player, instead of just aiming at the player's current position.
+#  some epic bounce tricks to hit the player, instead of just aiming at the player's current position.
 
 """
 Masking Bullet Data:
@@ -36,7 +35,8 @@ class EnemyCloudskimmerEnv(BaseEnv):
 
     def __init__(self):
         super().__init__()
-        # self.basic_flappy_controller = BasicFlappyModelController()
+        self.step: int = 0  # step counter
+        self.basic_flappy_controller = BasicFlappyModelController()
         self.controlled_enemy_id: int = -1  # 0: top, 1: middle, 2: bottom
         self.controlled_enemy: CloudSkimmer = None
         self.enemy_index_dict = {}  # map enemies to their initial index in the list
@@ -47,8 +47,15 @@ class EnemyCloudskimmerEnv(BaseEnv):
         self.spawn_enemies()
         self.pick_random_enemy()
 
+        # --- stuff needed to calculate the reward ---
+        # When the bullet hits the player or an enemy, it gets immediately removed from the gun.shot_bullets set, so we
+        # can't see if it hit the player or an enemy, that's why we store references to all bullets from the last frame.
+        self.all_bullets_from_last_frame = set()
+        self.bullets_bounced_off_pipes = weakref.WeakSet()
+
     def reset_env(self):
         super().reset_env()
+        self.step = 0
         self.pipes.spawn_initial_pipes_like_its_midgame()
         self.enemy_index_dict = {}
         self.spawn_enemies()
@@ -166,25 +173,15 @@ class EnemyCloudskimmerEnv(BaseEnv):
         return observation_space_clip_modes
 
     def perform_step(self, action):
-        print("PERFORMING STEP")
+        # print("PERFORMING STEP")
+        self.step += 1
         for event in pygame.event.get():
             self.handle_quit(event)
-            # TODO delete
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    self.player.flap()
 
-        # self.handle_basic_flappy()
+        self.handle_basic_flappy()
 
-        # TODO delete
-        if pygame.mouse.get_pressed()[0]:
-            self.inventory.use_item(inventory_slot_index=0)
-
-        # TODO delete
         self.controlled_enemy.rotate_gun(action[1])
-        # self.controlled_enemy.shoot()
 
-        print("ACTIONE:", action[0])
         if action[0] == 0:
             pass
         elif action[0] == 1:
@@ -199,21 +196,22 @@ class EnemyCloudskimmerEnv(BaseEnv):
         self.floor.tick()
         self.player.tick()
         self.enemy_manager.tick()
-        self.inventory.tick()  # TODO DELETE!!
 
         pygame.display.update()
         self.config.tick()
 
-        state = self.get_state()
-        print("STEP DONE")
-        print()  # breakpoint here
+        # state = self.get_state()
+        # reward = self.calculate_reward(action=action)
+        # print("STEP DONE")
+        # print()  # breakpoint here
 
-        # return (self.get_state(),
-        return (state,
-                self.calculate_reward(action=action),
-                self.controlled_enemy not in self.enemy_manager.spawned_enemy_groups[0].members,
-                False,
-                {})
+        # return (state,
+        return (self.get_state(),  # observation
+                # reward,
+                self.calculate_reward(action=action),  # reward,
+                self.controlled_enemy not in self.enemy_manager.spawned_enemy_groups[0].members,  # terminated
+                self.step > 1200,  # truncated; end the episode if it lasts too long
+                {})  # info
 
     def get_state(self):
         first_pipe_center_x_position = self.pipes.upper[0].x + self.pipes.upper[0].w // 2
@@ -247,7 +245,8 @@ class EnemyCloudskimmerEnv(BaseEnv):
             'player_y_velocity': np.array([self.player.vel_y], dtype=np.float32),
             'controlled_enemy': self.controlled_enemy_id,
             'remaining_bullets': np.array([gun.quantity], dtype=np.float32),
-            'gun_rotation': np.array([gun.rotation], dtype=np.float32),
+            # this is gun's raw rotation - animation_rotation is not taken into account
+            'gun_rotation': np.array([self.controlled_enemy.gun_rotation], dtype=np.float32),
             'enemy_x_position': np.array([self.controlled_enemy.x], dtype=np.float32),
             'enemy_existence': np.array(enemy_existence, dtype=np.float32),
             'top_enemy_y_position': np.array([enemy_y_pos[0]], dtype=np.float32),
@@ -285,46 +284,54 @@ class EnemyCloudskimmerEnv(BaseEnv):
         return action_masks
 
     def calculate_reward(self, action) -> int:
+        """
+        Agent should be rewarded for:
+         - hitting/damaging the player (huge reward) + bonus, if the bullet hit the player after bouncing off a pipe
+         - hitting a pipe (small reward) - so the likelihood of learning a cool bounce-off-pipe strategy is higher
+         - not firing (small reward each frame the agent doesn't fire, so if he fires but doesn't hit the player, he
+           won't get the reward, which is like if he got punished - punishing him if bullet despawns without hitting
+           the player might be more logical, however not only is it harder to implement, it might also confuse the
+           agent that he was punished after one bullet's position changed to a placeholder)
+        Agent should be punished for:
+         - hitting himself or his teammates (big punishment)
+         - rotating? Maybe a lil tiny punishment if the agent rotates? So it won't rotate unnecessarily...?
+           maybe even a slightly bigger punishment for each rotation direction change, so it won't look jittery
+        """
         reward = 0
 
-        # TODO I think we can get all this info within the method, we don't have to pass it as an argument, do we?
-        #  add boolean parameter something like shot_himself, if agent shoots itself, it should get punished
-        #  add boolean parameter hit_pipe, so the agent gets a tiny reward if it hits a pipe
+        # small punishment for firing
+        if action[0] == 1:
+            reward -= 1
+        # medium reward for reloading
+        elif action[0] == 2:
+            reward += 10
 
-        # TODO implement this method
-        #  Agent should be rewarded for:
-        #  - hitting/damaging the player (big reward)
-        #  - hitting a pipe (small reward) - so the likelihood of learning a cool bounce-off-pipe strategy is higher
-        #  - not firing (small reward each frame the agent doesn't fire, so if he fires but doesn't hit the player, he
-        #    won't get the reward, which is like if he got punished - punishing him if bullet despawns without hitting
-        #    the player might be more logical, however not only is it harder to implement, it might also confuse the
-        #    agent that he was punished after one bullet's position changed to a placeholder - or if he won't know
-        #    bullet positions, he would be confused why he was randomly punished a few frames after firing
-        #  Agent should be punished for:
-        #  - hitting himself or his teammates (big punishment)
-        #  - rotating? Maybe a lil tiny punishment if the agent rotates? So it won't rotate unnecessarily...?
-        #     maybe even a slightly bigger punishment for each rotation direction change, so it won't look jittery
-
-        # small reward for firing... or for not firing...?
-        # if action[0] == 1:
-        #     reward += 1
-        # small reward for reloading
-        # if action[0] == 2:
-        #     reward += 10
         # tiny reward for not rotating
-        # if action[1] == 0:
-        #     reward += 0.5
+        if action[1] == 0:
+            reward += 0.3
+        # small punishment for rotation direction change
+        # if prev_rotation_action != action[1]:
+        #     reward -= 2
 
-        # for bullet in enemy.weapon:
-        #   small reward for hitting a pipe
-        #   if bullet.self.hit_entity == 'pipe':
-        #       reward += 2
-        #   big reward for hitting the player
-        #   if bullet.self.hit_entity == 'player':
-        #       reward += 300
-        #   big punishment for hitting himself or his teammates
-        #   if bullet.self.hit_entity == 'enemy':
-        #       reward -= 100
+        for bullet in self.all_bullets_from_last_frame.union(self.controlled_enemy.gun.shot_bullets):
+            # huge reward for hitting the player
+            if bullet.hit_entity == 'player':
+                reward += 300
+                # bonus reward if the bullet hit the player after bouncing
+                # if bullet.bounced:
+                #     reward += 300
+            # big punishment for hitting himself or his teammates
+            elif bullet.hit_entity == 'enemy':
+                reward -= 100
+            # small reward for hitting a pipe
+            elif bullet.hit_entity == 'pipe' and bullet not in self.bullets_bounced_off_pipes:
+                self.bullets_bounced_off_pipes.add(bullet)
+                reward += 2
+
+        self.all_bullets_from_last_frame = set(self.controlled_enemy.gun.shot_bullets)
+
+        if abs(reward) > 11:
+            print(reward, end=', ')
 
         return reward
 

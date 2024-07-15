@@ -29,7 +29,7 @@ class CloudSkimmer(Enemy):
         self.set_max_hp(300)
 
         self.gun: Union[Gun, Item] = None
-        self.gun_rotation = 10  # 0
+        self.gun_rotation = 0
         # self.gun_rotation = random.randint(-60, 60)  # TODO remove duh
         self.gun_rotation_speed = 6
 
@@ -69,15 +69,14 @@ class CloudSkimmer(Enemy):
 
     def rotate_gun(self, action: int = 0) -> None:  # 0: do nothing, 1: rotate up, 2: rotate down
         # TODO try to smooth this out if it looks too jittery after training (rotation smoothing - inertia)
-        # if action == 0:
-        #     return
-        # elif action == 1:
-        #     self.gun_rotation -= self.gun_rotation_speed
-        # elif action == 2:
-        #     self.gun_rotation += self.gun_rotation_speed
-        #
-        # self.gun_rotation = max(min(self.gun_rotation, 60), -60)  # ensure rotation stays within bounds
-        pass
+        if action == 0:
+            return
+        elif action == 1:
+            self.gun_rotation -= self.gun_rotation_speed
+        elif action == 2:
+            self.gun_rotation += self.gun_rotation_speed
+
+        self.gun_rotation = max(min(self.gun_rotation, 60), -60)  # ensure rotation stays within bounds
 
 
 class CloudSkimmerGroup(EnemyGroup):

@@ -277,8 +277,8 @@ class Bullet(Item):
             if not self.collide(pipe):
                 continue
 
-            self.hit_entity = 'pipe'
             if self.handle_pipe_collision(pipe):
+                self.hit_entity = 'pipe'
                 return
 
         # handle hitting enemies
