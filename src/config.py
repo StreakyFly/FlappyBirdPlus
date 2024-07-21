@@ -5,12 +5,12 @@ from .ai.environments.env_types import EnvType
 
 
 class Config:
-    fps_cap = 0  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
+    fps_cap = 30  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
     debug = False  # <-- change if you want to enable debug mode
-    model = 'PPO'  # <-- change the model here (DQN or PPO)
-    mode = Mode.TRAIN  # <-- change the mode here
+    algorithm = 'PPO'  # <-- change the algorithm here (DQN or PPO)
+    mode = Mode.RUN_MODEL  # <-- change the mode here
     env_type = EnvType.ENEMY_CLOUDSKIMMER  # <-- change environment type here
-    run_id = None #"run_20240617_182959"  # <-- change the run id here (can be None in some cases)
+    run_id = "run_20240716_112512"  # <-- change the run id here (can be None for some modes)
 
     options = {
         'headless': False,  # run pygame in headless mode to increase performance
@@ -20,8 +20,8 @@ class Config:
 
     @classmethod
     def verify_config(cls):
-        if cls.model not in ['DQN', 'PPO']:
-            raise ValueError(f"Invalid model: {cls.model}")
+        if cls.algorithm not in ['DQN', 'PPO']:
+            raise ValueError(f"Invalid model: {cls.algorithm}")
         if cls.options['headless']:
             if not cls.options['mute']:
                 printc("CONFIG WARNING! Headless mode is enabled but audio is not muted.", color="orange")
@@ -29,7 +29,9 @@ class Config:
                 printc("CONFIG WARNING! Headless mode is enabled along with debug mode.", color="orange")
             if cls.fps_cap > 0:
                 printc("CONFIG WARNING! Headless mode is enabled but FPS is capped. Use 0 for no FPS cap.", color="orange")
-        if cls.model == 'PPO' and cls.run_id is None and cls.mode not in [Mode.TRAIN, Mode.PLAY, Mode.TEST_ENV]:
+            if cls.mode == Mode.RUN_MODEL:
+                printc("CONFIG WARNING! Headless mode is enabled but mode is set to run the model.", color="orange")
+        if cls.algorithm == 'PPO' and cls.run_id is None and cls.mode in [Mode.CONTINUE_TRAINING, Mode.EVALUATE_MODEL, Mode.RUN_MODEL]:
             raise ValueError("The selected mode requires a run_id.")
         if cls.mode == Mode.TRAIN and cls.run_id is not None:
             raise ValueError("Nuh-uh! Mode is set to Mode.TRAIN, but run_id is not None. "

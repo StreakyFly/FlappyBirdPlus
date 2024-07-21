@@ -44,10 +44,10 @@ class ModeExecutor:
     @staticmethod
     def init_model():
         model = None
-        if Config.model == 'DQN':
+        if Config.algorithm == 'DQN':
             from .ai.modelDQN import ModelDQN
             model = ModelDQN(env_type=Config.env_type)
-        elif Config.model == 'PPO':
+        elif Config.algorithm == 'PPO':
             from .ai.modelPPO import ModelPPO
             model = ModelPPO(env_type=Config.env_type, run_id=Config.run_id)
 
@@ -83,7 +83,7 @@ def print_config():
         printc(value, color=value_color, end=', ')
     printc("}")
 
-    print_option_value_pair("Model:", Config.model, color='gray')
+    print_option_value_pair("Model:", Config.algorithm, color='gray')
 
 
 def validate_mode():

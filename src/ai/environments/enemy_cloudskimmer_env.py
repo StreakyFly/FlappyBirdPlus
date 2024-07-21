@@ -337,7 +337,7 @@ class EnemyCloudskimmerEnv(BaseEnv):
 
     def handle_basic_flappy(self):
         flappy_state = basic_flappy_state.get_state(self.player, self.pipes, self.get_pipe_pair_center)
-        flappy_action = self.basic_flappy_controller.get_action(flappy_state)
+        flappy_action = self.basic_flappy_controller.predict_action(flappy_state)
         if flappy_action == 1:
             self.player.flap()
 
