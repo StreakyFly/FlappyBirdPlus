@@ -4,12 +4,18 @@ import gymnasium as gym
 import pygame
 
 from .base_env import BaseEnv
-from .basic_flappy_state import get_state
+from src.ai.observations.observation_manager import ObservationManager
 
 
 class BasicFlappyEnv(BaseEnv):
     def __init__(self):
+        self.observation_manager = ObservationManager()
         super().__init__()
+        self.observation_manager.create_observation_instance(self.player, self)
+
+    def reset(self):
+        super().reset()
+        self.observation_manager.create_observation_instance(self.player, self)
 
     @staticmethod
     def get_action_and_observation_space():
@@ -63,14 +69,14 @@ class BasicFlappyEnv(BaseEnv):
         pygame.display.update()
         self.config.tick()
 
-        return (self.get_state(),
+        return (self.get_observation(),
                 self.calculate_reward(action=action, died=terminated, passed_pipe=passed_pipe),
                 terminated,
                 False,
                 {})
 
-    def get_state(self):
-        return get_state(self.player, self.pipes, self.get_pipe_pair_center)
+    def get_observation(self):
+        return self.observation_manager.get_observation(self.player)
 
     def calculate_reward(self, action, died, passed_pipe) -> float:
         reward = 0

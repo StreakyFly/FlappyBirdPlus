@@ -58,14 +58,14 @@ class BaseEnv(FlappyBird):
         :param action: action(s) the agent took
         :return: observation, reward, terminated, truncated
         """
-        NotImplementedError("step() method must be implemented in the subclass")
+        NotImplementedError("perform_step() method must be implemented in the subclass")
 
-    def get_state(self):
+    def get_observation(self):
         """
-        Get the current state of the game.
-        :return: game state
+        Get the current observation of the game.
+        :return: game observation
         """
-        NotImplementedError("get_state() method must be implemented in the subclass")
+        NotImplementedError("get_observation() method must be implemented in the subclass")
 
     def get_action_masks(self):
         """

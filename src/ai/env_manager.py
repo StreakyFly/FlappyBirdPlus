@@ -65,6 +65,6 @@ class EnvManager:
 
     @staticmethod
     def get_enemy_cloudskimmer_env_class() -> Type:
-        from .environments import EnemyCloudskimmerEnv
-        return EnemyCloudskimmerEnv
+        from .environments import EnemyCloudSkimmerEnv
+        return EnemyCloudSkimmerEnv
 

@@ -46,7 +46,7 @@ class ModelPPO:
         self._initialize_directories()
 
     @staticmethod
-    def _generate_run_id():
+    def _generate_run_id() -> str:
         return f"run_{time.strftime('%Y%m%d_%H%M%S')}"
 
     def _initialize_directories(self) -> None:
@@ -70,7 +70,7 @@ class ModelPPO:
             # create the model using the normalized environment; use cpu as it's faster than gpu in this case
             model = self.model_cls(policy, norm_env, verbose=1, device='cpu',
                                    tensorboard_log=self.tensorboard_dir,
-                                   learning_rate=0.0002,
+                                   learning_rate=0.0003,  # 0.0002 was used for basic_flappy_env.py
                                    n_steps=2048,
                                    batch_size=64,
                                    gamma=0.99,
@@ -79,16 +79,16 @@ class ModelPPO:
         if continue_training:
             model._last_obs = None  # TODO Is this necessary? If not, remove it.
 
-        # save the model & normalization statistics every 100.000 steps
+        # save the model & normalization statistics every N steps
         checkpoint_callback = CheckpointCallback(
-            save_freq=15_000,  # this number is basically multiplied by n_envs
+            save_freq=19_000,  # this number is basically multiplied by n_envs
             save_path=self.checkpoints_dir,
             name_prefix=self.model_name,
             save_vecnormalize=True)
 
         # train the model
         model.learn(
-            total_timesteps=1_000_000,
+            total_timesteps=2_000_000,
             tb_log_name=self.model_name,
             callback=checkpoint_callback,
             reset_num_timesteps=not continue_training)
@@ -111,11 +111,10 @@ class ModelPPO:
 
         obs = norm_env.reset()
         while True:
-            action, _ = model.predict(obs, deterministic=True)
-            # TODO Is action_masks argument necessary? I don't think so, but they might increase agent's
-            #  performance depending on how the agent was trained.
-            #  https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html
-            # action, _ = model.predict(obs, deterministic=True, action_masks=?)
+            if self.use_action_masking:
+                action, _ = model.predict(obs, deterministic=True, action_masks=env.envs[0].action_masks())
+            else:
+                action, _ = model.predict(obs, deterministic=True)
             obs, _, done, _ = norm_env.step(action)
             if done:
                 obs = norm_env.reset()

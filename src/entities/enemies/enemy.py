@@ -68,10 +68,15 @@ class EnemyGroup:
         self.spawn_members()
 
     def tick(self):
-        for member in set(self.members):
-            member.tick()
-            if member.is_gone:
-                self.members.remove(member)
+        # BEFORE:
+        # for member in set(self.members):
+        #     member.tick()
+        #     if member.is_gone:
+        #         self.members.remove(member)
+        # AFTER (so their place in the list is preserved):
+        for member in self.members:
+            if not member.is_gone:
+                member.tick()
 
     def stop(self) -> None:
         for member in self.members:

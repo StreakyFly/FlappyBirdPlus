@@ -27,9 +27,6 @@ class GymEnv(GymnasiumEnv):
     def step(self, action):
         observation, reward, terminated, truncated, info = self.game_env.perform_step(action)
 
-        # if reward > 5:
-        #     print(reward)
-
         observation = self.clip_observation(observation)
 
         return observation, reward, terminated, truncated, info
@@ -40,10 +37,10 @@ class GymEnv(GymnasiumEnv):
 
         self.game_env.reset_env()
 
-        game_state = self.game_env.get_state()
+        observation = self.game_env.get_observation()
         info = {}
 
-        return game_state, info
+        return observation, info
 
     def render(self):
         # rendering is handled by the game itself

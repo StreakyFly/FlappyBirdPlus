@@ -22,9 +22,9 @@ class AdvancedFlappyEnv(BaseEnv):
         print("ERROR: perform_step() is not implemented yet.")
         return False
 
-    def get_state(self):
+    def get_observation(self):
         # TODO implement this function
-        print("ERROR: get_state() is not implemented yet.")
+        print("ERROR: get_observation() is not implemented yet.")
         return False
 
     def calculate_reward(self) -> int:

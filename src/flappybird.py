@@ -50,6 +50,9 @@ class FlappyBird:
 
         self.next_closest_pipe_pair = None
 
+        # TODO create model controllers here - but only if the mode is set to Mode.PLAY.
+        #  For other modes, this should be handled in their respective environments.
+
     def set_mute(self, mute: bool = False):
         if mute:
             self.config.sounds = Sounds(num_channels=0)
@@ -105,6 +108,30 @@ class FlappyBird:
         count = 0
 
         while True:
+            # TODO cloudskimmer is influenced by (advanced) flappy bird position, advanced flappy bird action is
+            #  influenced by cloudskimmer's action. Meaning if we update either of them before the other one, the one
+            #  updated last will have a 1 frame advantage, as it will know what the other one did - we do NOT want that,
+            #  as they weren't trained that way.
+            #  In all training environments we get observation data at the end of the step and then perform action at
+            #  the start of the next step. Similar (but not same) thing here. At the end of the step, we predict actions
+            #  for all agents. Only after that we perform those actions. This way all agents will get the info of the
+            #  same frame, no agent will get the info of what some other agent that was updated before him did, as
+            #  actions were predicted before updating any agent.
+            #  It's same with player actions. If player performs an action before cloudskimmer gets observation,
+            #  cloudskimmer will have 1 frame advantage. Which is not ok either.
+            # So at the end of the step (not here), once everything has been updated (ticked), do this:
+            #  actions = []
+            #  for entity in entities: (player&enemies)
+            #     if entity is human player:
+            #        continue
+            #     observation = observation_manager.get_observation(entity)
+            #     action = corresponding_controller.predict_action(observation)
+            #     actions.append(action)
+            #  for i, entity in enumerate(entities): (player&enemies)
+            #     if entity is human player:
+            #        handle human player input - possibly make a separate class for this
+            #        continue
+            #     corresponding_controller.perform_action(entity, actions[i])
             print("START")
             self.monitor_fps_drops(fps_threshold=27)
             if self.player.crossed(self.next_closest_pipe_pair[0]):
