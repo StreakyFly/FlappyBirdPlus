@@ -6,7 +6,7 @@ from .cloudskimmer import CloudSkimmerGroup
 class EnemyManager:
     def __init__(self, config: GameConfig):
         self.config = config
-        self.spawned_enemy_groups = []
+        self.spawned_enemy_groups = []  # some files expect this list to contain no more than one enemy group at once
 
     def tick(self):
         if self.can_spawn_enemy():

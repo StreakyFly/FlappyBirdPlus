@@ -13,6 +13,9 @@ class EnemyCloudSkimmerObservation(BaseObservation):
 
         self.bullet_index_dict = WeakKeyDictionary()  # map bullets to their initial index in the list
         self.replaced_bullets = WeakSet()  # old bullets that were replaced by new ones in the observation space
+        self.enemy_index_dict = {}  # map enemies to their initial index in the list
+        for i, enemy in enumerate(env.enemy_manager.spawned_enemy_groups[0].members):
+            self.enemy_index_dict[enemy] = i
 
     def get_observation(self):
         e = self.env
@@ -50,14 +53,12 @@ class EnemyCloudSkimmerObservation(BaseObservation):
 
         return game_state
 
-    @staticmethod
-    def get_enemy_info(enemy_manager):
+    def get_enemy_info(self, enemy_manager):
         enemy_existence = [0] * 3  # flag whether that enemy exists or not
         enemy_y_pos = [0] * 3  # enemy's y position
 
-        for enemy_index, enemy in enumerate(enemy_manager.spawned_enemy_groups[0].members):
-            if enemy.is_gone:
-                continue
+        for enemy in enemy_manager.spawned_enemy_groups[0].members:
+            enemy_index = self.enemy_index_dict[enemy]
             enemy_existence[enemy_index] = 1
             enemy_y_pos[enemy_index] = enemy.y
 
