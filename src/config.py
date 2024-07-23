@@ -1,7 +1,6 @@
 from .utils import printc
-
 from .modes import Mode
-from .ai.environments.env_types import EnvType
+from .ai.environments import EnvType
 
 
 class Config:

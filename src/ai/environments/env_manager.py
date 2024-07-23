@@ -1,7 +1,7 @@
 from typing import Type, Callable, Optional
 
 from .gym_env import GymEnv
-from .environments import EnvType
+from .env_types import EnvType
 
 
 class EnvManager:
@@ -55,16 +55,16 @@ class EnvManager:
 
     @staticmethod
     def get_basic_flappy_env_class() -> Type:
-        from .environments import BasicFlappyEnv
+        from .basic_flappy_env import BasicFlappyEnv
         return BasicFlappyEnv
 
     @staticmethod
     def get_advanced_flappy_env_class() -> Type:
-        from .environments import AdvancedFlappyEnv
+        from .advanced_flappy_env import AdvancedFlappyEnv
         return AdvancedFlappyEnv
 
     @staticmethod
     def get_enemy_cloudskimmer_env_class() -> Type:
-        from .environments import EnemyCloudSkimmerEnv
+        from .enemy_cloudskimmer_env import EnemyCloudSkimmerEnv
         return EnemyCloudSkimmerEnv
 

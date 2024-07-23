@@ -1,4 +1,4 @@
-from ...utils import GameConfig, printc
+from src.utils import GameConfig, printc
 from .item import Item
 from .item_enums import ItemName, ItemType
 from .empty_item import EmptyItem

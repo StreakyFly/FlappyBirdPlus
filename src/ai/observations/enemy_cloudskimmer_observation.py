@@ -1,8 +1,9 @@
-import numpy as np
 from weakref import WeakKeyDictionary, WeakSet
 
+import numpy as np
+
 from .base_observation import BaseObservation
-from ...entities.items import Gun
+from src.entities.items import Gun
 
 
 class EnemyCloudSkimmerObservation(BaseObservation):

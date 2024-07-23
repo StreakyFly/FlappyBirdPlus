@@ -2,7 +2,7 @@ import numpy as np
 
 from .base_controller import BaseModelController
 
-from src.entities.enemies.cloudskimmer import CloudSkimmer
+from src.entities.enemies import CloudSkimmer
 from src.entities.items import Gun
 
 

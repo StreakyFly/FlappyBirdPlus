@@ -1,5 +1,4 @@
-from ...utils import GameConfig
-
+from src.utils import GameConfig
 from .enemy import EnemyGroup
 from .cloudskimmer import CloudSkimmerGroup
 

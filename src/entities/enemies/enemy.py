@@ -1,6 +1,6 @@
 import pygame
 
-from ...utils import GameConfig, Animation
+from src.utils import GameConfig, Animation
 from ..entity import Entity
 from ..attribute_bar import AttributeBar
 

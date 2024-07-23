@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from ...utils import GameConfig
+from src.utils import GameConfig
 from .item_enums import ItemName
 from .item_spawn_chances import get_spawn_chances
 from .item import SpawnedItem

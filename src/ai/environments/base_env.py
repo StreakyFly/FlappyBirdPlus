@@ -1,7 +1,6 @@
-from ...flappybird import FlappyBird
-
-from ...utils import GameState
-from ...entities import PlayerMode
+from src.flappybird import FlappyBird
+from src.utils import GameState
+from src.entities import PlayerMode
 
 
 class BaseEnv(FlappyBird):

@@ -1,9 +1,10 @@
-from gymnasium import Env as GymnasiumEnv, spaces
-import numpy as np
 from typing import Literal
 
-from .environments import BaseEnv
-from ..utils import printc
+from gymnasium import Env as GymnasiumEnv, spaces
+import numpy as np
+
+from .base_env import BaseEnv
+from src.utils import printc
 
 
 class GymEnv(GymnasiumEnv):

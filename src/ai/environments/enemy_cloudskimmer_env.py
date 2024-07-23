@@ -1,13 +1,13 @@
-import numpy as np
-import gymnasium as gym
 from weakref import WeakSet
 
 import pygame
+import numpy as np
+import gymnasium as gym
 
 from .base_env import BaseEnv
-from ..observations.observation_manager import ObservationManager
-from ..controllers.basic_flappy_controller import BasicFlappyModelController
-from ...entities.enemies import CloudSkimmer
+from ..observations import ObservationManager
+from ..controllers import BasicFlappyModelController
+from src.entities.enemies import CloudSkimmer
 
 """
 Randomly select one of the enemies to control.

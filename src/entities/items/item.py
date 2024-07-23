@@ -1,9 +1,9 @@
-import random
 import math
+import random
 
 import pygame
 
-from ...utils import GameConfig
+from src.utils import GameConfig
 from ..entity import Entity
 from .item_enums import ItemName, ItemType
 

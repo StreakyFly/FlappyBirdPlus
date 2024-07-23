@@ -4,7 +4,7 @@ from stable_baselines3 import PPO
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-from ..env_manager import EnvManager
+from src.ai.environments import EnvManager
 
 
 class BaseModelController:

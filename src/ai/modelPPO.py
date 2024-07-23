@@ -12,8 +12,8 @@ from sb3_contrib.common.maskable.evaluation import evaluate_policy as maskable_e
 
 from gymnasium import spaces
 
-from ..utils import printc
-from .env_manager import EnvManager
+from src.utils import printc
+from .environments import EnvManager
 from .custom_vecnormalize import BoxOnlyVecNormalize
 
 

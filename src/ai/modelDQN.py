@@ -4,7 +4,7 @@ from stable_baselines3.common.vec_env import VecNormalize, VecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.evaluation import evaluate_policy
 
-from .env_manager import EnvManager
+from .environments import EnvManager
 
 
 # Dumbass me learnt that DQN doesn't work with MultiDiscrete observation spaces after training and perfecting

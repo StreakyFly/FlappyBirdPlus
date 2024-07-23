@@ -1,10 +1,3 @@
-import sys
-import numpy as np
-import gymnasium as gym
-
-import pygame
-from pygame import QUIT
-
 from .base_env import BaseEnv
 
 

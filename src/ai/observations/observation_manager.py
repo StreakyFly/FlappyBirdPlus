@@ -1,11 +1,11 @@
-import numpy as np
 from weakref import WeakKeyDictionary
+
+import numpy as np
 
 from .basic_flappy_observation import BasicFlappyObservation
 from .enemy_cloudskimmer_observation import EnemyCloudSkimmerObservation
-
-from src.entities.enemies.cloudskimmer import CloudSkimmer
 from src.entities.player import Player
+from src.entities.enemies import CloudSkimmer
 
 
 class ObservationManager:

@@ -6,7 +6,7 @@ from .modes import Mode
 from .config import Config
 from .utils import printc
 from .flappybird import FlappyBird
-from .ai.env_manager import EnvManager
+from .ai.environments import EnvManager
 
 """  # noqa: E265
 Very simple control flow diagram:

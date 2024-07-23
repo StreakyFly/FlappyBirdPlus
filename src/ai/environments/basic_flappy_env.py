@@ -1,10 +1,9 @@
+import pygame
 import numpy as np
 import gymnasium as gym
 
-import pygame
-
 from .base_env import BaseEnv
-from src.ai.observations.observation_manager import ObservationManager
+from ..observations import ObservationManager
 
 
 class BasicFlappyEnv(BaseEnv):

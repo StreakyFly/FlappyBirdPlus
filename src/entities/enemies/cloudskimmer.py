@@ -1,9 +1,8 @@
+import math
+import random
 from typing import Union
 
-import random
-import math
-
-from ...utils import GameConfig, Animation
+from src.utils import GameConfig, Animation
 from ..items import ItemName, ItemInitializer, Item, Gun
 from .enemy import Enemy, EnemyGroup
 
