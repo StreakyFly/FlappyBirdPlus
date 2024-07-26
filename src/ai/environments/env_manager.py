@@ -5,8 +5,7 @@ from .env_types import EnvType
 
 
 class EnvManager:
-
-    def __init__(self, env_type: EnvType = EnvType.BASIC_FLAPPY):
+    def __init__(self, env_type: EnvType):
         map_env_to_getclass_method: dict[EnvType, Callable[[], Type]] = {
             EnvType.BASIC_FLAPPY: self.get_basic_flappy_env_class,
             EnvType.ADVANCED_FLAPPY: self.get_advanced_flappy_env_class,
@@ -15,9 +14,6 @@ class EnvManager:
         }
 
         self.env_class: Type = map_env_to_getclass_method.get(env_type)()
-        if not self.env_class:
-            raise ValueError(f"Unsupported environment type: {env_type}")
-
         self.env: Optional[GymEnv] = None
 
     def get_env_class(self) -> Type:

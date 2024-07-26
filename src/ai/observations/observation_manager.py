@@ -25,13 +25,14 @@ class ObservationManager:
         }
 
     def create_observation_instance(self, entity, env, **kwargs) -> None:
+        # TODO This name sucks, what should this method be called? Maybe create_observer()?
         """
         Creates an observation instance for the given entity.
         :param entity: the entity for which to create the observation instance
         :param env: the game environment
         :param kwargs: keyword arguments to pass to the observation class
         """
-        self.observation_instances[entity] = self.observation_classes[type(entity)](env, **kwargs)
+        self.observation_instances[entity] = self.observation_classes[type(entity)](entity, env, **kwargs)
 
     def get_observation(self, entity) -> np.ndarray | dict:
         """

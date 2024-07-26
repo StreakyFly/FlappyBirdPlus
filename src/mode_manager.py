@@ -12,66 +12,77 @@ from .ai.environments import EnvManager
 Very simple control flow diagram:
 main -> mode_manager -> FlappyBird().start()
                      -> EnvManager().test_env() -> GymEnv -> FlappyBird().init_env()
-                     -> agentDQN -> EnvManager().get_env() -> GymEnv -> FlappyBird().init_env()
+                     -> modelPPO -> EnvManager().get_env() -> GymEnv -> FlappyBird().init_env()
 """
 
 
 class ModeExecutor:
     @staticmethod
-    def play_mode():
-        asyncio.run(FlappyBird().start())
+    def play():
+        # asyncio.run(FlappyBird().start())
+        game_instance = FlappyBird()
+        game_instance.init_model_controllers(human_player=Config.human_player)
+        asyncio.run(game_instance.start())
 
     @staticmethod
-    def test_env_mode():
+    def test_env():
         EnvManager(env_type=Config.env_type).test_env()
 
     @staticmethod
-    def train_mode():
+    def train():
         ModeExecutor.init_model().train()
 
     @staticmethod
-    def continue_training_mode():
+    def continue_training():
         ModeExecutor.init_model().continue_training()
 
     @staticmethod
-    def run_model_mode():
+    def run_model():
         ModeExecutor.init_model().run()
 
     @staticmethod
-    def evaluate_model_mode():
+    def evaluate_model():
         ModeExecutor.init_model().evaluate()
 
     @staticmethod
     def init_model():
-        model = None
         if Config.algorithm == 'DQN':
             from .ai.modelDQN import ModelDQN
             model = ModelDQN(env_type=Config.env_type)
         elif Config.algorithm == 'PPO':
             from .ai.modelPPO import ModelPPO
             model = ModelPPO(env_type=Config.env_type, run_id=Config.run_id)
+        else:
+            raise ValueError(f"Invalid algorithm: {Config.algorithm}")
 
         return model
 
 
 MODES = {
-    Mode.PLAY: ModeExecutor.play_mode,
-    Mode.TEST_ENV: ModeExecutor.test_env_mode,
-    Mode.TRAIN: ModeExecutor.train_mode,
-    Mode.CONTINUE_TRAINING: ModeExecutor.continue_training_mode,
-    Mode.RUN_MODEL: ModeExecutor.run_model_mode,
-    Mode.EVALUATE_MODEL: ModeExecutor.evaluate_model_mode,
+    Mode.PLAY: ModeExecutor.play,
+    Mode.TEST_ENV: ModeExecutor.test_env,
+    Mode.TRAIN: ModeExecutor.train,
+    Mode.CONTINUE_TRAINING: ModeExecutor.continue_training,
+    Mode.RUN_MODEL: ModeExecutor.run_model,
+    Mode.EVALUATE_MODEL: ModeExecutor.evaluate_model,
 }
 
 
-def print_option_value_pair(option, value, color='default'):
+def print_option_value_pair(option, value, comment=None, color='default'):
     printc(option, color=color, end=' ')
-    printc(value, color=color, styles=['bold'])
+    printc(value, color=color, styles=['bold'], end=' ')
+    if comment is not None:
+        printc(comment, color='gray')
+    else:
+        print()
 
 
 def print_config():
     print_option_value_pair("Mode:", Config.mode.name, color='green')
-    print_option_value_pair("Environment type:", Config.env_type.name, color='blue')
+    if Config.mode == Mode.PLAY:
+        print_option_value_pair("Environment type:", Config.env_type.name, comment="(not used)", color='gray')
+    else:
+        print_option_value_pair("Environment type:", Config.env_type.name, color='blue')
 
     printc("Options:", color='yellow', end='')
     printc(" { ", end='')
@@ -83,7 +94,10 @@ def print_config():
         printc(value, color=value_color, end=', ')
     printc("}")
 
-    print_option_value_pair("Model:", Config.algorithm, color='gray')
+    if Config.mode in [Mode.TRAIN, Mode.CONTINUE_TRAINING]:
+        print_option_value_pair("Model:", Config.algorithm, color='pink')
+    else:
+        print_option_value_pair("Model:", Config.algorithm, color='gray')
 
 
 def validate_mode():

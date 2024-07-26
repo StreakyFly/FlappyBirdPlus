@@ -1,14 +1,18 @@
 import numpy as np
 
+from src.entities.player import Player
 from .base_observation import BaseObservation
 
 
 class BasicFlappyObservation(BaseObservation):
+    def __init__(self, entity: Player, env):
+        super().__init__(entity, env)
+
     def get_observation(self) -> np.ndarray:
         e = self.env
         next_pipe_pair = next_next_pipe_pair = None
         for i, pipe in enumerate(e.pipes.upper):
-            if pipe.x + pipe.w < e.player.x:
+            if pipe.x + pipe.w < self.entity.x:
                 continue
 
             next_pipe_pair = (pipe, e.pipes.lower[i])

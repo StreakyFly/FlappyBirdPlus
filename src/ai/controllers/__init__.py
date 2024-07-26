@@ -1,1 +1,2 @@
 from .basic_flappy_controller import BasicFlappyModelController
+from .enemy_cloudskimmer_controller import EnemyCloudSkimmerModelController

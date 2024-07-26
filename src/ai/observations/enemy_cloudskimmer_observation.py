@@ -4,18 +4,17 @@ import numpy as np
 
 from .base_observation import BaseObservation
 from src.entities.items import Gun
+from src.entities.enemies import CloudSkimmer
 
 
 class EnemyCloudSkimmerObservation(BaseObservation):
-    def __init__(self, env, use_bullet_info: bool = True):
-        super().__init__(env)
-        self.use_bullet_info = use_bullet_info
+    def __init__(self, entity: CloudSkimmer, env, controlled_enemy_id: int = None, use_bullet_info: bool = True):
+        super().__init__(entity, env)
+        self.controlled_enemy_id: int = controlled_enemy_id  # 0: top, 1: middle, 2: bottom
+        self.use_bullet_info: bool = use_bullet_info
 
         self.bullet_index_dict = WeakKeyDictionary()  # map bullets to their initial index in the list
         self.replaced_bullets = WeakSet()  # old bullets that were replaced by new ones in the observation space
-        self.enemy_index_dict = {}  # map enemies to their initial index in the list
-        for i, enemy in enumerate(env.enemy_manager.spawned_enemy_groups[0].members):
-            self.enemy_index_dict[enemy] = i
 
     def get_observation(self):
         e = self.env
@@ -25,7 +24,7 @@ class EnemyCloudSkimmerObservation(BaseObservation):
             pipe_center = e.get_pipe_pair_center(pipe_pair)
             pipe_center_y_positions.append(pipe_center[1])
 
-        gun: Gun = e.controlled_enemy.gun
+        gun: Gun = self.entity.gun
 
         enemy_existence, enemy_y_pos = self.get_enemy_info(e.enemy_manager)
         if self.use_bullet_info:
@@ -36,11 +35,11 @@ class EnemyCloudSkimmerObservation(BaseObservation):
         game_state = {
             'player_y_position': np.array([e.player.y], dtype=np.float32),
             'player_y_velocity': np.array([e.player.vel_y], dtype=np.float32),
-            'controlled_enemy': e.controlled_enemy_id,
+            'controlled_enemy': self.controlled_enemy_id,
             'remaining_bullets': np.array([gun.quantity], dtype=np.float32),
             # this is gun's raw rotation - animation_rotation is not taken into account
-            'gun_rotation': np.array([e.controlled_enemy.gun_rotation], dtype=np.float32),
-            'enemy_x_position': np.array([e.controlled_enemy.x], dtype=np.float32),
+            'gun_rotation': np.array([self.entity.gun_rotation], dtype=np.float32),
+            'enemy_x_position': np.array([self.entity.x], dtype=np.float32),
             'enemy_existence': np.array(enemy_existence, dtype=np.float32),
             'top_enemy_y_position': np.array([enemy_y_pos[0]], dtype=np.float32),
             'middle_enemy_y_position': np.array([enemy_y_pos[1]], dtype=np.float32),
@@ -53,12 +52,13 @@ class EnemyCloudSkimmerObservation(BaseObservation):
 
         return game_state
 
-    def get_enemy_info(self, enemy_manager):
+    @staticmethod
+    def get_enemy_info(enemy_manager):
         enemy_existence = [0] * 3  # flag whether that enemy exists or not
         enemy_y_pos = [0] * 3  # enemy's y position
 
         for enemy in enemy_manager.spawned_enemy_groups[0].members:
-            enemy_index = self.enemy_index_dict[enemy]
+            enemy_index = enemy.id
             enemy_existence[enemy_index] = 1
             enemy_y_pos[enemy_index] = enemy.y
 
@@ -67,9 +67,6 @@ class EnemyCloudSkimmerObservation(BaseObservation):
     def get_bullet_info(self, gun, player):
         """
         Gets information about bullets fired by the gun.
-        The information is stored in two lists, bullet_exists and bullet_positions.
-        The list bullet_existence contains flags whether the bullet exists or not.
-        The list bullet_positions contains x and y positions (curr_front_pos) of the bullets.
         Bullets should always be put in the same slot in the lists as long as the bullet exist.
         If we have [pos1, pos2, empty_ph, pos4, empty_ph], and the agent fires another bullet,
         we put it in the first empty_ph slot we find. If all slots are filled we replace the oldest bullet.

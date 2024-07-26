@@ -12,8 +12,6 @@ class GymEnv(GymnasiumEnv):
 
     def __init__(self, game_env: BaseEnv):
         super().__init__()
-        # self.game_env.init_env()  # commented this out because I added it in base_env.py
-
         self.game_env = game_env
 
         # self.requires_action_masking = getattr(self.game_env, 'requires_action_masking', False)

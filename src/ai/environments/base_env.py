@@ -6,7 +6,7 @@ from src.entities import PlayerMode
 class BaseEnv(FlappyBird):
     def __init__(self):
         super().__init__()
-        self.init_env()  # commented init_env() in gym_env.py and added it here
+        self.init_env()
 
     def init_env(self) -> None:
         """

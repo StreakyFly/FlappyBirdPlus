@@ -6,7 +6,7 @@ import gymnasium as gym
 
 from .base_env import BaseEnv
 from ..observations import ObservationManager
-from ..controllers import BasicFlappyModelController
+from ..controllers import BasicFlappyModelController, EnemyCloudSkimmerModelController
 from src.entities.enemies import CloudSkimmer
 
 """
@@ -15,6 +15,7 @@ Once that enemy dies, terminate the episode and select another one randomly.
 """
 
 
+# YES, IT SHOULD FLY MORE RANDOMLY!!
 # TODO Should the player fly more randomly for a part of training, not just between pipes? So the agents learn some epic
 #  bounce tricks to hit the player when he's behind the pipes, instead of just aiming at the player's current position?
 #  If we give a higher reward for hitting the player after bouncing off a pipe, the agents try to trick shot the player
@@ -71,7 +72,8 @@ class EnemyCloudSkimmerEnv(BaseEnv):
     def fill_observation_manager(self):
         self.observation_manager.observation_instances.clear()
         self.observation_manager.create_observation_instance(entity=self.player, env=self)
-        self.observation_manager.create_observation_instance(entity=self.controlled_enemy, env=self)
+        self.observation_manager.create_observation_instance(entity=self.controlled_enemy, env=self,
+                                                             controlled_enemy_id=self.controlled_enemy_id)
 
     @staticmethod
     def get_action_and_observation_space() -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Dict]:
@@ -80,7 +82,7 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         action_space = gym.spaces.MultiDiscrete([3, 3])
 
         # TODO maybe add remaining_shoot_cooldown and remaining_reload_cooldown to the observation space after all
-        #  and punish the agent for attempting to fire or reload when they're on cooldown?
+        #  and punish the agent for attempting to fire or reload when they're on cooldown? Or keep it as it is now?
         observation_space = gym.spaces.Dict({
             'player_y_position': gym.spaces.Box(low=-120, high=755, shape=(1,), dtype=np.float32),
             'player_y_velocity': gym.spaces.Box(low=-17, high=21, shape=(1,), dtype=np.float32),
@@ -138,19 +140,14 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         # print("PERFORMING STEP")
         self.step += 1
         for event in pygame.event.get():
+            # self.handle_event(event)  # handles key presses as well
             self.handle_quit(event)
 
+        # here, flappy can get & perform the action before the enemy, as the agent has already decided what it'll do
         self.handle_basic_flappy()
 
         # print(action[0], self.controlled_enemy.gun.remaining_shoot_cooldown, self.controlled_enemy.gun.remaining_reload_cooldown)
-        # TODO replace this with the perform_action() method from the controller
-        self.controlled_enemy.rotate_gun(action[1])
-        if action[0] == 0:
-            pass
-        elif action[0] == 1:
-            self.controlled_enemy.shoot()
-        elif action[0] == 2:
-            self.controlled_enemy.reload()
+        EnemyCloudSkimmerModelController.perform_action(self.controlled_enemy, action)
 
         self.update_bullet_info()
 
@@ -193,11 +190,18 @@ class EnemyCloudSkimmerEnv(BaseEnv):
          - rotating? Maybe a lil tiny punishment if the agent rotates? So it won't rotate unnecessarily...?
            maybe even a slightly bigger punishment for each rotation direction change, so it won't look jittery
         """
+
+        # TODO WARNING! The agent learns to shoot in the middle between the pipes, not actually where the player is.
+        #  That's probably because the trained player model flies between the pipes, so the agent has actually never
+        #  seen player behind the pipes. We should make the player fly more randomly, not just between pipes!!
         reward = 0
 
-        # reward for firing
+        # reward for not firing
+        # if action[0] == 0:
+        #     reward += 4
+        # or punishment for firing?
         if action[0] == 1:
-            reward += 4
+            reward -= 20
         # reward for reloading
         elif action[0] == 2:
             reward += 30
@@ -233,6 +237,6 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         return reward
 
     def handle_basic_flappy(self):
-        flappy_state = self.observation_manager.get_observation(self.player)
-        flappy_action = self.basic_flappy_controller.predict_action(flappy_state, use_action_masks=False)
+        flappy_observation = self.observation_manager.get_observation(self.player)
+        flappy_action = self.basic_flappy_controller.predict_action(flappy_observation, use_action_masks=False)
         self.basic_flappy_controller.perform_action(self.player, flappy_action)

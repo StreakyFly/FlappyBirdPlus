@@ -1,6 +1,6 @@
 import math
 import random
-from typing import Union
+from typing import Union, Literal
 
 from src.utils import GameConfig, Animation
 from ..items import ItemName, ItemInitializer, Item, Gun
@@ -13,8 +13,9 @@ from .enemy import Enemy, EnemyGroup
 # TODO ghosts need to be better shaded, with more detail. Possibly even have a subtle sprite animation.
 
 class CloudSkimmer(Enemy):
-    def __init__(self, config: GameConfig, *args, **kwargs):
+    def __init__(self, config: GameConfig, pos_id, *args, **kwargs):
         super().__init__(config, Animation(config.images.enemies['enemy-cloudskimmer']), *args, **kwargs)
+        self.id: Literal[0, 1, 2] = pos_id  # 0: top, 1: middle, 2: bottom (unless the group is changed)
         # should they start at different times? Maybe CloudSkimmerGroup picks a random time, and then each member
         #  starts at a different time from that point within a certain range
         self.time = 0  #random.randint(0, 21)  # period of sin wave = 2 * pi / frequency = 2 * pi / 0.15 = 41.8879
@@ -99,8 +100,9 @@ class CloudSkimmerGroup(EnemyGroup):
                    (ItemName.WEAPON_DEAGLE, self.item_initializer.init_item(ItemName.EMPTY), 210, (-13, 35)),
                    (ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 35))]
 
-        for pos, amplitude, (weapon, ammo_item, ammo_quantity, weapon_offset) in zip(positions, amplitudes, weapons):
-            member = CloudSkimmer(self.config, x=pos[0], y=pos[1])
+        for i, (pos, amplitude, weapon_info) in enumerate(zip(positions, amplitudes, weapons)):
+            weapon, ammo_item, ammo_quantity, weapon_offset = weapon_info
+            member = CloudSkimmer(self.config, x=pos[0], y=pos[1], pos_id=i)
             gun: Union[Item, Gun] = self.item_initializer.init_item(weapon, member)
             gun.flip()
             gun.update_offset(weapon_offset)

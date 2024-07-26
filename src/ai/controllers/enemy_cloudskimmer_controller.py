@@ -1,6 +1,7 @@
 import numpy as np
 
 from .base_controller import BaseModelController
+from ..environments import EnvType
 
 from src.entities.enemies import CloudSkimmer
 from src.entities.items import Gun
@@ -8,9 +9,10 @@ from src.entities.items import Gun
 
 class EnemyCloudSkimmerModelController(BaseModelController):
     def __init__(self):
-        super().__init__(env_type='enemy_cloudskimmer', model_name='enemy_cloudskimmer')
+        super().__init__(env_type=EnvType.ENEMY_CLOUDSKIMMER, model_name='enemy_cloudskimmer')
 
-    def perform_action(self, entity: CloudSkimmer, action):
+    @staticmethod
+    def perform_action(entity: CloudSkimmer, action):
         entity.rotate_gun(action[1])
 
         if action[0] == 0:
@@ -21,7 +23,16 @@ class EnemyCloudSkimmerModelController(BaseModelController):
             entity.reload()
 
     @staticmethod
-    def get_action_masks(gun: Gun) -> np.ndarray:
+    def get_action_masks(env, observation_instance) -> np.ndarray:
+        controlled_enemy_id = observation_instance.controlled_enemy_id
+
+        gun: Gun = None
+        for enemy in env.enemy_manager.spawned_enemy_groups[0].members:
+            if enemy.id == controlled_enemy_id:
+                gun = enemy.gun
+        if gun is None:
+            raise ValueError(f"Enemy with id {controlled_enemy_id} not found.")
+
         # initialize masks for each action type, all actions are initially available
         fire_reload_masks = np.ones(3, dtype=int)  # [do nothing, fire, reload]
         rotation_masks = np.ones(3, dtype=int)  # [do nothing, rotate up, rotate down]
