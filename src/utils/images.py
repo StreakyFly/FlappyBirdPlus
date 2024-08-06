@@ -73,9 +73,9 @@ class Images:
 
     def _load_enemy_images(self) -> None:
         self.enemies = dict()
-        enemy_names = ('enemy-temp_1', 'enemy-temp_2', 'enemy-cloudskimmer_1')
+        enemy_img_names = ('enemy-cloudskimmer_1', 'enemy-cloudskimmer-eyes')
 
-        for enemy_name in enemy_names:
+        for enemy_name in enemy_img_names:
             base_name = enemy_name.rsplit('_', 1)[0]
             if base_name not in self.enemies:
                 self.enemies[base_name] = []

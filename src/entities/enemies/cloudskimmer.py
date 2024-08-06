@@ -7,14 +7,14 @@ from ..items import ItemName, ItemInitializer, Item, Gun
 from .enemy import Enemy, EnemyGroup
 
 
-# TODO ghost's eyes should follow the player (depending on gun's rotation or player's position?).
 # TODO ghosts should spawn in random colors. As they get damaged, they could change color or become more transparent.
 #  When they die, the weapon should fall to the ground and the ghost should disappear.
-# TODO ghosts need to be better shaded, with more detail. Possibly even have a subtle sprite animation.
+# TODO ghosts need to be better shaded, with more detail. Possibly even have a subtle sprite animation (waves on bottom)
 
 class CloudSkimmer(Enemy):
     def __init__(self, config: GameConfig, pos_id, *args, **kwargs):
         super().__init__(config, Animation(config.images.enemies['enemy-cloudskimmer']), *args, **kwargs)
+        self.eyes = config.images.enemies['enemy-cloudskimmer-eyes'][0]
         self.id: Literal[0, 1, 2] = pos_id  # 0: top, 1: middle, 2: bottom (unless the group is changed)
         # should they start at different times? Maybe CloudSkimmerGroup picks a random time, and then each member
         #  starts at a different time from that point within a certain range
@@ -40,6 +40,7 @@ class CloudSkimmer(Enemy):
             self.sin_y = self.amplitude * math.sin(self.frequency * self.time)
             self.y = round(self.initial_y + self.sin_y)  # without rounding this, the gun is jittery
         super().tick()
+        self.update_eyes()
         self.gun.tick()
 
     def stop(self) -> None:
@@ -77,6 +78,15 @@ class CloudSkimmer(Enemy):
             self.gun_rotation += self.gun_rotation_speed
 
         self.gun_rotation = max(min(self.gun_rotation, 60), -60)  # ensure rotation stays within bounds
+
+    def update_eyes(self):
+        """
+        Draws the ghost's eyes on the screen.
+        The vertical offset is interpolated based on gun rotation.
+        """
+        max_offset = 5
+        vertical_offset = (self.gun_rotation / 60) * max_offset
+        self.config.screen.blit(self.eyes, (self.x, self.y + vertical_offset))
 
 
 class CloudSkimmerGroup(EnemyGroup):

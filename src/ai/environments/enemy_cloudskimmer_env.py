@@ -69,6 +69,11 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         self.controlled_enemy_id = np.random.randint(0, 3)
         self.controlled_enemy = self.enemy_manager.spawned_enemy_groups[0].members[self.controlled_enemy_id]
 
+        # reduce the HP of other enemies, so they die sooner, so the agent also learns to play without teammates
+        for enemy in self.enemy_manager.spawned_enemy_groups[0].members:
+            if enemy != self.controlled_enemy:
+                enemy.set_max_hp(90)
+
     def fill_observation_manager(self):
         self.observation_manager.observation_instances.clear()
         self.observation_manager.create_observation_instance(entity=self.player, env=self)
