@@ -67,7 +67,8 @@ class Inventory(Entity):
         default_item_types = [
             ItemType.EMPTY_WEAPON,
             ItemType.EMPTY_AMMO,
-            ItemType.EMPTY,  # TODO -> FOOD...? Or grenades, bombs? Or maybe something else - spells that freeze enemies or something like that, maybe even poison like in COC?
+            ItemType.EMPTY,  # TODO: tiny robot that helps the player by shooting enemies (what should be
+            #                   inventory slot text? Just "1"? Or maybe his name which you can set in settings? xD
             ItemType.EMPTY_POTION,
             ItemType.EMPTY_HEAL,
             ItemType.EMPTY_SPECIAL
