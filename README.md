@@ -1,22 +1,20 @@
 # FlappyBirdPlus
-Upgraded Flappy Bird with health, guns & enemies! Trained 'AI' included.
+Upgraded Flappy Bird with health, guns & enemies, controlled by AI agents.
 
-Part of the basic Flappy Bird code yoinked from https://github.com/sourabhv/FlapPyBird
+Not developed for commercial purposes, only for fun and learning.
 
-
-<br/>
-
-
-Would it be possible to run the game in a browser? With pygbag?
-https://pypi.org/project/pygbag/
+[PLACEHOLDER FOR THE VIDEO OF THE CURRENT PROGRESS]
 
 # TODO:
-
-1. guns - add animation and sound for shooting and reloading
-2. multiple types of enemies controlled by trained agents - WIP
-3. 3rd inventory slot - maybe add hunger and food? Or spells that freeze enemies/something like that?
-4. traps...? Probably not.
-5. make the scene speed easily adjustable. Nevermind, would complicate stuff too much.
+0. add animation for reloading guns, bullet collisions (sparks, tiny explosions) and other items 
+1. sound effects for like uhh... everything
+1. multiple types of enemies (controlled by trained agents)
+2. 3rd inventory slot - small robots that help the player?
+3. main menu with a global leaderboard (connected to a database)
+4. more items, like potions, heals, weapons and special items
+5. occasional traps...? Probably not.
+6. Figure out how to run the game in a browser, possibly with pygbag https://pypi.org/project/pygbag/
+7. and more...
 
 <br/>
 
@@ -31,24 +29,21 @@ Input:
  - fired bullet positions (only bullets they fired)
 
 Output:
- - rotation - rotate up or down
- - fire, rotate or do nothing
+ - rotation - rotate the weapon up or down or do nothing
+ - fire, reload or do nothing
 
 The agent should be rewarded when their bullet hits the player, and penalized when it hits them or another enemy.
-
-Reloading will not be done by AI, but can be coded to happen randomly, so it doesn't always use the entire magazine.
-There should also be random cooldowns here and there, so they don't constantly fire.
+Should there be random cooldowns here and there, so CloudSkimmers don't constantly fire?
+To be determined.
 
 
 <br/>
 
 Training the SkyDart AI agents: TBD
 
-
 <br/>
 
-Only after the entire game is complete! =>
-Training the Player AI agent:
+Training the Player AI agent (once the game is complete):
 
 Input:
  - player position, rotation, health & shield
@@ -73,5 +68,11 @@ Output:
  - use a heal or not
 
 The agent should be rewarded every time they pass a pipe/the score increases.
-If that's too simple, also try rewarding it for hitting enemies, and punish it for getting hit.
-Maybe also reward it when the bird has high health and shield, and punish it when they're low, although I'm not sure this is a good idea.
+It should also be rewarded for hitting enemies, and punished for getting hit.
+Maybe also reward it when the bird has high health and shield, and punish it when they're low?
+To be determined.
+
+<br/>
+
+Credits:
+ - Part of the basic Flappy Bird code is from https://github.com/sourabhv/FlapPyBird, but it was later heavily modified and expanded upon.
