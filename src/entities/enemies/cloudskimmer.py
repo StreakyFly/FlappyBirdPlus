@@ -7,6 +7,7 @@ from ..items import ItemName, ItemInitializer, Item, Gun
 from .enemy import Enemy, EnemyGroup
 
 
+# TODO: Should there be random occasional cooldowns, so CloudSkimmers don't constantly fire?
 # TODO ghosts should spawn in random colors. As they get damaged, they could change color or become more transparent.
 #  When they die, the weapon should fall to the ground and the ghost should disappear.
 # TODO ghosts need to be better shaded, with more detail. Possibly even have a subtle sprite animation (waves on bottom)
@@ -26,7 +27,7 @@ class CloudSkimmer(Enemy):
         self.frequency = 0.15  # oscillation frequency
         self.sin_y = 0  # sin wave vertical position
 
-        self.set_max_hp(300)
+        self.set_max_hp(150)
 
         self.gun: Union[Gun, Item] = None
         self.gun_rotation = 0

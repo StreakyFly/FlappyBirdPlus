@@ -5,41 +5,28 @@ Not developed for commercial purposes, only for fun and learning.
 
 [PLACEHOLDER FOR THE VIDEO OF THE CURRENT PROGRESS]
 
+Inventory backgrounds and some item icons are placeholders and will be replaced.
+
 # TODO:
-0. add animation for reloading guns, bullet collisions (sparks, tiny explosions) and other items 
-1. sound effects for like uhh... everything
-1. multiple types of enemies (controlled by trained agents)
-2. 3rd inventory slot - small robots that help the player?
-3. main menu with a global leaderboard (connected to a database)
-4. more items, like potions, heals, weapons and special items
-5. occasional traps...? Probably not.
-6. Figure out how to run the game in a browser, possibly with pygbag https://pypi.org/project/pygbag/
-7. and more...
+0. make fighting enemies a bit easier and more fun! (fighting CloudSkimmers is too hard)
+1. barely touching the top/bottom of a pipe shouldn't immediately kill the bird, but only slightly damage it
+2. add animation for reloading guns, bullet collisions (sparks, tiny explosions), enemy deaths and other items 
+3. sound effects for like uhh... everything
+4. multiple types of enemies (controlled by trained agents)
+5. 3rd inventory slot - small robots that help the player?
+6. main menu with a global leaderboard (data stored in a database)
+7. more items, like potions, heals, weapons and special items
+8. occasional traps...? Probably not.
+9. Figure out how to run the game in a browser, possibly with pygbag https://pypi.org/project/pygbag/
+10. and more...
 
 <br/>
 
-Training the CloudSkimmer AI agents:
-
-Input:
- - player position
- - enemy positions (so they won't fire at them or other enemies)
- - current weapon rotation
- - pipes y center position
- - gun type & bullet speed
- - fired bullet positions (only bullets they fired)
-
-Output:
- - rotation - rotate the weapon up or down or do nothing
- - fire, reload or do nothing
-
-The agent should be rewarded when their bullet hits the player, and penalized when it hits them or another enemy.
-Should there be random cooldowns here and there, so CloudSkimmers don't constantly fire?
-To be determined.
-
-
-<br/>
+Training the CloudSkimmer AI agents: WIP
 
 Training the SkyDart AI agents: TBD
+
+Training the robot AI agents: TBD
 
 <br/>
 
@@ -61,8 +48,7 @@ Input:
 
 Output:
  - jump or not
- - fire or not
- - reload or not
+ - fire, reload or do nothing
  - use the 3rd slot item or not
  - use a potion or not
  - use a heal or not

@@ -114,8 +114,8 @@ class FlappyBird:
             self.welcome_message.tick()
 
             pygame.display.update()
-            await asyncio.sleep(0)
             self.config.tick()
+            await asyncio.sleep(0)  # for pygbag compatibility (not implemented yet)
 
     async def play(self):
         """
@@ -153,9 +153,11 @@ class FlappyBird:
             if self.player.crossed(self.next_closest_pipe_pair[0]):
                 self.next_closest_pipe_pair = self.get_next_pipe_pair()
                 self.score.add()
-            # self.player.handle_bad_collisions(self.pipes, self.floor)
-            # if self.is_player_dead():
-            #     return
+
+            self.player.handle_bad_collisions(self.pipes, self.floor)
+            if self.is_player_dead():
+                return
+
             collided_items = self.player.collided_items(self.item_manager.spawned_items)
             self.item_manager.collect_items(collided_items)
             self.update_bullet_info()
@@ -163,8 +165,8 @@ class FlappyBird:
             self.game_tick()
 
             pygame.display.update()
-            await asyncio.sleep(0)
             self.config.tick()
+            await asyncio.sleep(0)
 
             print("END")
             print()
@@ -238,8 +240,8 @@ class FlappyBird:
             self.game_over_message.tick()
 
             pygame.display.update()
-            await asyncio.sleep(0)
             self.config.tick()
+            await asyncio.sleep(0)
 
     def game_tick(self):
         self.background.tick()

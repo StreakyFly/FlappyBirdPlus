@@ -12,7 +12,7 @@ class Config:
     mode: Mode = Mode.PLAY  # <-- change the mode here
     env_type: EnvType = EnvType.ENEMY_CLOUDSKIMMER  # <-- change environment type here
     run_id: str = "run_20240716_112512"  # <-- change the run id here (can/should be None for some modes)
-    human_player: bool = False  # <-- change if you want to play the game yourself (only works for Mode.PLAY)
+    human_player: bool = True  # <-- change if you want to play the game yourself (only works for Mode.PLAY)
 
     options = {
         'headless': False,  # run pygame in headless mode to increase performance
