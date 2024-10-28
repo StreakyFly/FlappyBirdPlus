@@ -8,7 +8,7 @@ class Images:
     background: pygame.Surface
     floor: pygame.Surface
     pipe: Tuple[pygame.Surface, pygame.Surface]
-    player: Tuple[pygame.Surface, pygame.Surface, pygame.Surface]
+    player: Tuple[pygame.Surface, ...]
     welcome_message: pygame.Surface
     game_over: pygame.Surface
     inventory_slot: pygame.Surface
@@ -24,15 +24,12 @@ class Images:
         self._load_enemy_images()
 
     def randomize(self) -> None:
-        PLAYER_IMGS = [['yellowbird-upflap', 'yellowbird-midflap', 'yellowbird-downflap'],
-                       ['bluebird-upflap', 'bluebird-midflap', 'bluebird-downflap'],
-                       ['redbird-upflap', 'redbird-midflap', 'redbird-downflap']]
+        PLAYER_IMG_NAMES = ('bird-yellow', 'bird-blue', 'bird-red')
 
-        random_player = random.randint(0, len(PLAYER_IMGS) - 1)
+        random_player_index = random.randint(0, len(PLAYER_IMG_NAMES) - 1)
+        player_spritesheet = _load_image(f'player/{PLAYER_IMG_NAMES[random_player_index]}', True)
 
-        self.player = (_load_image(f'player/{PLAYER_IMGS[random_player][0]}'),
-                       _load_image(f'player/{PLAYER_IMGS[random_player][1]}'),
-                       _load_image(f'player/{PLAYER_IMGS[random_player][2]}'))
+        self.player = tuple(_animation_spritesheet_to_frames(player_spritesheet, 3))
 
     def _load_base_images(self) -> None:
         self.background = _load_image('background-day').convert()
@@ -47,55 +44,67 @@ class Images:
 
     def _load_inventory_backgrounds(self) -> None:
         self.inventory_backgrounds = dict()
-        item_type_names = ('empty', 'empty-weapon', 'empty-ammo', 'empty-potion', 'empty-heal', 'empty-special',
+        ITEM_TYPE_NAMES = ('empty', 'empty-weapon', 'empty-ammo', 'empty-potion', 'empty-heal', 'empty-special',
                            'weapon', 'ammo', 'potion', 'heal', 'special')
-        for item_type in item_type_names:
-            self.inventory_backgrounds[item_type] = _load_item_image(f'inventory_backgrounds/{item_type}').convert()
+        for item_type in ITEM_TYPE_NAMES:
+            self.inventory_backgrounds[item_type] = _load_image(_items_dir(f'inventory_backgrounds/{item_type}')).convert()
 
     def _load_item_images(self) -> None:
         self.items = dict()
         item_names = (
             'empty/empty', 'empty/empty-weapon', 'empty/empty-ammo',
             'special/totem-of-undying', 'heals/medkit', 'heals/bandage', 'potions/potion-heal', 'potions/potion-shield',
-
         )
         item_names += _get_armament_names()
 
         for item in item_names:
             item_name = item.split('/')[-1]
-            self.items[item_name] = _load_item_image(item).convert_alpha()
+            self.items[item_name] = _load_image(_items_dir(item)).convert_alpha()
 
-            for version in ('_small', '_inventory'):
+            for version in ('small', 'inventory'):
                 try:
-                    self.items[f"{item_name}{version}"] = _load_item_image(f'{item}{version}').convert_alpha()
+                    self.items[f"{item_name}_{version}"] = _load_image(_items_dir(f'{item}_{version}')).convert_alpha()
                 except FileNotFoundError:
                     pass
 
     def _load_enemy_images(self) -> None:
         self.enemies = dict()
-        enemy_img_names = ('enemy-cloudskimmer_1', 'enemy-cloudskimmer-eyes')
+        ENEMY_IMG_NAMES = ('enemy-cloudskimmer_1', 'enemy-cloudskimmer-eyes')
 
-        for enemy_name in enemy_img_names:
+        for enemy_name in ENEMY_IMG_NAMES:
             base_name = enemy_name.rsplit('_', 1)[0]
             if base_name not in self.enemies:
                 self.enemies[base_name] = []
             self.enemies[base_name].append(_load_image(f'enemies/{enemy_name}').convert_alpha())
 
 
-def _load_image(image_name) -> pygame.Surface:
-    return pygame.image.load(f'assets/images/{image_name}.png')
+def _load_image(image_name: str, is_spritesheet: bool = False) -> pygame.Surface:
+    suffix = '_spritesheet' if is_spritesheet else ''
+    return pygame.image.load(f'assets/images/{image_name}{suffix}.png')
 
 
-def _load_item_image(item_name) -> pygame.Surface:
-    return _load_image(f'items/{item_name}')
+def _items_dir(item_name: str) -> str:
+    return f'items/{item_name}'
 
 
 def _get_armament_names() -> Tuple[str, ...]:
     DIR_PREFIXES = ['weapons', 'weapons/ammo']
-    weapons = ('ak-47', 'deagle', 'uzi', )
-    ammunition = ('ammo-box', 'small-bullet', 'medium-bullet', 'big-bullet', )
+    WEAPON_NAMES = ('ak-47', 'deagle', 'uzi', )
+    AMMUNITION_NAMES = ('ammo-box', 'small-bullet', 'medium-bullet', 'big-bullet', )
 
-    names = [f'{DIR_PREFIXES[0]}/{weapon}' for weapon in weapons]
-    names.extend([f'{DIR_PREFIXES[1]}/{ammo}' for ammo in ammunition])
+    names = [f'{DIR_PREFIXES[0]}/{weapon}' for weapon in WEAPON_NAMES]
+    names.extend([f'{DIR_PREFIXES[1]}/{ammo}' for ammo in AMMUNITION_NAMES])
 
     return tuple(names)
+
+
+def _animation_spritesheet_to_frames(spritesheet: pygame.Surface, num_frames: int) -> List[pygame.Surface]:
+    frame_width = spritesheet.get_width() // num_frames
+    frame_height = spritesheet.get_height()
+    frames = []
+
+    for i in range(num_frames):
+        frame = spritesheet.subsurface(pygame.Rect(i * frame_width, 0, frame_width, frame_height)).convert_alpha()
+        frames.append(frame)
+
+    return frames
