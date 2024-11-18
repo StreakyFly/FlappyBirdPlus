@@ -141,7 +141,7 @@ class FlappyBird:
 
         while True:
             print("START")
-            self.monitor_fps_drops(fps_threshold=27)
+            self.monitor_fps_drops()
 
             self.perform_entity_actions()
             # handle events including player input
@@ -344,13 +344,13 @@ class FlappyBird:
             pygame.quit()
             sys.exit()
 
-    def monitor_fps_drops(self, fps_threshold):
+    def monitor_fps_drops(self, fps_threshold=None):
         """
         Extremely advanced algorithm to monitor FPS drops
         written by the one and only @StreakyFly.
-
-        (yeah... it's completely useless, idk why I haven't removed it yet)
         """
+        fps_threshold = fps_threshold or int(self.config.fps * 0.9)
         curr_fps = self.config.clock.get_fps()
-        if curr_fps < fps_threshold:  # highly advanced mathematical formula to detect FPS drops
+
+        if curr_fps < fps_threshold:
             print("FPS drop:", curr_fps)
