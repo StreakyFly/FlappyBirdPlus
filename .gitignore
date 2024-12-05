@@ -8,6 +8,10 @@ ai-models/DQN
 ai-models/**/run*
 
 
+Environment
+.env
+
+
 __pycache__
 
 

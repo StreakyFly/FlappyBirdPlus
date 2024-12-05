@@ -13,15 +13,18 @@ Inventory slot backgrounds and some item icons are placeholders and will be repl
 0. make fighting enemies a bit easier and more fun! (fighting CloudSkimmers is too hard)
 1. barely touching the top/bottom of a pipe shouldn't immediately kill the bird, but only slightly damage it
 2. add animation for reloading guns, bullet collisions (sparks/tiny explosions), collecting items, enemy deaths and other items 
-3. sound effects for like uhh... everything
-4. multiple types of enemies (controlled by AI agents)
-5. 3rd inventory slot - small robots that help the player? (also controlled by AI agents)
-6. main menu with a global leaderboard (data stored in a database)
-7. more items, like potions, heals, weapons and special items
-8. occasional targets attached to pipes, that give you points/abilities/extra shield for hitting them, so it's not boring when there's no enemies?
-9. occasional traps...? Probably not.
-10. Figure out how to run the game in a browser, possibly with pygbag https://pypi.org/project/pygbag/
-11. and more...
+3. VFX, show damage dealt - red text appears above the entity when damage is dealt and then it fades away
+4. sound effects for like uhh... everything
+5. multiple types of enemies (controlled by AI agents)
+6. 3rd inventory slot - small robots that help the player? (also controlled by AI agents)
+7. main menu with a global leaderboard (data stored in a database)
+8. more items, like potions, heals, weapons and special items
+9. occasional targets attached to pipes, that give you points/abilities/extra shield for hitting them, so it's not boring when there's no enemies?
+10. easter egg: kill multiple birds with one stone: super rare stone item that bounces between enemies and kills them all
+11. Figure out how to run the game in a browser, possibly with pygbag https://pypi.org/project/pygbag/
+12. and more... 
+
+- global leaderboard database: later possibly add "HumanPlayer" column that simply stores the info whether the bird was controlled by a human or an AI agent
 
 <br/>
 
