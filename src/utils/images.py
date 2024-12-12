@@ -9,15 +9,15 @@ class Images:
     floor: pygame.Surface
     pipe: Tuple[pygame.Surface, pygame.Surface]
     player: Tuple[pygame.Surface, ...]
-    welcome_message: pygame.Surface
-    game_over: pygame.Surface
     inventory_slot: pygame.Surface
     item_spawn_bubble: pygame.Surface
     inventory_backgrounds: Dict[str, pygame.Surface]
     items: Dict[str, pygame.Surface]
     enemies: Dict[str, List[pygame.Surface]]
+    user_interface: Dict[str, pygame.Surface]
 
     def __init__(self) -> None:
+        self._load_user_interface_images()
         self._load_base_images()
         self._load_inventory_backgrounds()
         self._load_item_images()
@@ -31,13 +31,23 @@ class Images:
 
         self.player = tuple(_animation_spritesheet_to_frames(player_spritesheet, 3))
 
+    def _load_user_interface_images(self) -> None:
+        images_alpha_flags = {
+            'welcome-message': True,
+            'game-over': True,
+            'menu': True,  # TODO: will it have transparent parts or nah?
+            'button-wide': False,  # TODO: will it have transparent parts or nah?
+        }
+        self.user_interface = {}
+        for element, alpha in images_alpha_flags.items():
+            image = _load_image(f'user_interface/{element}')
+            self.user_interface[element] = image.convert_alpha() if alpha else image.convert()
+
     def _load_base_images(self) -> None:
         self.background = _load_image('background-day').convert()
         self.floor = _load_image('floor').convert_alpha()
         self.pipe = (pygame.transform.flip(_load_image('pipe').convert_alpha(), False, True),
                      _load_image('pipe').convert_alpha())
-        self.welcome_message = _load_image('welcome-message').convert_alpha()
-        self.game_over = _load_image('game-over').convert_alpha()
         self.inventory_slot = _load_image('inventory-slot').convert_alpha()
         self.item_spawn_bubble = _load_image('item-spawn-bubble').convert_alpha()
         self.randomize()

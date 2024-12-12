@@ -4,7 +4,7 @@ from .entity import Entity
 
 class WelcomeMessage(Entity):
     def __init__(self, config: GameConfig) -> None:
-        image = config.images.welcome_message
+        image = config.images.user_interface['welcome-message']
         super().__init__(
             config=config,
             image=image,
