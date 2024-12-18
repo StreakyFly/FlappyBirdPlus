@@ -5,8 +5,8 @@ import sys
 import pygame
 
 from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds
-from .entities import Background, Floor, Player, PlayerMode, Pipes, Score, WelcomeMessage, GameOver, \
-    Inventory, ItemManager, ItemName, EnemyManager, CloudSkimmer
+from .entities import MainMenu, SettingsMenu, LeaderboardMenu, Background, Floor, Player, PlayerMode, Pipes, Score, \
+    WelcomeMessage, GameOver, Inventory, ItemManager, ItemName, EnemyManager, CloudSkimmer
 from .ai import ObservationManager
 
 
@@ -16,7 +16,8 @@ from .ai import ObservationManager
 class FlappyBird:
     def __init__(self):
         pygame.init()
-        pygame.display.set_caption("Flappy Bird by @StreakyFly")
+        # pygame.display.set_caption("Flappy Bird by @StreakyFly")
+        pygame.display.set_caption("Flappy Bird Plus")
         window = Window(width=720, height=960)
         if os.environ.get('SDL_VIDEODRIVER') == 'dummy':
             screen = pygame.display.set_mode((window.width, window.height))
@@ -50,13 +51,17 @@ class FlappyBird:
         self.item_manager = None
         self.enemy_manager = None
 
-        self.next_closest_pipe_pair = None
+        # Menus
+        self.main_menu = None
 
         # AI stuff
         self.human_player = True
         self.observation_manager = ObservationManager()
         self.flappy_controller = None
         self.enemy_cloudskimmer_controller = None
+
+        # Miscellaneous
+        self.next_closest_pipe_pair = None
 
     def set_mute(self, mute: bool = False):
         if mute:
@@ -87,6 +92,7 @@ class FlappyBird:
 
     def reset(self):
         self.config.images.randomize()
+        self.main_menu = MainMenu(self.config)
         self.background = Background(self.config)
         self.floor = Floor(self.config)
         self.player = Player(self.config, self.gsm)
@@ -110,8 +116,12 @@ class FlappyBird:
 
             self.background.tick()
             self.floor.tick()
-            self.player.tick()
-            self.welcome_message.tick()
+            # self.player.tick()
+            # self.welcome_message.tick()
+            # TODO: we'll show main menu here, but what should be behind the menu? Normal environment (but no player)?
+            #  and how should we switch from main menu to game? Going straight into the game might be a bit too sudden.
+            #  Or maybe it might be fine, if the bird flaps once or twice by himself and then the player can take over.
+            self.main_menu.tick()
 
             pygame.display.update()
             self.config.tick()

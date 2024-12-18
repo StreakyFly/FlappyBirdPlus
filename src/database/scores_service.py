@@ -4,7 +4,7 @@ from database import supabase
 
 
 # TODO: call this when the game ends
-def add_score(username: str, score: int):
+def submit_score(username: str, score: int):
     response = (
         supabase.table('Scores')
         .insert({
