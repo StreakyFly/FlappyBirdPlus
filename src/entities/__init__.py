@@ -9,3 +9,4 @@ from .game_over import GameOver
 from .inventory import Inventory
 from .items import ItemName, SpawnedItem, ItemManager, ItemInitializer
 from .enemies import EnemyManager, CloudSkimmer
+from .entity import Entity

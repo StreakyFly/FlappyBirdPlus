@@ -1,0 +1,9 @@
+ENTIRE PACMAN GAME IN THIS DIRECTORY
+ - including loading images (load them in images.py, use load_image function from main images.py)
+ - including loading sounds
+ - including entities
+
+Player spritesheet will contain 3 sprites:
+ - wing up, beak open
+ - wing middle, beak closed
+ - wing down, beak open

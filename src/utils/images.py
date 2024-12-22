@@ -9,6 +9,7 @@ class Images:
     floor: pygame.Surface
     pipe: Tuple[pygame.Surface, pygame.Surface]
     player: Tuple[pygame.Surface, ...]
+    player_id: int
     inventory_slot: pygame.Surface
     item_spawn_bubble: pygame.Surface
     inventory_backgrounds: Dict[str, pygame.Surface]
@@ -27,9 +28,10 @@ class Images:
         PLAYER_IMG_NAMES = ('bird-yellow', 'bird-blue', 'bird-red')
 
         random_player_index = random.randint(0, len(PLAYER_IMG_NAMES) - 1)
-        player_spritesheet = _load_image(f'player/{PLAYER_IMG_NAMES[random_player_index]}', True)
+        player_spritesheet = load_image(f'player/{PLAYER_IMG_NAMES[random_player_index]}', True)
 
-        self.player = tuple(_animation_spritesheet_to_frames(player_spritesheet, 3))
+        self.player_id = random_player_index
+        self.player = tuple(animation_spritesheet_to_frames(player_spritesheet, 3))
 
     def _load_user_interface_images(self) -> None:
         images_alpha_flags = {
@@ -40,16 +42,16 @@ class Images:
         }
         self.user_interface = {}
         for element, alpha in images_alpha_flags.items():
-            image = _load_image(f'user_interface/{element}')
+            image = load_image(f'user_interface/{element}')
             self.user_interface[element] = image.convert_alpha() if alpha else image.convert()
 
     def _load_base_images(self) -> None:
-        self.background = _load_image('background-day').convert()
-        self.floor = _load_image('floor').convert_alpha()
-        self.pipe = (pygame.transform.flip(_load_image('pipe').convert_alpha(), False, True),
-                     _load_image('pipe').convert_alpha())
-        self.inventory_slot = _load_image('inventory-slot').convert_alpha()
-        self.item_spawn_bubble = _load_image('item-spawn-bubble').convert_alpha()
+        self.background = load_image('background-day').convert()
+        self.floor = load_image('floor').convert_alpha()
+        self.pipe = (pygame.transform.flip(load_image('pipe').convert_alpha(), False, True),
+                     load_image('pipe').convert_alpha())
+        self.inventory_slot = load_image('inventory-slot').convert_alpha()
+        self.item_spawn_bubble = load_image('item-spawn-bubble').convert_alpha()
         self.randomize()
 
     def _load_inventory_backgrounds(self) -> None:
@@ -57,7 +59,7 @@ class Images:
         ITEM_TYPE_NAMES = ('empty', 'empty-weapon', 'empty-ammo', 'empty-potion', 'empty-heal', 'empty-special',
                            'weapon', 'ammo', 'potion', 'heal', 'special')
         for item_type in ITEM_TYPE_NAMES:
-            self.inventory_backgrounds[item_type] = _load_image(_items_dir(f'inventory_backgrounds/{item_type}')).convert()
+            self.inventory_backgrounds[item_type] = load_image(_items_dir(f'inventory_backgrounds/{item_type}')).convert()
 
     def _load_item_images(self) -> None:
         self.items = dict()
@@ -69,11 +71,11 @@ class Images:
 
         for item in item_names:
             item_name = item.split('/')[-1]
-            self.items[item_name] = _load_image(_items_dir(item)).convert_alpha()
+            self.items[item_name] = load_image(_items_dir(item)).convert_alpha()
 
             for version in ('small', 'inventory'):
                 try:
-                    self.items[f"{item_name}_{version}"] = _load_image(_items_dir(f'{item}_{version}')).convert_alpha()
+                    self.items[f"{item_name}_{version}"] = load_image(_items_dir(f'{item}_{version}')).convert_alpha()
                 except FileNotFoundError:
                     pass
 
@@ -85,12 +87,7 @@ class Images:
             base_name = enemy_name.rsplit('_', 1)[0]
             if base_name not in self.enemies:
                 self.enemies[base_name] = []
-            self.enemies[base_name].append(_load_image(f'enemies/{enemy_name}').convert_alpha())
-
-
-def _load_image(image_name: str, is_spritesheet: bool = False) -> pygame.Surface:
-    suffix = '_spritesheet' if is_spritesheet else ''
-    return pygame.image.load(f'assets/images/{image_name}{suffix}.png')
+            self.enemies[base_name].append(load_image(f'enemies/{enemy_name}').convert_alpha())
 
 
 def _items_dir(item_name: str) -> str:
@@ -108,7 +105,12 @@ def _get_armament_names() -> Tuple[str, ...]:
     return tuple(names)
 
 
-def _animation_spritesheet_to_frames(spritesheet: pygame.Surface, num_frames: int) -> List[pygame.Surface]:
+def load_image(image_name: str, is_spritesheet: bool = False) -> pygame.Surface:
+    suffix = '_spritesheet' if is_spritesheet else ''
+    return pygame.image.load(f'assets/images/{image_name}{suffix}.png')
+
+
+def animation_spritesheet_to_frames(spritesheet: pygame.Surface, num_frames: int) -> List[pygame.Surface]:
     frame_width = spritesheet.get_width() // num_frames
     frame_height = spritesheet.get_height()
     frames = []

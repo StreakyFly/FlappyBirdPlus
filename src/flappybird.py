@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+from typing import Literal
 
 import pygame
 
@@ -8,6 +9,7 @@ from .utils import GameConfig, GameState, GameStateManager, Window, Images, Soun
 from .entities import MainMenu, SettingsMenu, LeaderboardMenu, Background, Floor, Player, PlayerMode, Pipes, Score, \
     WelcomeMessage, GameOver, Inventory, ItemManager, ItemName, EnemyManager, CloudSkimmer
 from .ai import ObservationManager
+from .pacman import Pacman
 
 
 # from .config import Config <-- imported later to avoid circular import
@@ -33,7 +35,8 @@ class FlappyBird:
             window=window,
             images=Images(),
             sounds=Sounds(),
-            debug=Config.debug
+            debug=Config.debug,
+            pacman=Config.pacman
         )
 
         if Config.options['mute']:
@@ -62,6 +65,13 @@ class FlappyBird:
 
         # Miscellaneous
         self.next_closest_pipe_pair = None
+
+        # Pacman stuff
+        self.pacman: Pacman = None
+        self.pacman_shown = False
+        self.transitioning_to: Literal[None, "fp", "pm"] = None
+        self.transition_duration: int = 30
+        self.transition_progress: int = 0
 
     def set_mute(self, mute: bool = False):
         if mute:
@@ -166,6 +176,11 @@ class FlappyBird:
 
             self.player.handle_bad_collisions(self.pipes, self.floor)
             if self.is_player_dead():
+                if self.config.pacman:  # TODO: and player died by hitting a pipe from top
+                    self.pacman = Pacman(self.config, self.config.images.player_id)
+                    self.transitioning_to = "pm"
+                    # TODO: transition to pacman minigame
+                    #  - flappy's death animation will also need to be updated
                 return
 
             collided_items = self.player.collided_items(self.item_manager.spawned_items)
@@ -246,12 +261,48 @@ class FlappyBird:
                 if self.handle_event(event):
                     return
 
-            self.game_tick()
-            self.game_over_message.tick()
+            if self.pacman_shown:
+                info = self.pacman.update()
+                # TODO: when pacman ends and returns that it's over, start transitioning from PC to FP
+                if info == 1:  # TODO update, probably won't return just -1
+                    self.transitioning_to = "fp"
+            else:
+                self.game_tick()
+                self.game_over_message.tick()
+
+            self.transition()
 
             pygame.display.update()
             self.config.tick()
             await asyncio.sleep(0)
+
+    def transition(self):
+        if not self.transitioning_to:
+            return
+
+        self.draw_black_overlay()
+
+        if self.transitioning_to == "pm":
+            self.fade_to_black() if not self.pacman_shown else self.fade_from_black()
+        elif self.transitioning_to == "fp":
+            self.fade_to_black() if self.pacman_shown else self.fade_from_black()
+
+    def fade_to_black(self):
+        self.transition_progress += 1
+        if self.transition_progress == self.transition_duration:
+            self.pacman_shown = not self.pacman_shown
+
+    def fade_from_black(self):
+        self.transition_progress -= 1
+        if self.transition_progress == 0:
+            self.transitioning_to = None
+
+    def draw_black_overlay(self):
+        alpha = min(255, int(255 * (self.transition_progress / self.transition_duration)))
+        fade_surface = pygame.Surface(self.config.screen.get_size())
+        fade_surface.fill((0, 0, 0))
+        fade_surface.set_alpha(alpha)
+        self.config.screen.blit(fade_surface, (0, 0))
 
     def game_tick(self):
         self.background.tick()
@@ -335,7 +386,7 @@ class FlappyBird:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 return True
 
-        elif self.player.mode == PlayerMode.CRASH:
+        elif self.player.mode == PlayerMode.CRASH and not self.pacman:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 if self.player.y + self.player.h >= self.floor.y - 1:  # waits for bird crash animation to end
                     return True
