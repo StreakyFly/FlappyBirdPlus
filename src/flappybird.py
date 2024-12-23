@@ -6,7 +6,7 @@ from typing import Literal
 import pygame
 
 from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds
-from .entities import MainMenu, SettingsMenu, LeaderboardMenu, Background, Floor, Player, PlayerMode, Pipes, Score, \
+from .entities import MenuManager, MainMenu, Background, Floor, Player, PlayerMode, Pipes, Score, \
     WelcomeMessage, GameOver, Inventory, ItemManager, ItemName, EnemyManager, CloudSkimmer
 from .ai import ObservationManager
 from .pacman import Pacman
@@ -53,9 +53,7 @@ class FlappyBird:
         self.inventory = None
         self.item_manager = None
         self.enemy_manager = None
-
-        # Menus
-        self.main_menu = None
+        self.menu_manager = None
 
         # AI stuff
         self.human_player = True
@@ -102,7 +100,8 @@ class FlappyBird:
 
     def reset(self):
         self.config.images.randomize()
-        self.main_menu = MainMenu(self.config)
+        self.menu_manager = MenuManager()
+        self.menu_manager.push_menu(MainMenu(self.config, self.menu_manager))
         self.background = Background(self.config)
         self.floor = Floor(self.config)
         self.player = Player(self.config, self.gsm)
@@ -123,6 +122,7 @@ class FlappyBird:
             for event in pygame.event.get():
                 if self.handle_event(event):
                     return
+                self.menu_manager.handle_event(event)
 
             self.background.tick()
             self.floor.tick()
@@ -131,7 +131,7 @@ class FlappyBird:
             # TODO: we'll show main menu here, but what should be behind the menu? Normal environment (but no player)?
             #  and how should we switch from main menu to game? Going straight into the game might be a bit too sudden.
             #  Or maybe it might be fine, if the bird flaps once or twice by himself and then the player can take over.
-            self.main_menu.tick()
+            self.menu_manager.tick()
 
             pygame.display.update()
             self.config.tick()

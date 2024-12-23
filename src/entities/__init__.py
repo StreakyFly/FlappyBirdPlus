@@ -1,4 +1,4 @@
-from .menus import MainMenu, SettingsMenu, LeaderboardMenu
+from .menus import MenuManager, MainMenu
 from .background import Background
 from .floor import Floor
 from .player import Player, PlayerMode
