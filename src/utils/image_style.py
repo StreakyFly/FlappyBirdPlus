@@ -1,7 +1,29 @@
 import pygame
 
 
-def render_color_overlay(surface, color=(0, 0, 0), alpha: float = 1):
+def apply_outline_and_shadow(surface: pygame.Surface, outline_color=(0, 0, 0), outline_width: int = 4, outline_algorithm: int = 3,
+                             shadow_color=(0, 0, 0), shadow_distance: tuple[int, int] = (4, 4), shadow_alpha: float = 1) -> pygame.Surface:
+    """
+    Applies an outline and shadow to the given surface and returns a new surface with the effects.
+    """
+    outlined_surface = render_outline(surface=surface,
+                                      outline_color=outline_color,
+                                      outline_width=outline_width,
+                                      outline_algorithm=outline_algorithm)
+
+    shadow_surface = render_color_overlay(surface=outlined_surface, color=shadow_color, alpha=shadow_alpha)
+
+    combined_surface = pygame.Surface((outlined_surface.get_width() + abs(shadow_distance[0]),
+                                      outlined_surface.get_height() + abs(shadow_distance[1])),
+                                      pygame.SRCALPHA)
+
+    combined_surface.blit(shadow_surface, shadow_distance)
+    combined_surface.blit(outlined_surface, (0, 0))
+
+    return combined_surface
+
+
+def render_color_overlay(surface, color=(0, 0, 0), alpha: float = 1) -> pygame.Surface:
     """
     Color the surface with a solid color.
     """
@@ -12,7 +34,7 @@ def render_color_overlay(surface, color=(0, 0, 0), alpha: float = 1):
     return colored_mask
 
 
-def render_outline(surface: pygame.Surface, outline_color, outline_width, outline_algorithm: int):
+def render_outline(surface: pygame.Surface, outline_color, outline_width, outline_algorithm: int) -> pygame.Surface:
     """
     Add outline to the surface.
     """
@@ -34,7 +56,7 @@ def render_outline(surface: pygame.Surface, outline_color, outline_width, outlin
     return surf
 
 
-def get_points(outline_algorithm: int, outline_width: int):
+def get_points(outline_algorithm: int, outline_width: int) -> list:
     match outline_algorithm:
         case 0:
             points = _circlepoints(outline_width)
@@ -52,8 +74,7 @@ def get_points(outline_algorithm: int, outline_width: int):
     return points
 
 
-def _circlepoints(r):
-    r = int(round(r))
+def _circlepoints(r: int) -> list:
     x, y, e = r, 0, 1 - r
     points = []
     while x >= y:
@@ -72,7 +93,7 @@ def _circlepoints(r):
     return points
 
 
-def _squarepoints(r):
+def _squarepoints(r: int) -> list:
     points = set()
     for i in range(0, r+1):
         points.add((0, i))
@@ -83,7 +104,7 @@ def _squarepoints(r):
     return list(points)
 
 
-def _squarepoints_corners(r):
+def _squarepoints_corners(r: int) -> list:
     points = set()
     for i in range(0, r+1):
         points.add((i, i))
@@ -94,7 +115,7 @@ def _squarepoints_corners(r):
     return list(points)
 
 
-def _squarepoints_corners_for_chonkers(r):
+def _squarepoints_corners_for_chonkers(r: int) -> list:
     points = set()
     points.add((r, r))
     points.add((r, -r))
@@ -103,7 +124,7 @@ def _squarepoints_corners_for_chonkers(r):
 
     return list(points)
 
-def _squarepoints_corners_for_less_chonkers(r):
+def _squarepoints_corners_for_less_chonkers(r: int) -> list:
     """
     I am really good at naming functions.
     """

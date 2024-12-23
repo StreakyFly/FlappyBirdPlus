@@ -5,6 +5,9 @@ from .settings_menu import SettingsMenu
 from .elements import Button
 
 
+# TODO: add main label to the menu - as an element
+#  maybe underlined text or something like that, or just text and a line under it separating it from other elements
+
 class MainMenu(Menu):
     def __init__(self, config: GameConfig, menu_manager: MenuManager):
         super().__init__(config, menu_manager)

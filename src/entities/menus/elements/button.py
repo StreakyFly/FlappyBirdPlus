@@ -7,12 +7,7 @@ from src.entities.entity import Entity
 class Button(Entity):
     def __init__(self, config: GameConfig, x=0, y=0, image=None, label: str = "", on_click: callable = None):
         image = image or config.images.user_interface['button-wide']
-        super().__init__(
-            config=config,
-            image=image,
-            x=x,
-            y=y,
-        )
+        super().__init__(config=config, image=image, x=x, y=y)
         self.label = label
         self.on_click_callback = on_click
         self.font = load_font(Fonts.FONT_FLAPPY, 48)
