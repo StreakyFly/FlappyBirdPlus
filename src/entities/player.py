@@ -32,7 +32,7 @@ class Player(Entity):
         self.min_y = -2 * self.h
         self.max_y = config.window.viewport_height - self.h * 0.75
 
-        self.animation = Animation(images=list(self.config.images.player) + [self.config.images.player[1]])
+        self.animation = Animation(frames=list(self.config.images.player) + [self.config.images.player[1]])
 
         self.crashed = False
         self.crash_entity = None
@@ -43,9 +43,11 @@ class Player(Entity):
         self.invincibility_frames = 0
         self.set_mode(PlayerMode.SHM)
         self.gsm = gsm
-        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(255, 0, 0, 222),
+        # self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(255, 0, 0, 222),
+        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=500, color=(255, 0, 0, 222),
                                        x=self.x, y=int(self.y) - 25, w=self.w, h=10)
-        self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(20, 50, 255, 222),
+        # self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(20, 50, 255, 222),
+        self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=500, color=(20, 50, 255, 222),
                                            x=self.x, y=int(self.y) - 40, w=self.w, h=10)
 
     def set_mode(self, mode: PlayerMode) -> None:

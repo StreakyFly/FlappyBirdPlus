@@ -3,7 +3,8 @@ import pygame
 from src.utils import GameConfig
 from .images import Images
 from .player import Player
-from .enemy import Enemy
+
+from .pm.run import GameController
 
 
 class Pacman:
@@ -13,16 +14,15 @@ class Pacman:
         self.images = Images(player_id)
         # self.sounds = None  # TODO: well... TODO?
         self.player = Player(self.config, self.images.player)
-        self.enemies = [Enemy(self.config, self.images.enemy) for _ in range(4)]
 
-    def update(self):
-        # TODO
-        #  update enemies
-        #  update player
+        self.game = GameController(config)
+        self.game.start_game()
 
-        self.config.screen.fill((0, 123, 0))
-        pygame.draw.rect(self.config.screen, (255, 255, 0), (400, 150, 100, 100))
+    def update(self, events):
+        self.game.check_events(events)
+        self.game.update()
 
-        self.player.tick()
-        for enemy in self.enemies:
-            enemy.tick()
+        # self.config.screen.fill((0, 123, 0))
+        # pygame.draw.rect(self.config.screen, (255, 255, 0), (400, 150, 100, 100))
+        #
+        # self.player.tick()

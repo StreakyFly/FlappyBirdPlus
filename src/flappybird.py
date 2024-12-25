@@ -257,12 +257,16 @@ class FlappyBird:
         self.inventory.stop()
 
         while True:
+            events = []
             for event in pygame.event.get():
-                if self.handle_event(event):
-                    return
+                if self.pacman_shown:
+                    self.handle_quit(event)
+                    events.append(event)
+                elif self.handle_event(event):
+                        return
 
             if self.pacman_shown:
-                info = self.pacman.update()
+                info = self.pacman.update(events)
                 # TODO: when pacman ends and returns that it's over, start transitioning from PC to FP
                 if info == 1:  # TODO update, probably won't return just -1
                     self.transitioning_to = "fp"
@@ -386,7 +390,7 @@ class FlappyBird:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 return True
 
-        elif self.player.mode == PlayerMode.CRASH and not self.pacman:
+        elif self.player.mode == PlayerMode.CRASH:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 if self.player.y + self.player.h >= self.floor.y - 1:  # waits for bird crash animation to end
                     return True

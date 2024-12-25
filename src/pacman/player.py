@@ -12,7 +12,7 @@ class Player(Entity):
         y = 100  # int((config.window.height - image.get_height()) / 2)
         super().__init__(config, player_sprites[0], x, y)
 
-        self.animation = Animation(images=list(player_sprites) + [player_sprites[1]])
+        self.animation = Animation(frames=list(player_sprites) + [player_sprites[1]])
 
     def tick(self) -> None:
         super().tick()
