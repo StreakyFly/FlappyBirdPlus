@@ -36,8 +36,8 @@ class ObservationManager:
 
     def get_observation(self, entity) -> np.ndarray | dict:
         """
-        Retrieves the observation for a given agent type.
+        Retrieves an observation for the given agent type.
         :param entity: the entity for which to get the observation
-        :return: the observation for the given agent type
+        :return: observation for the given agent type
         """
         return self.observation_instances[entity].get_observation()

@@ -10,7 +10,7 @@ class EnvManager:
             EnvType.BASIC_FLAPPY: self.get_basic_flappy_env_class,
             EnvType.ADVANCED_FLAPPY: self.get_advanced_flappy_env_class,
             EnvType.ENEMY_CLOUDSKIMMER: self.get_enemy_cloudskimmer_env_class,
-            # EnvType.ENEMY_AEROTHIEF: EnemyAerothiefEnv
+            # EnvType.ENEMY_AEROTHIEF: self.get_enemy_aerothief_env_class,
         }
 
         self.env_class: Type = map_env_to_getclass_method.get(env_type)()
@@ -63,4 +63,3 @@ class EnvManager:
     def get_enemy_cloudskimmer_env_class() -> Type:
         from .enemy_cloudskimmer_env import EnemyCloudSkimmerEnv
         return EnemyCloudSkimmerEnv
-

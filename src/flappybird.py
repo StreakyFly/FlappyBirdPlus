@@ -214,7 +214,8 @@ class FlappyBird:
         if not self.human_player:
             controlled_entities.append(self.player)
         if self.enemy_manager.spawned_enemy_groups:
-            controlled_entities.extend(self.enemy_manager.spawned_enemy_groups[0].members)
+            if isinstance(self.enemy_manager.spawned_enemy_groups[0].members[0], CloudSkimmer):
+                controlled_entities.extend(self.enemy_manager.spawned_enemy_groups[0].members)
 
         # get actions for all entities
         actions = []
@@ -355,9 +356,10 @@ class FlappyBird:
 
         # enemy bullets
         for group in self.enemy_manager.spawned_enemy_groups:
-            spawned_enemies.update(group.members)
-            for enemy in group.members:
-                current_bullets.update(enemy.gun.shot_bullets)
+            if isinstance(group.members[0], CloudSkimmer):
+                spawned_enemies.update(group.members)
+                for enemy in group.members:
+                    current_bullets.update(enemy.gun.shot_bullets)
 
         pipes = self.pipes.upper + self.pipes.lower
         for bullet in current_bullets:

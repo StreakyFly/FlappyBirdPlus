@@ -1,6 +1,7 @@
 from src.utils import GameConfig
 from .enemy import EnemyGroup
 from .cloudskimmer import CloudSkimmerGroup
+from .skydart import SkyDartGroup
 
 
 class EnemyManager:
@@ -29,13 +30,18 @@ class EnemyManager:
 
     def spawn_enemy(self) -> None:
         # TODO implement this
-        self.spawn_cloudskimmer()  # temporary
+        # self.spawn_cloudskimmer()  # temporary
+        self.spawn_skydart()  # temporary
 
     def spawn_cloudskimmer(self):
         # TODO play sound effect when spawning enemy, for this one some ghost sound effect
 
         # Warning! Changing the x and y position will require additional training of the CloudSkimmer agent.
         self.spawned_enemy_groups.append(CloudSkimmerGroup(self.config, x=1000, y=350))
+
+    def spawn_skydart(self):
+        # TODO implement this
+        self.spawned_enemy_groups.append(SkyDartGroup(self.config, x=1000, y=100))
 
     def spawn_aerothief(self):
         # TODO implement this
