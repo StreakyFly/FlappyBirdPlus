@@ -390,7 +390,7 @@ class FlappyBird:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 return True
 
-        elif self.player.mode == PlayerMode.CRASH:
+        elif self.player.mode == PlayerMode.CRASH and not self.pacman:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 if self.player.y + self.player.h >= self.floor.y - 1:  # waits for bird crash animation to end
                     return True

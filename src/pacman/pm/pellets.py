@@ -44,7 +44,7 @@ class PelletGroup:
         self.pellet_list = []
         self.power_pellets = []
         self.create_pellet_list(pellet_file)
-        self.numEaten = 0
+        self.num_eaten = 0
 
     def update(self, dt):
         for power_pellet in self.power_pellets:

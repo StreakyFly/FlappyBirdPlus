@@ -11,11 +11,11 @@ class Pacman:
     def __init__(self, config: GameConfig, player_id):
         self.config = config
         self.clock = pygame.time.Clock()
-        self.images = Images(player_id)
+        # self.images = Images(player_id)
         # self.sounds = None  # TODO: well... TODO?
-        self.player = Player(self.config, self.images.player)
+        # self.player = Player(self.config, self.images.player)
 
-        self.game = GameController(config)
+        self.game = GameController(config, player_id)
         self.game.start_game()
 
     def update(self, events):

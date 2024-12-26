@@ -5,6 +5,7 @@ import pygame
 from .constants import *
 from src.utils import load_image, animation_spritesheet_to_frames, Animation
 
+PLAYER_IMG_NAMES = ('bird-yellow', 'bird-blue', 'bird-red')
 BASETILEWIDTH = 16
 BASETILEHEIGHT = 16
 DEATH = 5
@@ -25,17 +26,17 @@ class Spritesheet:
 
 
 class PacmanSprites(Spritesheet):
-    def __init__(self, entity):
+    def __init__(self, entity, player_id: int):
         super().__init__()
         self.entity = entity
         self.animations = {}
         self.stop_images = {}
-        self.load_animations()
+        self.load_animations(PLAYER_IMG_NAMES[player_id])
         self.stop_image: pygame.Surface = self.stop_images[LEFT]
         self.entity.image = self.get_start_image()
 
-    def load_animations(self):
-        player_sheet = animation_spritesheet_to_frames(load_image("pacman/player", True), 4)
+    def load_animations(self, player_spritesheet_filename: str):
+        player_sheet = animation_spritesheet_to_frames(load_image(f"pacman/{player_spritesheet_filename}", True), 4)
         left = [pygame.transform.flip(frame, True, False) for frame in player_sheet]
         right = player_sheet
         up = [pygame.transform.rotate(frame, 90) for frame in player_sheet]
@@ -71,13 +72,13 @@ class PacmanSprites(Spritesheet):
             self.animations[key].reset()
 
     def get_start_image(self):
-        return self.stop_image
+        return self.stop_images[LEFT]
 
 
 class GhostSprites(Spritesheet):
     def __init__(self, entity):
         super().__init__()
-        self.x = {BLINKY:0, PINKY:2, INKY:4, CLYDE:6}
+        self.x = {BLINKY: 0, PINKY: 2, INKY: 4, CLYDE: 6}
         self.entity = entity
         self.entity.image = self.get_start_image()
 
@@ -115,7 +116,7 @@ class FruitSprites(Spritesheet):
     def __init__(self, entity, level):
         super().__init__()
         self.entity = entity
-        self.fruits = {0:(16,8), 1:(18,8), 2:(20,8), 3:(16,10), 4:(18,10), 5:(20,10)}
+        self.fruits = {0: (16,8), 1: (18,8), 2: (20,8), 3: (16,10), 4: (18,10), 5: (20,10)}
         self.entity.image = self.get_start_image(level % len(self.fruits))
 
     def get_start_image(self, key):
@@ -126,21 +127,21 @@ class FruitSprites(Spritesheet):
 
 
 class LifeSprites(Spritesheet):
-    def __init__(self, numlives):
+    def __init__(self, num_lives: int, player_id: int):
         super().__init__()
-        self.reset_lives(numlives)
+        self.images = []
+        player_sheet = animation_spritesheet_to_frames(load_image(f"pacman/{PLAYER_IMG_NAMES[player_id]}", True), 4)
+        self.life_image = player_sheet[0]
+        self.reset_lives(num_lives)
 
     def remove_image(self):
         if len(self.images) > 0:
             self.images.pop(0)
 
-    def reset_lives(self, numlives):
+    def reset_lives(self, num_lives):
         self.images = []
-        for i in range(numlives):
-            self.images.append(self.get_image(0, 0))
-
-    def get_image(self, x, y):
-        return Spritesheet.get_image(self, x, y, 2 * TILEWIDTH, 2 * TILEHEIGHT)
+        for i in range(num_lives):
+            self.images.append(self.life_image)
 
 
 class MazeSprites(Spritesheet):

@@ -7,14 +7,14 @@ from .sprites import PacmanSprites
 
 
 class Pacman(Entity):
-    def __init__(self, node):
+    def __init__(self, node, player_id: int):
         super().__init__(node)
         self.name = PACMAN    
         self.color = YELLOW
         self.direction = LEFT
         self.set_between_nodes(LEFT)
         self.alive = True
-        self.sprites = PacmanSprites(self)
+        self.sprites = PacmanSprites(self, player_id)
 
     def reset(self):
         super().reset()
