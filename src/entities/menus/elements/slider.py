@@ -1,6 +1,6 @@
 import pygame
 
-from src.utils import GameConfig, Fonts, load_font, flappy_text, apply_outline_and_shadow
+from src.utils import GameConfig, Fonts, get_font, flappy_text, apply_outline_and_shadow
 from src.entities.entity import Entity
 
 
@@ -14,7 +14,7 @@ class Slider(Entity):
         self.min_value = min_value
         self.max_value = max_value
         self.value = int(initial_value)
-        self.font = load_font(Fonts.FONT_FLAPPY, 32)
+        self.font = get_font(Fonts.FONT_FLAPPY, 32)
         self.dragging = False
 
         self.bar_height = 10

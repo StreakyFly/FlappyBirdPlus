@@ -1,6 +1,6 @@
 import pygame
 
-from src.utils import GameConfig, Fonts, load_font
+from src.utils import GameConfig, Fonts, get_font
 from src.entities.entity import Entity
 
 
@@ -14,7 +14,7 @@ class Leaderboard(Entity):
         self.scroll_offset = 0
         self.scroll_speed = 20
         self.row_height = 30
-        self.font = load_font(Fonts.FONT_FLAPPY, 24)
+        self.font = get_font(Fonts.FONT_FLAPPY, 24)
 
         self.bg_color = (30, 30, 30)
         self.text_color = (255, 255, 255)

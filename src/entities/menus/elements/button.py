@@ -1,6 +1,6 @@
 import pygame
 
-from src.utils import GameConfig, Fonts, load_font, flappy_text
+from src.utils import GameConfig, Fonts, get_font, flappy_text
 from src.entities.entity import Entity
 
 
@@ -10,7 +10,7 @@ class Button(Entity):
         super().__init__(config=config, image=image, x=x, y=y)
         self.label = label
         self.on_click_callback = on_click
-        self.font = load_font(Fonts.FONT_FLAPPY, 48)
+        self.font = get_font(Fonts.FONT_FLAPPY, 48)
         self.hovered = False
 
     def tick(self):

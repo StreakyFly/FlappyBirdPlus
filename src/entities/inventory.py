@@ -3,7 +3,7 @@ from typing import Union, List
 
 import pygame
 
-from ..utils import GameConfig, flappy_text, load_font, Fonts
+from ..utils import GameConfig, flappy_text, get_font, Fonts
 from .entity import Entity
 from .items import Item, ItemType, ItemName, ItemInitializer, Gun
 
@@ -13,7 +13,7 @@ class InventorySlot(Entity):
         super().__init__(*args, **kwargs)
         self.item: Item = None
         self.type: ItemType = ItemType.EMPTY
-        self.font = load_font(Fonts.FONT_FLAPPY, 24)
+        self.font = get_font(Fonts.FONT_FLAPPY, 24)
 
     def tick(self) -> None:
         self.item.tick()

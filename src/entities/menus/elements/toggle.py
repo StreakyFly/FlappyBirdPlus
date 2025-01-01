@@ -1,6 +1,6 @@
 import pygame
 
-from src.utils import GameConfig, Fonts, load_font, flappy_text, apply_outline_and_shadow
+from src.utils import GameConfig, Fonts, get_font, flappy_text, apply_outline_and_shadow
 from src.entities.entity import Entity
 
 
@@ -13,7 +13,7 @@ class Toggle(Entity):
         self.label = label
         self.on_toggle_callback = on_toggle
         self.state = initial_state
-        self.font = load_font(Fonts.FONT_FLAPPY, 32)
+        self.font = get_font(Fonts.FONT_FLAPPY, 32)
         self.hovered = False
 
         # Animation stuff

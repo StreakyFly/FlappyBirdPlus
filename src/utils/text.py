@@ -7,7 +7,18 @@ class Fonts:
     FONT_FLAPPY = 'flappy-bird.ttf'
 
 
-def load_font(path: str, font_size: int) -> pygame.font:
+# Cache loaded fonts
+loaded_fonts = {}
+
+
+def get_font(path: str, font_size: int) -> pygame.font:
+    key = f'{path}-{font_size}'
+    if key not in loaded_fonts:
+        loaded_fonts[key] = _load_font(path, font_size)
+    return loaded_fonts[key]
+
+
+def _load_font(path: str, font_size: int) -> pygame.font:
     return pygame.font.Font(f'assets/{path}', font_size)
 
 

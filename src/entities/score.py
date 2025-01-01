@@ -1,6 +1,6 @@
 import pygame
 
-from ..utils import GameConfig, Fonts, flappy_text, load_font
+from ..utils import GameConfig, Fonts, flappy_text, get_font
 from .entity import Entity
 
 
@@ -13,7 +13,7 @@ class Score(Entity):
         self.y = self.config.window.height * 0.04
         self.score = 0
 
-        self.font = load_font(Fonts.FONT_FLAPPY, 76)
+        self.font = get_font(Fonts.FONT_FLAPPY, 76)
 
     def reset(self) -> None:
         self.score = 0
