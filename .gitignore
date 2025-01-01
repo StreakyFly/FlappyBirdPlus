@@ -5,13 +5,17 @@ src/pacman/TODO.txt
 *plans.txt
 
 
-# model training data (I'll delete most of it, only keep da best/interesting ones) and push them later
+# Model training data (I'll delete most of it, only keep da best/interesting ones) and push them later
 ai-models/DQN
 ai-models/**/run*
 
 
-Environment
+# Environment
 .env
+
+
+# Persistent data, like user settings
+data/
 
 
 __pycache__

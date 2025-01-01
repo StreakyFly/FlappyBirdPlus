@@ -5,13 +5,15 @@ from src.entities.entity import Entity
 
 
 class Slider(Entity):
-    def __init__(self, config: GameConfig, x=0, y=0, width=300, min_value=0, max_value=100, initial_value=50, label: str = ""):
-        super().__init__(config=config, x=x, y=y)
-        self.w = width
+    def __init__(self, config: GameConfig, x=0, y=0, width=300, label: str = "",
+                 on_slide: callable = None, min_value=0, max_value=100, initial_value=50
+                 ):
+        super().__init__(config=config, x=x, y=y, w=width)
+        self.label = label
+        self.on_slide_callback = on_slide
         self.min_value = min_value
         self.max_value = max_value
-        self.value = initial_value
-        self.label = label
+        self.value = int(initial_value)
         self.font = load_font(Fonts.FONT_FLAPPY, 32)
         self.dragging = False
 
@@ -67,3 +69,5 @@ class Slider(Entity):
         relative_x = mouse_pos[0] - self.x
         self.value = self.min_value + (relative_x / self.w) * (self.max_value - self.min_value)
         self.value = int(pygame.math.clamp(self.value, self.min_value, self.max_value))
+        if self.on_slide_callback:
+            self.on_slide_callback(self.value)

@@ -5,12 +5,14 @@ from src.entities.entity import Entity
 
 
 class Toggle(Entity):
-    def __init__(self, config: GameConfig, x=0, y=0, width=80, height=40, label: str = "", initial_state=False, on_toggle: callable = None):
+    def __init__(self, config: GameConfig, x=0, y=0, width=80, height=40, label: str = "",
+                 on_toggle: callable = None, initial_state=False
+                 ):
         image = pygame.Surface((width, height), pygame.SRCALPHA)
         super().__init__(config=config, image=image, x=x, y=y)
         self.label = label
-        self.state = initial_state
         self.on_toggle_callback = on_toggle
+        self.state = initial_state
         self.font = load_font(Fonts.FONT_FLAPPY, 32)
         self.hovered = False
 
