@@ -42,7 +42,6 @@ class Button(Entity):
         self.hovered = self.rect.collidepoint(mouse_pos)
 
     def on_click(self):
-        print(f"Button '{self.label}' clicked")
         if self.on_click_callback:
             self.on_click_callback()
         else:

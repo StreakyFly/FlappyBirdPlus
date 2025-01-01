@@ -3,6 +3,10 @@ from src.entities.entity import Entity
 from .menu_manager import MenuManager
 
 
+# TODO: add main label to the menu - as an element
+#  maybe underlined text or something like that, or just text and a line under it separating it from other elements
+
+
 class Menu(Entity):
     SIDE_PADDING = 40
 
@@ -16,6 +20,7 @@ class Menu(Entity):
         )
         self.menu_manager = menu_manager
         self.elements: list = []
+        self.title: str = ""
 
     def tick(self):
         super().tick()
@@ -45,4 +50,5 @@ class Menu(Entity):
 
     def handle_event(self, event):
         for element in self.elements:
-            element.handle_event(event)
+            if hasattr(element, "handle_event"):
+                element.handle_event(event)
