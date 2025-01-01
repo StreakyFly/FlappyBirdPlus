@@ -36,13 +36,13 @@ class Toggle(Entity):
         super().draw()
 
         # Draw the toggle background
-        bg_color = (190, 220, 190) if self.state else (220, 190, 190)
+        bg_color = (200, 210, 180) if self.state else (220, 190, 180)
         self.image.fill(bg_color)
         combined_surface = apply_outline_and_shadow(self.image, outline_width=3, shadow_distance=(3, 3))
         self.config.screen.blit(combined_surface, (self.x, self.y))
 
         # Draw the toggle switch
-        switch_color = (0, 255, 0) if self.state else (255, 0, 0)
+        switch_color = (156, 230, 89) if self.state else (251, 56, 3)
         switch_x = self.get_current_switch_x()
         switch_width = self.h * 0.68
         switch_height = switch_width
