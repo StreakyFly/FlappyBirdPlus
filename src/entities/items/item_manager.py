@@ -15,27 +15,38 @@ class ItemManager:
         self.spawned_items: List[SpawnedItem] = []
         self.spawn_cooldown: int = 150  # self.config.fps * 5 <-- we don't want it tied to the fps
         self.stopped = False
+        # self.count = 0  # TODO delete
 
     def tick(self) -> None:
         if self.stopped:
             return
 
-        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
-        #                            x=800, y=700, image=self.config.images.item_spawn_bubble))
-        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
-        #                            x=800, y=600, image=self.config.images.item_spawn_bubble))
-        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.TOTEM_OF_UNDYING,
-        #                            x=800, y=500, image=self.config.images.item_spawn_bubble))
-        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
-        #                            x=800, y=400, image=self.config.images.item_spawn_bubble))
-        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
-        #                            x=800, y=300, image=self.config.images.item_spawn_bubble))
-        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.TOTEM_OF_UNDYING,
-        #                            x=800, y=200, image=self.config.images.item_spawn_bubble))
-        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
-        #                            x=800, y=100, image=self.config.images.item_spawn_bubble))
-        # self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
-        #                            x=800, y=0, image=self.config.images.item_spawn_bubble))
+        # self.count += 1  # TODO: delete
+        # if 70 < self.count < 90:  # TODO: delete
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
+        #                                x=800, y=700, image=self.config.images.item_spawn_bubble))
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
+        #                                x=800, y=600, image=self.config.images.item_spawn_bubble))
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.TOTEM_OF_UNDYING,
+        #                                x=800, y=500, image=self.config.images.item_spawn_bubble))
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
+        #                                x=800, y=400, image=self.config.images.item_spawn_bubble))
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
+        #                                x=800, y=300, image=self.config.images.item_spawn_bubble))
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.TOTEM_OF_UNDYING,
+        #                                x=800, y=200, image=self.config.images.item_spawn_bubble))
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
+        #                                x=800, y=100, image=self.config.images.item_spawn_bubble))
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
+        #                                x=800, y=0, image=self.config.images.item_spawn_bubble))
+
+        # items = [ItemName.WEAPON_AK47, ItemName.WEAPON_DEAGLE, ItemName.WEAPON_UZI, ItemName.AMMO_BOX,
+        #          ItemName.POTION_HEAL, ItemName.POTION_SHIELD, ItemName.TOTEM_OF_UNDYING]
+        # for i in range(16):
+        #     item_name = random.choice(items)
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=item_name,
+        #                               x=800, y=50*i, image=self.config.images.item_spawn_bubble))
+        # print(len(self.spawned_items))
 
         if self.can_spawn_item():
             self.spawn_item()

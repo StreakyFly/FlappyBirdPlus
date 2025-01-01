@@ -111,7 +111,7 @@ class FlappyBird:
         self.score = Score(self.config)
         self.inventory = Inventory(self.config, self.player)
         self.item_manager = ItemManager(self.config, self.inventory, self.pipes)
-        self.enemy_manager = EnemyManager(self.config)
+        self.enemy_manager = EnemyManager(self.config, self)
         self.next_closest_pipe_pair = (self.pipes.upper[0], self.pipes.lower[0])
 
     async def start_screen(self):
@@ -160,7 +160,7 @@ class FlappyBird:
         self.score.reset()
 
         while True:
-            print("START")
+            # print("START")
             self.monitor_fps_drops()
 
             self.perform_entity_actions()
@@ -193,8 +193,8 @@ class FlappyBird:
             self.config.tick()
             await asyncio.sleep(0)
 
-            print("END")
-            print()
+            # print("END")
+            # print()
 
     def perform_entity_actions(self):
         # TODO CloudSkimmer's action is influenced by (advanced) flappy bird's action (position) and advanced flappy
@@ -214,7 +214,8 @@ class FlappyBird:
         if not self.human_player:
             controlled_entities.append(self.player)
         if self.enemy_manager.spawned_enemy_groups:
-            if isinstance(self.enemy_manager.spawned_enemy_groups[0].members[0], CloudSkimmer):
+            if self.enemy_manager.spawned_enemy_groups[0].members and \
+                    isinstance(self.enemy_manager.spawned_enemy_groups[0].members[0], CloudSkimmer):
                 controlled_entities.extend(self.enemy_manager.spawned_enemy_groups[0].members)
 
         # get actions for all entities
@@ -356,8 +357,8 @@ class FlappyBird:
 
         # enemy bullets
         for group in self.enemy_manager.spawned_enemy_groups:
-            if isinstance(group.members[0], CloudSkimmer):
-                spawned_enemies.update(group.members)
+            spawned_enemies.update(group.members)
+            if group.members and isinstance(group.members[0], CloudSkimmer):
                 for enemy in group.members:
                     current_bullets.update(enemy.gun.shot_bullets)
 

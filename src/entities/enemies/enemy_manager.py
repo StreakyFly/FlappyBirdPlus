@@ -5,8 +5,9 @@ from .skydart import SkyDartGroup
 
 
 class EnemyManager:
-    def __init__(self, config: GameConfig):
+    def __init__(self, config: GameConfig, env):
         self.config = config
+        self.env = env
         self.spawned_enemy_groups = []  # some files expect this list to contain no more than one enemy group at once
 
     def tick(self):
@@ -41,7 +42,7 @@ class EnemyManager:
 
     def spawn_skydart(self):
         # TODO implement this
-        self.spawned_enemy_groups.append(SkyDartGroup(self.config, x=1000, y=100))
+        self.spawned_enemy_groups.append(SkyDartGroup(self.config, x=1000, y=100, target=self.env.player))
 
     def spawn_aerothief(self):
         # TODO implement this

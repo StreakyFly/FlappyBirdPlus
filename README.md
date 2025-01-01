@@ -16,13 +16,15 @@ Inventory slot backgrounds and some item icons are placeholders and will be repl
 3. VFX, show damage dealt - red text appears above the entity when damage is dealt and then it fades away
 4. sound effects for like uhh... everything
 5. multiple types of enemies (controlled by AI agents)
-6. 3rd inventory slot - small robots that help the player? (also controlled by AI agents)
+6. 3rd inventory slot - small robots that help the player? (also controlled by AI agents in some modes) - their position and movements can be programmed similarly
+    as we did with ghost.py, set the target and let them move towards it, but slow them down until they almost stop, then update the target's position
 7. main menu with a global leaderboard (data stored in a database)
 8. more items, like potions, heals, weapons and special items
 9. occasional targets attached to pipes, that give you points/abilities/extra shield for hitting them, so it's not boring when there's no enemies?
 10. easter egg: kill multiple birds with one stone: super rare stone item that bounces between enemies and kills them all
-11. Figure out how to run the game in a browser, possibly with pygbag https://pypi.org/project/pygbag/
-12. and more... 
+11. maybe add some occasional thorns growing from the top to bottom pipe, that slowly damage the bird if they touch them, can be destroyed by shooting them
+12. Figure out how to run the game in a browser, possibly with pygbag https://pypi.org/project/pygbag/
+13. and more... 
 
 - global leaderboard database: later possibly add "HumanPlayer" column that simply stores the info whether the bird was controlled by a human or an AI agent
 
