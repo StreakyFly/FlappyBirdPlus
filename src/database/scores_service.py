@@ -24,7 +24,7 @@ def submit_score(username: str, score: int):
 def get_scores(count: int = 100):
     response = (
         supabase.table('Scores')
-        .select('score, timestamp')
+        .select('username, score, timestamp')
         .order('score', desc=True)
         .limit(count)
         .execute()

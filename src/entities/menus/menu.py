@@ -52,7 +52,7 @@ class Menu(Entity):
                                        outline_color=(0, 0, 0), outline_width=4, shadow_distance=(4, 4))
             text_rect = text_surface.get_rect(center=(self.x + self.w // 2, self.y + text_surface.get_height() // 2 + 20))
             self.config.screen.blit(text_surface, text_rect)
-            # TODO: draw bottom line of the titlebar for separation
+            # Draw the bottom line
             line = pygame.Surface((self.w, 10))
             line.fill((83, 56, 71))
             self.config.screen.blit(line, (self.x, self.y + self.TITLEBAR_HEIGHT - 10))

@@ -2,21 +2,22 @@ from .file_manager import FileManager
 
 
 class SettingsManager(FileManager):
-    def __init__(self, directory="data", settings_file="settings.json"):
-        super().__init__(directory)
+    def __init__(self, settings_file="settings.json"):
+        super().__init__()
         self.settings_file = settings_file
         self.default_settings = {
             "volume": 0.5,
             "vsync": False,
         }
         self._initialize_settings()
+        self.settings = self._load_settings()
 
     def _initialize_settings(self):
         """ Initialize settings if they do not exist. """
         if not self.file_exists(self.settings_file):
             self.save_settings(self.default_settings)
 
-    def load_settings(self):
+    def _load_settings(self):
         """ Load settings from the settings file. """
         settings = self.load_file(self.settings_file, default=self.default_settings)
 
@@ -35,3 +36,14 @@ class SettingsManager(FileManager):
         """ Reset settings to default. """
         self.save_settings(self.default_settings)
         return self.default_settings
+
+    def update_setting(self, key, value):
+        """ Update a setting. """
+        if key not in self.default_settings:
+            raise ValueError(f"Invalid setting: {key}")
+        self.settings[key] = value
+        self.save_settings(self.settings)
+
+    def get_setting(self, key):
+        """ Get a setting. """
+        return self.settings[key]
