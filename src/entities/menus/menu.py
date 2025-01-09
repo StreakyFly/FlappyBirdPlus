@@ -77,6 +77,9 @@ class Menu(Entity):
             element.init()
         self.elements.append(element)
 
+    def remove_element(self, element):
+        self.elements.remove(element)
+
     def handle_event(self, event):
         if self.name:
             # Go back to the previous menu when ESC is pressed

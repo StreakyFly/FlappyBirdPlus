@@ -24,11 +24,13 @@ class Leaderboard(Entity):
         self.row_height = 30
         self.font = get_font(Fonts.FONT_FLAPPY, 24)
 
-        self.bg_color = (30, 30, 30)
         self.text_color = (255, 255, 255)
-        self.header_color = (50, 50, 50)
-        self.row_color = (40, 40, 40)
-        self.highlight_color = (60, 60, 60)
+        # self.bg_color = (30, 30, 30)
+        # self.row_color = (40, 40, 40)
+        # self.highlight_color = (60, 60, 60)
+        self.bg_color = (64, 43, 54)
+        self.row_color = (83, 56, 71)
+        self.highlight_color = (110, 72, 93)
 
         self.surface = pygame.Surface((width, height))
 

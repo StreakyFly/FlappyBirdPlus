@@ -54,3 +54,6 @@ class Button(Entity):
             self.on_click_callback()
         else:
             print(f"No on_click callback set for button '{self.label}'")
+
+    def change_background_color(self, color):
+        self.image.fill(color)

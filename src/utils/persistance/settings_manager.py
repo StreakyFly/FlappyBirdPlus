@@ -8,6 +8,9 @@ class SettingsManager(FileManager):
         self.default_settings = {
             "volume": 0.5,
             "vsync": False,
+            "ai_player": False,
+            "pacman": True,
+            "debug": False,
         }
         self._initialize_settings()
         self.settings = self._load_settings()
@@ -15,7 +18,7 @@ class SettingsManager(FileManager):
     def _initialize_settings(self):
         """ Initialize settings if they do not exist. """
         if not self.file_exists(self.settings_file):
-            self.save_settings(self.default_settings)
+            self._save_settings(self.default_settings)
 
     def _load_settings(self):
         """ Load settings from the settings file. """
@@ -28,13 +31,13 @@ class SettingsManager(FileManager):
 
         return settings
 
-    def save_settings(self, settings):
+    def _save_settings(self, settings):
         """ Save settings to the settings file. """
         self.save_file(self.settings_file, settings)
 
     def reset_settings(self):
         """ Reset settings to default. """
-        self.save_settings(self.default_settings)
+        self._save_settings(self.default_settings)
         return self.default_settings
 
     def update_setting(self, key, value):
@@ -42,7 +45,7 @@ class SettingsManager(FileManager):
         if key not in self.default_settings:
             raise ValueError(f"Invalid setting: {key}")
         self.settings[key] = value
-        self.save_settings(self.settings)
+        self._save_settings(self.settings)
 
     def get_setting(self, key):
         """ Get a setting. """
