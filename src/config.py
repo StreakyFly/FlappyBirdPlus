@@ -1,6 +1,6 @@
 from typing import Literal
 
-from .utils import printc
+from .utils import printc, SettingsManager
 from .modes import Mode
 from .ai.environments import EnvType
 
@@ -39,5 +39,11 @@ class Config:
                              "This will overwrite the existing model with specified run_id (if it exists) "
                              "- you most likely don't want that. If you do, manually delete the existing model.")
 
+
+# Load settings
+settings_manager = SettingsManager()
+Config.debug = settings_manager.get_setting("debug")
+Config.pacman = settings_manager.get_setting("pacman")
+Config.human_player = not settings_manager.get_setting("ai_player")
 
 Config.verify_config()

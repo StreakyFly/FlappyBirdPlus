@@ -38,13 +38,13 @@ class SettingsMenu(Menu):
         # TODO: set vsync
 
     def on_ai_player_toggle(self, state):
-        # TODO: set ai player
         self.settings_manager.update_setting("ai_player", state)
+        self.config.human_player = not state
 
     def on_pacman_toggle(self, state):
-        # TODO: set pacman on death
         self.settings_manager.update_setting("pacman", state)
+        self.config.pacman = state
 
     def on_debug_toggle(self, state):
-        # TODO: set debug mode
         self.settings_manager.update_setting("debug", state)
+        self.config.debug = state
