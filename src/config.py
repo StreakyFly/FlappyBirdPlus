@@ -7,13 +7,14 @@ from .ai.environments import EnvType
 
 class Config:
     fps_cap: int = 30  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
-    debug: bool = False  # <-- change if you want to enable debug mode
+    debug: bool = False  # <-- toggle debug mode
     mode: Mode = Mode.PLAY  # <-- change the mode here
     algorithm: Literal['PPO', 'DQN'] = 'PPO'  # <-- change the algorithm here
     env_type: EnvType = EnvType.BASIC_FLAPPY  # <-- change environment type here
     run_id: str = None  # "run_20240716_112512"  # <-- change the run id here (can/should be None for some modes)
-    human_player: bool = True  # <-- change if you want to play the game yourself (only works for Mode.PLAY)
-    pacman: bool = True  # <-- change if you want to play pacman when you die, for an extra life
+    human_player: bool = True  # <-- toggle if you want to play the game yourself (only works for Mode.PLAY)
+    pacman: bool = True  # <-- toggle if you want to play pacman when you die, for an extra life
+    save_results: bool = True  # <-- toggle if you want to save the results to file & database
 
     options = {
         'headless': False,  # run pygame in headless mode to increase performance

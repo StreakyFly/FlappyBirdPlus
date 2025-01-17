@@ -1,6 +1,6 @@
-from datetime import datetime
-from enum import Enum
 import threading
+from datetime import datetime, timezone, timedelta
+from enum import Enum
 
 from src.utils import GameConfig, ResultsManager
 from src.database import scores_service
@@ -8,8 +8,6 @@ from .menu import Menu
 from .menu_manager import MenuManager
 from .elements import Leaderboard, Tabs
 
-
-# TODO: add option to switch between personal and global leaderboard
 
 class LeaderboardType(Enum):
     PERSONAL = "personal"
@@ -33,10 +31,10 @@ class LeaderboardMenu(Menu):
         self.load_leaderboard(LeaderboardType.GLOBAL, global_leaderboard)  # fetch and update the global leaderboard data in the background
         tabs = Tabs(config=self.config, menu=self, tabs={
             "Personal": [
-                {"element": personal_leaderboard, "x": 0, "y": 25, "align": "center"}
+                {"element": personal_leaderboard, "x": 0, "y": 0, "align": "center"}
             ],
             "Global": [
-                {"element": global_leaderboard, "x": 0, "y": 25, "align": "center"}
+                {"element": global_leaderboard, "x": 0, "y": 0, "align": "center"}
             ]
         })
         self.leaderboard = personal_leaderboard
@@ -56,6 +54,7 @@ class LeaderboardMenu(Menu):
 
     def load_global_leaderboard(self, leaderboard: Leaderboard = None):
         column_info = {
+            'rank': {'label': 'Rank', 'weight': 0.17},
             'username': {'label': 'Username', 'weight': 0.5},
             'score': {'label': 'Score', 'weight': 0.2},
             'timestamp': {'label': 'Date', 'weight': 0.3}
@@ -64,6 +63,8 @@ class LeaderboardMenu(Menu):
 
         def fetch_and_set_data():
             new_data = scores_service.get_scores()
+            for index, entry in enumerate(new_data, start=1):
+                entry['rank'] = index
             leaderboard.set_data(self.format_data(new_data, '%d/%m/%y'), column_info)
 
         if leaderboard is not None:
@@ -73,7 +74,10 @@ class LeaderboardMenu(Menu):
 
     def load_personal_leaderboard(self):
         data = self.format_data(self.results_manager.results)
+        for index, entry in enumerate(data, start=1):
+            entry['rank'] = index
         column_info = {
+            'rank': {'label': 'Rank', 'weight': 0.17},
             'score': {'label': 'Score', 'weight': 0.32},
             'timestamp': {'label': 'Date', 'weight': 0.68}
         }
@@ -81,10 +85,12 @@ class LeaderboardMenu(Menu):
 
     @staticmethod
     def format_data(data, date_format: str = '%d/%m/%Y @ %H:%M'):
+        local_offset = datetime.now().astimezone().utcoffset()
+
         for entry in data:
-            # TODO: format date based on the user's locale
-            # entry['timestamp'] = datetime.fromisoformat(entry['timestamp']).strftime(date_format)
             timestamp = entry['timestamp']
-            entry['timestamp'] = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z').strftime(date_format)
+            utc_time = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f%z')
+            local_time = utc_time + local_offset
+            entry['timestamp'] = local_time.strftime(date_format)
 
         return data

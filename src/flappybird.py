@@ -1,16 +1,18 @@
 import asyncio
 import os
 import sys
+import threading
+from datetime import datetime, timezone
 from typing import Literal
 
 import pygame
 
-from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds
+from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds, ResultsManager
 from .entities import MenuManager, MainMenu, Background, Floor, Player, PlayerMode, Pipes, Score, \
     WelcomeMessage, GameOver, Inventory, ItemManager, ItemName, EnemyManager, CloudSkimmer
 from .ai import ObservationManager
+from .database import scores_service
 from .pacman import Pacman
-
 
 # from .config import Config <-- imported later to avoid circular import
 
@@ -36,7 +38,8 @@ class FlappyBird:
             images=Images(),
             sounds=Sounds(),
             debug=Config.debug,
-            pacman=Config.pacman
+            pacman=Config.pacman,
+            save_results=Config.save_results,
         )
 
         if Config.options['mute']:
@@ -54,6 +57,7 @@ class FlappyBird:
         self.item_manager = None
         self.enemy_manager = None
         self.menu_manager = None
+        self.results_manager = ResultsManager()
 
         # AI stuff
         self.human_player = True
@@ -249,6 +253,9 @@ class FlappyBird:
             raise ValueError(f"Unknown entity type: {type(entity)}")
 
     async def game_over(self):
+        # TODO: if we'll transition to pacman, we need to somehow NOT KILL THE PLAYER and let him continue the game
+        #  if he wins the pacman minigame. If he loses, nothing changes, it's game over.
+
         self.gsm.set_state(GameState.END)
         self.player.set_mode(PlayerMode.CRASH)
 
@@ -257,6 +264,10 @@ class FlappyBird:
         self.item_manager.stop()
         self.enemy_manager.stop()
         self.inventory.stop()
+
+        # TODO: if self.config.save_results AND not extra pacman chance
+        if self.score.score > 0 and self.config.save_results:
+            threading.Thread(target=self.submit_result_async, daemon=True).start()
 
         while True:
             events = []
@@ -411,6 +422,11 @@ class FlappyBird:
             print("Quitting...")
             pygame.quit()
             sys.exit()
+
+    def submit_result_async(self):
+        current_time = datetime.now(timezone.utc).isoformat()
+        self.results_manager.submit_result(self.score.score, current_time)
+        scores_service.submit_score("PLACEHOLDER", self.score.score)  # TODO: change "JOHNNY" to username variable
 
     def monitor_fps_drops(self, fps_threshold=None):
         """

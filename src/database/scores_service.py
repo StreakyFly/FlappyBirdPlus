@@ -1,18 +1,20 @@
 from .database import supabase
+import requests
 
-# TODO: store all player scores in a local text file, just in case they aren't connected to the internet
 
-
-# TODO: call this when the game ends
 def submit_score(username: str, score: int):
-    response = (
-        supabase.table('Scores')
-        .insert({
-            'username': username,
-            'score': score,
-        })
-        .execute()
-    )
+    try:
+        response = (
+            supabase.table('Scores')
+            .insert({
+                'username': username,
+                'score': score,
+            })
+            .execute()
+        )
+    except requests.ConnectionError:
+        print("No internet connection. Score not submitted.")
+        return
 
     # TODO: get rid of these print statements
     if response and response.data:
@@ -22,13 +24,17 @@ def submit_score(username: str, score: int):
 
 
 def get_scores(count: int = 100):
-    response = (
-        supabase.table('Scores')
-        .select('username, score, timestamp')
-        .order('score', desc=True)
-        .limit(count)
-        .execute()
-    )
+    try:
+        response = (
+            supabase.table('Scores')
+            .select('username, score, timestamp')
+            .order('score', desc=True)
+            .limit(count)
+            .execute()
+        )
+    except requests.ConnectionError:
+        print("No internet connection. Scores not fetched.")
+        return [{'score': '---', 'timestamp': '---'}]
 
     if response and response.data:
         return response.data

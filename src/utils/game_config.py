@@ -16,6 +16,7 @@ class GameConfig:
         sounds: Sounds,
         debug: bool = False,
         pacman: bool = False,
+        save_results: bool = True,
     ) -> None:
         self.screen = screen
         self.clock = clock
@@ -25,6 +26,7 @@ class GameConfig:
         self.sounds = sounds
         self.debug = debug
         self.pacman = pacman
+        self.save_results = save_results
 
     def tick(self) -> None:
         self.clock.tick(self.fps)

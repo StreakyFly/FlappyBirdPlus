@@ -65,7 +65,7 @@ class Tabs(Entity):
         for element_info in self.tabs[tab_name]:
             element = element_info["element"]
             x = element_info["x"]
-            y = element_info["y"] + 45  # move elements down to make space for the tabs
+            y = element_info["y"] + self.h + 10  # move elements down to make space for the tabs (10 is bottom line height)
             align = element_info["align"]
             self.menu.add_element(element, x, y, align)
 

@@ -1,3 +1,4 @@
+from bisect import bisect_left
 from .file_manager import FileManager
 
 
@@ -22,14 +23,16 @@ class ResultsManager(FileManager):
 
     def _save_results(self, results):
         """ Save results to the results file. """
-        self.save_file(self.results_file, results)
+        self.save_file(self.results_file, { "results": results })
 
     def reset_results(self):
         """ Reset results to default. """
         self._save_results(self.default_results)
         return self.default_results
 
-    def add_result(self, score: int, timestamp: str):
-        """ Add a result to the results. """
-        self.results['results'].append({'score': score, 'timestamp': timestamp})
+    def submit_result(self, score: int, timestamp: str):
+        """ Add a result to the results while ensuring the list remains sorted. """
+        new_result = {'score': score, 'timestamp': timestamp}
+        insert_position = bisect_left([-r['score'] for r in self.results], -score, hi=len(self.results))
+        self.results.insert(insert_position, new_result)
         self._save_results(self.results)
