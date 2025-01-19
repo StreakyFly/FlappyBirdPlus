@@ -89,10 +89,12 @@ class Leaderboard(Entity):
                 self.scroll_velocity = 0  # reset velocity when drag starts
                 self.drag_start_y = event.pos[1]  # initial y-coordinate of the drag
                 self.initial_scroll_offset = self.scroll_offset  # current scroll offset
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
 
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1 and self.dragging:  # left mouse button released
                 self.dragging = False
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
                 if self.prev_drag_y is not None:  # calculate velocity based on last drag movement
                     self.scroll_velocity = -(event.pos[1] - self.prev_drag_y) * 3
 
