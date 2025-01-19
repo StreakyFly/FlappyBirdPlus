@@ -22,7 +22,8 @@ class Enemy(Entity):
         if self.x < -200:
             self.is_gone = True
 
-        self.update_image(self.animation.update())
+        if self.running:
+            self.update_image(self.animation.update())
 
         self.hp_manager.y = self.y - 25
         self.hp_manager.x = self.x
