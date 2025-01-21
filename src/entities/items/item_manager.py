@@ -18,6 +18,9 @@ class ItemManager:
         # self.count = 0  # TODO delete
 
     def tick(self) -> None:
+        for item in self.spawned_items:
+            item.tick()
+
         if self.stopped:
             return
 
@@ -51,8 +54,6 @@ class ItemManager:
         if self.can_spawn_item():
             self.spawn_item()
 
-        for item in self.spawned_items:
-            item.tick()
         self.despawn_items()
 
     def stop(self) -> None:
