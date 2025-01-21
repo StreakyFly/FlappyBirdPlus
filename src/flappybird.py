@@ -28,7 +28,7 @@ class FlappyBird:
         else:
             screen = pygame.display.set_mode((window.width, window.height), flags=pygame.SCALED)  # , vsync=1)
 
-        from .config import Config  # imported here to avoid circular import
+        from .config import Config, settings_manager  # imported here to avoid circular import
 
         self.config = GameConfig(
             screen=screen,
@@ -37,6 +37,7 @@ class FlappyBird:
             window=window,
             images=Images(),
             sounds=Sounds(),
+            settings_manager=settings_manager,
             debug=Config.debug,
             pacman=Config.pacman,
             save_results=Config.save_results,
@@ -44,6 +45,9 @@ class FlappyBird:
 
         if Config.options['mute']:
             self.set_mute(True)
+            self.config.sounds.set_global_volume(0)
+        else:
+            self.config.sounds.set_global_volume(self.config.settings_manager.get_setting("volume"))
 
         self.gsm = GameStateManager()
         self.background = None

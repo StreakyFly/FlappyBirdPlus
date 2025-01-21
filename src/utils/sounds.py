@@ -15,6 +15,9 @@ class Sounds:
     def __init__(self, num_channels: int = 50) -> None:
         pygame.mixer.set_num_channels(num_channels)
         self.muted = False
+        self.global_volume = 0.5
+        self.music_volume = 1.0
+        self.sounds_volume = 1.0
 
         self.die = _load_sound('die.wav')
         self.hit = _load_sound('hit.wav')
@@ -22,6 +25,8 @@ class Sounds:
         self.point = _load_sounds('point', 2)
         self.flap = _load_sounds('flap', 2)
         self.collect_item = _load_sounds('items/collect_item', 4)
+
+        self.all_sounds = [self.die, self.hit, self.swoosh] + self.point + self.flap + self.collect_item
 
     def set_muted(self, mute: bool) -> None:
         self.muted = mute
@@ -33,6 +38,25 @@ class Sounds:
 
     def play_random(self, sounds: List[pygame.mixer.Sound]) -> None:
         self.play(random.choice(sounds))
+
+    def set_global_volume(self, volume: float) -> None:
+        self.set_muted(volume == 0)
+        self.global_volume = volume
+        self.set_music_volume()
+        self.set_sounds_volume()
+
+    def set_music_volume(self, volume: float = None) -> None:
+        if volume is not None:
+            self.music_volume = volume
+        new_volume = self.global_volume * self.music_volume
+        pygame.mixer.music.set_volume(new_volume)
+
+    def set_sounds_volume(self, volume: float = None) -> None:
+        if volume is not None:
+            self.sounds_volume = volume
+        new_volume = self.global_volume * self.sounds_volume
+        for sound in self.all_sounds:
+            sound.set_volume(new_volume)
 
 
 def _load_sound(sound_name: str) -> pygame.mixer.Sound:

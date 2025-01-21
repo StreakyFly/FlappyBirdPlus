@@ -3,6 +3,7 @@ import pygame
 from .images import Images
 from .sounds import Sounds
 from .window import Window
+from .persistance import SettingsManager
 
 
 class GameConfig:
@@ -14,6 +15,7 @@ class GameConfig:
         window: Window,
         images: Images,
         sounds: Sounds,
+        settings_manager: SettingsManager,
         debug: bool = False,
         pacman: bool = False,
         save_results: bool = True,
@@ -24,6 +26,7 @@ class GameConfig:
         self.window = window
         self.images = images
         self.sounds = sounds
+        self.settings_manager = settings_manager
         self.debug = debug
         self.pacman = pacman
         self.save_results = save_results

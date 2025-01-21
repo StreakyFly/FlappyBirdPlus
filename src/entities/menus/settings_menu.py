@@ -1,3 +1,5 @@
+import pygame
+
 from src.utils import GameConfig, SettingsManager
 from .menu import Menu
 from .menu_manager import MenuManager
@@ -7,7 +9,7 @@ from .elements import Slider, Toggle, Tabs
 class SettingsMenu(Menu):
     def __init__(self, config: GameConfig, menu_manager: MenuManager):
         super().__init__(config, menu_manager, name="Settings")
-        self.settings_manager = SettingsManager()
+        self.settings_manager = config.settings_manager
         self.init_elements()
 
     def init_elements(self):
@@ -30,8 +32,9 @@ class SettingsMenu(Menu):
         self.add_element(tabs, 0, 100, "center")
 
     def on_volume_slide(self, value):
-        self.settings_manager.update_setting("volume", value / 100)
-        # TODO: set volume
+        volume = pygame.math.clamp(value, 0, 100) / 100
+        self.settings_manager.update_setting("volume", volume)
+        self.config.sounds.set_global_volume(volume)
 
     def on_vsync_toggle(self, state):
         self.settings_manager.update_setting("vsync", state)
