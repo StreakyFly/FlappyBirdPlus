@@ -48,6 +48,7 @@ class FlappyBird:
             self.config.sounds.set_global_volume(0)
         else:
             self.config.sounds.set_global_volume(self.config.settings_manager.get_setting("volume"))
+            self.config.sounds.play_background_music()
 
         self.gsm = GameStateManager()
         self.background = None

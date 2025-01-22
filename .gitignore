@@ -3,6 +3,7 @@ test_scripts
 EXAMPLES
 src/pacman/TODO.txt
 *plans.txt
+more-song-options.txt
 
 
 # Model training data (I'll delete most of it, only keep da best/interesting ones) and push them later
