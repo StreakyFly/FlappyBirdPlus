@@ -44,9 +44,9 @@ class FlappyBird:
         )
 
         if Config.options['mute']:
-            self.set_mute(True)
-            self.config.sounds.set_global_volume(0)
+            self.config.sounds = Sounds(muted=True)
         else:
+            self.config.sounds = Sounds()
             self.config.sounds.set_global_volume(self.config.settings_manager.get_setting("volume"))
             self.config.sounds.play_background_music()
 
@@ -79,14 +79,6 @@ class FlappyBird:
         self.transitioning_to: Literal[None, "fp", "pm"] = None
         self.transition_duration: int = 30
         self.transition_progress: int = 0
-
-    def set_mute(self, mute: bool = False):
-        if mute:
-            self.config.sounds = Sounds(num_channels=0)
-            self.config.sounds.set_muted(True)
-        else:
-            self.config.sounds = Sounds(num_channels=50)
-            self.config.sounds.set_muted(False)
 
     def init_model_controllers(self, human_player: bool = True):
         """

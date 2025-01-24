@@ -18,7 +18,7 @@ class Config:
 
     options = {
         'headless': False,  # run pygame in headless mode to increase performance
-        'mute': True,  # mute the audio (slight performance boost)
+        'mute': False,  # mute the audio (slight performance boost)
         'profile': False,  # profile the code execution
     }
 

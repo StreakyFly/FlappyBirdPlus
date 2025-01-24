@@ -20,10 +20,10 @@ class Sounds:
     flap: List[pygame.mixer.Sound]
     collect_item: List[pygame.mixer.Sound]
 
-    def __init__(self, num_channels: int = 50) -> None:
-        pygame.mixer.set_num_channels(num_channels)
-        self.muted = False
-        self.global_volume = 0.5
+    def __init__(self, muted: bool = False) -> None:
+        self.muted = muted
+        pygame.mixer.set_num_channels(0 if muted else 50)
+        self.global_volume = 0 if muted else 0.5
         self.music_volume = 1.0
         self.sounds_volume = 1.0
 
