@@ -59,9 +59,9 @@ class Player(Entity):
             self.reset_vals_shm()
         elif mode == PlayerMode.CRASH:
             self.animation.stop()
-            self.config.sounds.hit.play()
+            self.config.sounds.play(self.config.sounds.hit)
             if self.crash_entity == "pipe":
-                self.config.sounds.die.play()
+                self.config.sounds.play(self.config.sounds.die)
             self.reset_vals_crash()
 
     def reset_vals_normal(self) -> None:
