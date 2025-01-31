@@ -28,7 +28,7 @@ class FlappyBird:
         else:
             screen = pygame.display.set_mode((window.width, window.height), flags=pygame.SCALED)  # , vsync=1)
 
-        from .config import Config, settings_manager  # imported here to avoid circular import
+        from .config import Config  # imported here to avoid circular import
 
         self.config = GameConfig(
             screen=screen,
@@ -37,7 +37,7 @@ class FlappyBird:
             window=window,
             images=Images(),
             sounds=Sounds(),
-            settings_manager=settings_manager,
+            settings_manager=Config.settings_manager,
             debug=Config.debug,
             pacman=Config.pacman,
             save_results=Config.save_results,

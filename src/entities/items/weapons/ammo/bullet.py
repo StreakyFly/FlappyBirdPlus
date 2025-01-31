@@ -182,13 +182,13 @@ class Bullet(Item):
 
         pygame.draw.circle(screen, (200, 0, 100), self.curr_front_pos, 7, width=3)
         pygame.draw.circle(screen, (0, 25, 255), self.curr_front_pos, 14, width=8)
-        # pygame.draw.circle(screen, (0, 255, 55), self.spawn_position, 18, width=11)
+        pygame.draw.circle(screen, (0, 255, 55), self.spawn_position, 9, width=6)
 
         for is_valid, intersections in self.intersections.items():
             for intersection in intersections:
                 color = (0, 100, 200) if is_valid == "valid" else (255, 0, 0)
                 pygame.draw.circle(screen, color, intersection, 10, width=4)
-                intersection.x += self.VISUAL_BACKGROUND_VELOCITY.x
+                intersection.x += self.VISUAL_BACKGROUND_VELOCITY.x if self.velocity != pygame.Vector2(0, 0) else 0
 
         prev_front_pos_real = self.prev_front_pos - self.REAL_CAMERA_VELOCITY * 0.5  # how much the bullet moved in the game world
         prev_front_pos_visual = self.prev_front_pos  # how much the bullet moved on the screen

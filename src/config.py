@@ -6,14 +6,15 @@ from .ai.environments import EnvType
 
 
 class Config:
+    settings_manager = SettingsManager()  # load settings
     fps_cap: int = 30  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
-    debug: bool = False  # <-- toggle debug mode
+    debug: bool = settings_manager.get_setting('debug')  # <-- toggle debug mode
     mode: Mode = Mode.PLAY  # <-- change the mode here
     algorithm: Literal['PPO', 'DQN'] = 'PPO'  # <-- change the algorithm here
     env_type: EnvType = EnvType.BASIC_FLAPPY  # <-- change environment type here
     run_id: str = None  # "run_20240716_112512"  # <-- change the run id here (can/should be None for some modes)
-    human_player: bool = True  # <-- toggle if you want to play the game yourself (only works for Mode.PLAY)
-    pacman: bool = True  # <-- toggle if you want to play pacman when you die, for an extra life
+    human_player: bool = not settings_manager.get_setting('ai_player')  # <-- toggle if you want to play the game yourself (only works for Mode.PLAY)
+    pacman: bool = settings_manager.get_setting('pacman')  # <-- toggle if you want to play pacman when you die, for an extra life
     save_results: bool = True  # <-- toggle if you want to save the results to file & database
 
     options = {
@@ -40,11 +41,5 @@ class Config:
                              "This will overwrite the existing model with specified run_id (if it exists) "
                              "- you most likely don't want that. If you do, manually delete the existing model.")
 
-
-# Load settings
-settings_manager = SettingsManager()
-Config.debug = settings_manager.get_setting("debug")
-Config.pacman = settings_manager.get_setting("pacman")
-Config.human_player = not settings_manager.get_setting("ai_player")
 
 Config.verify_config()

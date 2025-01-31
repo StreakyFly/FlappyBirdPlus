@@ -22,5 +22,8 @@ data/
 __pycache__
 
 
-Pycharm stuff
+# Pycharm stuff
 .idea/**
+
+# Build files
+build/
