@@ -1,4 +1,36 @@
+import random
 import pygame
+
+
+def get_random_value(value: list | tuple, random_type: str = "auto", as_int: bool = False):
+    """Returns a random value based on the specified random_type.
+
+    - "range": Assumes `value` is (min, max) and picks a number in the range.
+    - "choice": Assumes `value` is a list/tuple and picks one randomly.
+    - "auto": Tries to guess (uses range if 2 numbers, picks one otherwise).
+    - as_int: If True, forces integer selection from ranges.
+    """
+    if random_type == "range":
+        if as_int:
+            return random.randint(*value)
+        elif isinstance(value[0], float) or isinstance(value[1], float):
+            return random.uniform(*value)
+        else:
+            return random.randint(*value)  # default to int if no float detected
+
+    elif random_type == "choice":
+        return random.choice(value)
+
+    else:
+        # Auto-detect if not explicitly set
+        if isinstance(value, (list, tuple)) and len(value) == 2 and all(isinstance(v, (int, float)) for v in value):
+            if isinstance(value[0], float) or isinstance(value[1], float):
+                return random.uniform(*value) if not as_int else random.randint(*value)
+            return random.randint(*value)
+
+    if isinstance(value, (list, tuple)):
+        return random.choice(value)
+    return value
 
 
 def get_mask(image: pygame.Surface) -> pygame.mask.Mask:

@@ -9,6 +9,7 @@ from .floor import Floor
 from .pipe import Pipe, Pipes
 from .items import SpawnedItem
 from .attribute_bar import AttributeBar
+from .particles import ParticleManager
 
 
 # MAYBE ALSO ADD HUNGER BAR??
@@ -49,6 +50,7 @@ class Player(Entity):
         # self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(20, 50, 255, 222),
         self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=500, color=(20, 50, 255, 222),
                                            x=self.x, y=int(self.y) - 40, w=self.w, h=10)
+        self.particle_manager = ParticleManager(config=config)
 
     def set_mode(self, mode: PlayerMode) -> None:
         self.mode = mode
@@ -146,6 +148,7 @@ class Player(Entity):
                 self.tick_crash()
 
         self.tick_hp()
+        self.particle_manager.tick()
         super().tick()
 
     def draw(self) -> None:
@@ -186,6 +189,18 @@ class Player(Entity):
         items = []
         for item in spawned_items:
             if self.collide(item):
+                # Spawn particles when player collects the item
+                self.particle_manager.spawn_particles(
+                    item.cx, item.cy, count=(8, 12),
+                    lifespan=(15, 25),
+                    radius=(12, 20),
+                    gravity=(0.07, 0.14),
+                    position_offset_x=(-40, 40),
+                    position_offset_y=(-40, 40),
+                    initial_velocity_x=(-5, 5),
+                    initial_velocity_y=(-5, 5),
+                    color=(178, 245, 247, (150, 220))
+                )
                 items.append(item)
         return items
 
