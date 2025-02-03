@@ -197,7 +197,7 @@ class Player(Entity):
                     gravity=(0.07, 0.14),
                     position_offset_x=(-40, 40),
                     position_offset_y=(-40, 40),
-                    initial_velocity_x=(-5, 5),
+                    initial_velocity_x=(-5+item.vel_x+1, 5+item.vel_x+1),  # take item's velocity into account (partly)
                     initial_velocity_y=(-5, 5),
                     color=(178, 245, 247, (150, 220))
                 )

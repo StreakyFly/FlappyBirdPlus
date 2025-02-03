@@ -21,7 +21,7 @@ class Particle(Entity):
 
     def tick(self):
         self.age += 1
-        self.x += self.velocity.x - 7.5  # -7.5 is the visual background velocity - how much the background moves on the screen
+        self.x += self.velocity.x
         self.y += self.velocity.y
         self.velocity.y += self.gravity
 
