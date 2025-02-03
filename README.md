@@ -6,7 +6,7 @@ Not developed for commercial purposes, only for fun and learning.
 Current state of the game:
 
 
-https://github.com/user-attachments/assets/ba39f203-3d8b-49b4-ad90-dc5e51185136
+https://github.com/user-attachments/assets/f86d4411-f890-4ca8-a3de-40508af201c6
 
 
 Inventory slot backgrounds and some item icons are placeholders and will be replaced.
