@@ -39,6 +39,13 @@ class GameController:
         self.captured_fruit = []
         self.fruit_node = None
         self.maze_data = MazeData()
+        # SFX
+        self.soundtrack = pygame.mixer.Sound('assets/audio/pacman/soundtrack.wav')
+        self.die_sfx = pygame.mixer.Sound('assets/audio/pacman/die.wav')
+        self.eat_pellet_sfx = pygame.mixer.Sound('assets/audio/pacman/eat_pellet.wav')
+        self.eat_fruit_sfx = pygame.mixer.Sound('assets/audio/pacman/eat_fruit.wav')
+        self.eat_ghost_sfx = pygame.mixer.Sound('assets/audio/pacman/eat_ghost.wav')
+        self.power_up_sfx = pygame.mixer.Sound('assets/audio/pacman/power_up.wav')
 
     def set_background(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -113,13 +120,16 @@ class GameController:
                     self.pause.set_pause()
                     if self.pause.paused:
                         self.text_group.show_text(PAUSETXT)
+                        self.soundtrack.stop()
                     else:
                         self.text_group.hide_text()
                         self.show_entities()
+                        self.soundtrack.play(-1)
 
     def check_pellet_events(self):
         pellet = self.pacman.eat_pellets(self.pellets.pellet_list)
         if pellet:
+            self.eat_pellet_sfx.play()
             self.pellets.num_eaten += 1
             self.update_score(pellet.points)
             if self.pellets.num_eaten == 30:
@@ -141,6 +151,7 @@ class GameController:
                     self.pacman.visible = False
                     ghost.visible = False
                     self.update_score(ghost.points)
+                    self.eat_ghost_sfx.play()
                     self.text_group.add_text(str(ghost.points), WHITE, ghost.position.x, ghost.position.y, 8, time=1)
                     self.ghosts.update_points()
                     self.pause.set_pause(pause_time=1, func=self.show_entities)
@@ -150,14 +161,25 @@ class GameController:
                     if self.pacman.alive:
                         self.lives -=  1
                         self.life_sprites.remove_image()
-                        self.pacman.die()               
+                        self.pacman.die()
+                        self.die_sfx.play()
                         self.ghosts.hide()
                         if self.lives <= 0:
                             self.text_group.show_text(GAMEOVERTXT)
                             self.pause.set_pause(pause_time=3, func=self.restart_game)
                         else:
                             self.pause.set_pause(pause_time=3, func=self.reset_level)
-    
+
+        # Check if power-up is active and play/stop the power-up sound effect
+        if any(ghost.mode.current is FREIGHT for ghost in self.ghosts):
+            self.soundtrack.stop()
+            if self.power_up_sfx.get_num_channels() == 0:
+                self.power_up_sfx.play()
+        else:
+            self.power_up_sfx.stop()
+            if self.soundtrack.get_num_channels() == 0:
+                self.soundtrack.play(-1)
+
     def check_fruit_events(self):
         if self.pellets.num_eaten == 50 or self.pellets.num_eaten == 140:
             if self.fruit is None:
@@ -165,6 +187,7 @@ class GameController:
         if self.fruit is not None:
             if self.pacman.collide_check(self.fruit):
                 self.update_score(self.fruit.points)
+                self.eat_fruit_sfx.play()
                 self.text_group.add_text(str(self.fruit.points), WHITE, self.fruit.position.x, self.fruit.position.y, 8, time=1)
                 fruit_captured = False
                 for fruit in self.captured_fruit:

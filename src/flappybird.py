@@ -180,6 +180,7 @@ class FlappyBird:
                 if self.config.pacman:  # TODO: and player died by hitting a pipe from top
                     self.pacman = Pacman(self.config, self.config.images.player_id)
                     self.transitioning_to = "pm"
+                    pygame.mixer.music.fadeout(1500)
                     # TODO: transition to pacman minigame
                     #  - flappy's death animation will also need to be updated
                 return
