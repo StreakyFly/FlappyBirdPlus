@@ -105,7 +105,7 @@ def _items_dir(item_name: str) -> str:
 
 def _get_armament_names() -> Tuple[str, ...]:
     DIR_PREFIXES = ['weapons', 'weapons/ammo']
-    WEAPON_NAMES = ('ak-47', 'deagle', 'uzi', )
+    WEAPON_NAMES = ('ak47', 'deagle', 'uzi', )
     AMMUNITION_NAMES = ('ammo-box', 'small-bullet', 'medium-bullet', 'big-bullet', )
 
     names = [f'{DIR_PREFIXES[0]}/{weapon}' for weapon in WEAPON_NAMES]

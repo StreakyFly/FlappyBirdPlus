@@ -363,11 +363,9 @@ class Bullet(Item):
         if pipe.x <= intersection_bottom.x <= pipe.x + pipe.w:
             valid_intersections.append(intersection_bottom)
 
-        invalid_intersections = [i for i in [intersection_left, intersection_right, intersection_top, intersection_bottom] if i not in valid_intersections]
-
         if self.config.debug:
             self.intersections["valid"] = valid_intersections
-            self.intersections["invalid"] = invalid_intersections
+            self.intersections["invalid"] = [i for i in [intersection_left, intersection_right, intersection_top, intersection_bottom] if i not in valid_intersections]
 
         closest = None
         if valid_intersections:

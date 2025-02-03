@@ -30,7 +30,7 @@ class ItemName(Enum):
     EMPTY = 'empty'
 
     # WEAPONS
-    WEAPON_AK47 = 'ak-47'
+    WEAPON_AK47 = 'ak47'
     WEAPON_DEAGLE = 'deagle'
     WEAPON_UZI = 'uzi'
 
