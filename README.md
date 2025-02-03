@@ -3,9 +3,11 @@ Upgraded Flappy Bird with health, guns & enemies, controlled by AI agents.
 
 Not developed for commercial purposes, only for fun and learning.
 
-Current state of the game with one enemy type, controlled by an AI agent (needs further training):
+Current state of the game:
 
-https://github.com/user-attachments/assets/6e5577b1-c191-472b-a197-a96c1912de6f
+
+https://github.com/user-attachments/assets/ba39f203-3d8b-49b4-ad90-dc5e51185136
+
 
 Inventory slot backgrounds and some item icons are placeholders and will be replaced.
 
