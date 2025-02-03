@@ -29,6 +29,7 @@ class Gun(Item):
         self.shoot_cooldown = 0
         self.reload_cooldown = 0
         self.ammo_item = None  # ammo item from the inventory slot[1]
+        self.weapon_name = str(self.name).split("_")[1].lower()
 
         self.remaining_shoot_cooldown = 0
         self.remaining_reload_cooldown = 0
@@ -205,8 +206,8 @@ class Gun(Item):
         self.remaining_shoot_cooldown = self.shoot_cooldown
         self.set_cooldown(self.shoot_cooldown)
         self.start_shoot_animation()
+        self.config.sounds.play(self.config.sounds.weapons[self.weapon_name]['shoot'])
         self.spawn_bullet()
-        # TODO play shooting sound
 
         if self.quantity == 0:
             self.handle_reloading()
@@ -216,8 +217,8 @@ class Gun(Item):
         self.remaining_reload_cooldown = self.reload_cooldown
         self.set_cooldown(self.reload_cooldown)
         self.remaining_shoot_cooldown = 0
+        self.config.sounds.play(self.config.sounds.weapons[self.weapon_name]['reload'])
         # TODO start reload animation
-        # TODO play reloading sound
 
     def calculate_initial_bullet_position(self) -> pygame.Vector2:
         # calculate the position of the barrel end relative to the pivot point

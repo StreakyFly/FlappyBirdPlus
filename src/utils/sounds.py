@@ -1,5 +1,5 @@
 import random
-from typing import List
+from typing import List, Dict
 
 import pygame
 
@@ -19,6 +19,7 @@ class Sounds:
     point: List[pygame.mixer.Sound]
     flap: List[pygame.mixer.Sound]
     collect_item: List[pygame.mixer.Sound]
+    weapons: Dict[str, Dict[str, pygame.mixer.Sound]]
 
     def __init__(self, muted: bool = False) -> None:
         self.muted = muted
@@ -27,15 +28,11 @@ class Sounds:
         self.music_volume = 1.0
         self.sounds_volume = 1.0
 
-        self.background_music = _load_music('background_music')
-        self.die = _load_sound('die')
-        self.hit = _load_sound('hit')
-        self.swoosh = _load_sound('swoosh')
-        self.point = _load_sounds('point', 2)
-        self.flap = _load_sounds('flap', 2)
-        self.collect_item = _load_sounds('items/collect_item', 4)
+        self._load_base_sounds()
+        self._load_weapon_sounds()
 
-        self.all_sounds = [self.die, self.hit, self.swoosh] + self.point + self.flap + self.collect_item
+        self.all_sounds = [self.die, self.hit, self.swoosh] + self.point + self.flap + self.collect_item + \
+                            [sound for weapon_sounds in self.weapons.values() for sound in weapon_sounds.values()]
 
     def set_muted(self, mute: bool) -> None:
         self.muted = mute
@@ -83,6 +80,24 @@ class Sounds:
     def unpause_background_music() -> None:
         pygame.mixer.music.unpause()
 
+    def _load_base_sounds(self) -> None:
+        self.background_music = _load_music('background_music')
+        self.die = _load_sound('die')
+        self.hit = _load_sound('hit')
+        self.swoosh = _load_sound('swoosh')
+        self.point = _load_sounds('point', 2)
+        self.flap = _load_sounds('flap', 2)
+        self.collect_item = _load_sounds('items/collect_item', 4)
+
+    def _load_weapon_sounds(self) -> None:
+        self.weapons = {}
+        weapon_names = ('ak47', 'deagle', 'uzi')
+
+        for weapon_name in weapon_names:
+            self.weapons[weapon_name] = {
+                "shoot": _load_item_sound(f'weapons/{weapon_name}-shoot'),
+                "reload": _load_item_sound(f'weapons/{weapon_name}-reload')
+            }
 
 def _load_sound(sound_name: str, extension: str = 'wav') -> pygame.mixer.Sound:
     return pygame.mixer.Sound(f'assets/audio/sfx/{sound_name}.{extension}')
