@@ -121,9 +121,9 @@ class FlappyBird:
 
         while True:
             for event in pygame.event.get():
-                if self.handle_event(event):
-                    return
                 self.menu_manager.handle_event(event)
+                if self.handle_event(event) and self.menu_manager.current_menu == self.menu_manager.menu_stack[0]:
+                    return
                 if not self.menu_manager.current_menu:
                     return
 
@@ -419,7 +419,7 @@ class FlappyBird:
     def submit_result_async(self):
         current_time = datetime.now(timezone.utc).isoformat()
         self.results_manager.submit_result(self.score.score, current_time)
-        scores_service.submit_score("PLACEHOLDER", self.score.score)  # TODO: change "PLACEHOLDER" to username variable
+        scores_service.submit_score(self.config.settings_manager.get_setting("username"), self.score.score)
 
     def monitor_fps_drops(self, fps_threshold=None):
         """

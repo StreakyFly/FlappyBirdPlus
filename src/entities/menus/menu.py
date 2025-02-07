@@ -81,12 +81,13 @@ class Menu(Entity):
         self.elements.remove(element)
 
     def handle_event(self, event):
-        if self.name:
-            # Go back to the previous menu when ESC is pressed
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                self.menu_manager.pop_menu()
-                return
-
+        # Handle events for all elements (before possibly returning to the previous menu,
+        #                                 as some elements may need to change/revert pygame's state)
         for element in self.elements:
             if hasattr(element, "handle_event"):
                 element.handle_event(event)
+
+        # Return to the previous menu when ESC is pressed
+        if self.name and (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+            self.menu_manager.pop_menu()
+            return

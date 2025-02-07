@@ -1,3 +1,5 @@
+import random
+
 from .file_manager import FileManager
 
 
@@ -6,6 +8,7 @@ class SettingsManager(FileManager):
         super().__init__()
         self.settings_file = settings_file
         self.default_settings = {
+            "username": self.get_random_username(),
             "volume": 0.5,
             "vsync": False,
             "ai_player": False,
@@ -50,3 +53,10 @@ class SettingsManager(FileManager):
     def get_setting(self, key):
         """ Get a setting. """
         return self.settings[key]
+
+    @staticmethod
+    def get_random_username():
+        """ Return a random username. """
+        with open("assets/default_usernames.txt", "r") as file:
+            usernames = file.read().splitlines()
+        return random.choice(usernames)

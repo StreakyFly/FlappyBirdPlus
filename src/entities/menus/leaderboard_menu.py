@@ -64,7 +64,7 @@ class LeaderboardMenu(Menu):
 
         if leaderboard is not None:
             def fetch_and_set_data():
-                new_data = scores_service.get_scores()
+                new_data = scores_service.get_scores(1000)  # TODO: implement pagination
                 for index, entry in enumerate(new_data, start=1):
                     entry['rank'] = index
                 leaderboard.set_data(self.format_data(new_data, '%d/%m/%y'), column_info)
