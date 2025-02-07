@@ -12,17 +12,20 @@ class MainMenu(Menu):
         self.init_elements()
 
     def init_elements(self):
-        button = Button(config=self.config, label="Play")
+        button = Button(config=self.config, label="Play", on_click=self.show_play)
         button2 = Button(config=self.config, label="Leaderboard", on_click=self.show_leaderboard)
         button3 = Button(config=self.config, label="Settings", on_click=self.show_settings)
         self.add_element(button, 0, 100)
         self.add_element(button2, 0, 250)
         self.add_element(button3, 0, 400)
 
-    def show_settings(self):
-        settings_menu = SettingsMenu(self.config, self.menu_manager)
-        self.menu_manager.push_menu(settings_menu)
+    def show_play(self):
+        self.menu_manager.pop_menu()
 
     def show_leaderboard(self):
         leaderboard_menu = LeaderboardMenu(self.config, self.menu_manager)
         self.menu_manager.push_menu(leaderboard_menu)
+
+    def show_settings(self):
+        settings_menu = SettingsMenu(self.config, self.menu_manager)
+        self.menu_manager.push_menu(settings_menu)

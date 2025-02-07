@@ -95,9 +95,9 @@ class FlappyBird:
     async def start(self):
         while True:
             self.reset()
-            await self.start_screen()
-            await self.play()
-            await self.game_over()
+            self.start_screen()
+            self.play()
+            self.game_over()
 
     def reset(self):
         self.config.images.randomize()
@@ -115,7 +115,7 @@ class FlappyBird:
         self.enemy_manager = EnemyManager(self.config, self)
         self.next_closest_pipe_pair = (self.pipes.upper[0], self.pipes.lower[0])
 
-    async def start_screen(self):
+    def start_screen(self):
         self.gsm.set_state(GameState.START)
         self.player.set_mode(PlayerMode.SHM)
 
@@ -124,21 +124,17 @@ class FlappyBird:
                 if self.handle_event(event):
                     return
                 self.menu_manager.handle_event(event)
+                if not self.menu_manager.current_menu:
+                    return
 
             self.background.tick()
             self.floor.tick()
-            # self.player.tick()
-            # self.welcome_message.tick()
-            # TODO: we'll show main menu here, but what should be behind the menu? Normal environment (but no player)?
-            #  and how should we switch from main menu to game? Going straight into the game might be a bit too sudden.
-            #  Or maybe it might be fine, if the bird flaps once or twice by himself and then the player can take over.
             self.menu_manager.tick()
 
             pygame.display.update()
             self.config.tick()
-            await asyncio.sleep(0)  # for pygbag compatibility (not implemented yet)
 
-    async def play(self):
+    def play(self):
         """
         Order of operations should be as follows:
         1. get actions for all entities based on current observation (it's similar in training environments)
@@ -177,7 +173,7 @@ class FlappyBird:
 
             self.player.handle_bad_collisions(self.pipes, self.floor)
             if self.is_player_dead():
-                if self.config.pacman:  # TODO: and player died by hitting a pipe from top
+                if self.config.pacman:  # TODO: and player died above the pipe (and fell in)
                     self.pacman = Pacman(self.config, self.config.images.player_id)
                     self.transitioning_to = "pm"
                     pygame.mixer.music.fadeout(1500)
@@ -193,24 +189,23 @@ class FlappyBird:
 
             pygame.display.update()
             self.config.tick()
-            await asyncio.sleep(0)
 
             # print("END")
             # print()
 
     def perform_entity_actions(self):
-        # TODO CloudSkimmer's action is influenced by (advanced) flappy bird's action (position) and advanced flappy
-        #  bird's action is influenced by CloudSkimmer's action. Meaning if we update either of them before the other
-        #  one, the one updated last will have a 1 frame advantage, as it will know what the other one did - we do NOT
-        #  want that, as it's not fair + they weren't trained that way.
-        #  In all training environments we get observation data at the end of the step and then perform actions at
-        #  the start of the next step. So, before performing actions, the game state doesn't change. We get observation,
-        #  then we perform actions. We'll do basically the same thing here. First we predict actions for all agents,
-        #  only after that we perform those actions. This way all agents will get the info of the same frame - no agent
-        #  will get the info of what some other agent that was updated before him did, as actions were predicted before
-        #  updating any agent.
-        #  It's same with player actions. If player performs an action before CloudSkimmer gets observation,
-        #  CloudSkimmer will have 1 frame advantage. Which is not OK either.
+        # CloudSkimmer's action is influenced by (advanced) flappy bird's action (position) and advanced flappy
+        # bird's action is influenced by CloudSkimmer's action. Meaning if we update either of them before the other
+        # one, the one updated last will have a 1 frame advantage, as it will know what the other one did - we do NOT
+        # want that, as it's not fair + they weren't trained that way.
+        # In all training environments we get observation data at the end of the step and then perform actions at
+        # the start of the next step. So, before performing actions, the game state doesn't change. We get observation,
+        # then we perform actions. We'll do basically the same thing here. First we predict actions for all agents,
+        # only after that we perform those actions. This way all agents will get the info of the same frame - no agent
+        # will get the info of what some other agent that was updated before him did, as actions were predicted before
+        # updating any agent.
+        # It's same with player actions. If player performs an action before CloudSkimmer gets observation,
+        # CloudSkimmer will have 1 frame advantage. Which is not OK either.
 
         controlled_entities = []
         if not self.human_player:
@@ -250,7 +245,7 @@ class FlappyBird:
         else:
             raise ValueError(f"Unknown entity type: {type(entity)}")
 
-    async def game_over(self):
+    def game_over(self):
         # TODO: if we'll transition to pacman, we need to somehow NOT KILL THE PLAYER and let him continue the game
         #  if he wins the pacman minigame. If he loses, nothing changes, it's game over.
 
@@ -289,7 +284,6 @@ class FlappyBird:
 
             pygame.display.update()
             self.config.tick()
-            await asyncio.sleep(0)
 
     def transition(self):
         if not self.transitioning_to:
@@ -406,6 +400,7 @@ class FlappyBird:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 if self.player.y + self.player.h >= self.floor.y - 1:  # waits for bird crash animation to end
                     return True
+        return False
 
     def handle_mouse_buttons(self):
         if not self.human_player:
@@ -424,7 +419,7 @@ class FlappyBird:
     def submit_result_async(self):
         current_time = datetime.now(timezone.utc).isoformat()
         self.results_manager.submit_result(self.score.score, current_time)
-        scores_service.submit_score("PLACEHOLDER", self.score.score)  # TODO: change "JOHNNY" to username variable
+        scores_service.submit_score("PLACEHOLDER", self.score.score)  # TODO: change "PLACEHOLDER" to username variable
 
     def monitor_fps_drops(self, fps_threshold=None):
         """
