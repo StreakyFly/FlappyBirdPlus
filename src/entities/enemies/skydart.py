@@ -94,6 +94,7 @@ class SkyDart(Enemy):
         if self.target is not None and self.collide(self.target):
             self.damaged_player = True
             self.target.deal_damage(30)
+            self.config.sounds.play(self.config.sounds.hit_quiet)
 
 
 # TODO:

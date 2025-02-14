@@ -20,6 +20,9 @@ class Sounds:
     flap: List[pygame.mixer.Sound]
     collect_item: List[pygame.mixer.Sound]
     weapons: Dict[str, Dict[str, pygame.mixer.Sound]]
+    # TODO: refactor this, maybe put all hit sounds in a dict?
+    hit_quiet: pygame.mixer.Sound
+    hit_bullet: pygame.mixer.Sound
 
     def __init__(self, muted: bool = False) -> None:
         self.muted = muted
@@ -31,8 +34,8 @@ class Sounds:
         self._load_base_sounds()
         self._load_weapon_sounds()
 
-        self.all_sounds = [self.die, self.hit, self.swoosh] + self.point + self.flap + self.collect_item + \
-                            [sound for weapon_sounds in self.weapons.values() for sound in weapon_sounds.values()]
+        self.all_sounds = [self.die, self.hit, self.swoosh, self.hit_quiet] + self.point + self.flap + self.collect_item + \
+                          [sound for weapon_sounds in self.weapons.values() for sound in weapon_sounds.values()]
 
     def set_muted(self, mute: bool) -> None:
         self.muted = mute
@@ -88,6 +91,8 @@ class Sounds:
         self.point = _load_sounds('point', 2)
         self.flap = _load_sounds('flap', 2)
         self.collect_item = _load_sounds('items/collect_item', 4)
+        self.hit_quiet = _load_sound('hit_quiet')
+        self.hit_bullet = _load_item_sound('hit_bullet')
 
     def _load_weapon_sounds(self) -> None:
         self.weapons = {}

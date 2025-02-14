@@ -1,3 +1,5 @@
+import random
+
 from src.utils import GameConfig
 from .enemy import EnemyGroup
 from .cloudskimmer import CloudSkimmerGroup
@@ -9,6 +11,9 @@ class EnemyManager:
         self.config = config
         self.env = env
         self.spawned_enemy_groups = []  # some files expect this list to contain no more than one enemy group at once
+        self.count = 0
+        self.wait = 240
+        self.group_to_spawn = self.spawn_skydart
 
     def tick(self):
         if self.can_spawn_enemy():
@@ -24,15 +29,22 @@ class EnemyManager:
             group.stop()
 
     def can_spawn_enemy(self) -> bool:
+        # TODO improve spawning logic
         if self.spawned_enemy_groups:
             return False
-        # TODO implement this
+        self.count += 1
+        if self.count < self.wait:
+            return False
+        self.wait = random.randint(120, 300)
+        self.count = 0
         return True
 
     def spawn_enemy(self) -> None:
         # TODO implement this
         # self.spawn_cloudskimmer()  # temporary
-        self.spawn_skydart()  # temporary
+        # self.spawn_skydart()  # temporary
+        self.group_to_spawn()
+        self.group_to_spawn = self.spawn_skydart if self.group_to_spawn == self.spawn_cloudskimmer else self.spawn_cloudskimmer
 
     def spawn_cloudskimmer(self):
         # TODO play sound effect when spawning enemy, for this one some ghost sound effect

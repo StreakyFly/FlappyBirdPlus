@@ -296,6 +296,7 @@ class Bullet(Item):
         if self.player and self.collide(self.player):
             self.hit_entity = 'player'
             self.player.deal_damage(self.damage)
+            self.config.sounds.play(self.config.sounds.hit_bullet)
             return
 
     def stop(self):

@@ -16,6 +16,10 @@ class ItemManager:
         self.spawn_cooldown: int = 150  # self.config.fps * 5 <-- we don't want it tied to the fps
         self.stopped = False
         # self.count = 0  # TODO delete
+        self.first_items_to_spawn = [[ItemName.WEAPON_AK47, ItemName.WEAPON_DEAGLE, ItemName.WEAPON_UZI],
+                                     [ItemName.POTION_HEAL, ItemName.POTION_SHIELD],
+                                     [ItemName.WEAPON_AK47, ItemName.WEAPON_DEAGLE, ItemName.WEAPON_UZI],
+                                     [ItemName.MEDKIT, ItemName.BANDAGE]]
 
     def tick(self) -> None:
         for item in self.spawned_items:
@@ -73,7 +77,10 @@ class ItemManager:
         return True
 
     def spawn_item(self) -> None:
-        item_name: ItemName = self.get_random_spawn_item()
+        if self.first_items_to_spawn:
+            item_name = random.choice(self.first_items_to_spawn.pop(0))
+        else:
+            item_name: ItemName = self.get_random_spawn_item()
         # TODO further improve spawn position - calculate where the player will be able to collect the spawned
         #  item, and then adjust the spawn position accordingly, so that the player can collect the item and it doesn't
         #  end within the pipe when it reaches the player. Basically reverse calculate the position where the item

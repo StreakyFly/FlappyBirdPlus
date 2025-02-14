@@ -62,12 +62,12 @@ class TextGroup:
     def setup_text(self):
         size = TILEHEIGHT
         self.all_text[SCORETXT] = Text("0".zfill(8), WHITE, 0, TILEHEIGHT, size)
-        self.all_text[LEVELTXT] = Text(str(1).zfill(3), WHITE, 23 * TILEWIDTH, TILEHEIGHT, size)
+        # self.all_text[LEVELTXT] = Text(str(1).zfill(3), WHITE, 23 * TILEWIDTH, TILEHEIGHT, size)
         self.all_text[READYTXT] = Text("READY!", YELLOW, 11.25 * TILEWIDTH, 20 * TILEHEIGHT, size, visible=False)
         self.all_text[PAUSETXT] = Text("PAUSED!", YELLOW, 10.625 * TILEWIDTH, 20 * TILEHEIGHT, size, visible=False)
         self.all_text[GAMEOVERTXT] = Text("GAMEOVER!", YELLOW, 10 * TILEWIDTH, 20 * TILEHEIGHT, size, visible=False)
         self.add_text("SCORE", WHITE, 0, 0, size)
-        self.add_text("LEVEL", WHITE, 23 * TILEWIDTH, 0, size)
+        # self.add_text("LEVEL", WHITE, 23 * TILEWIDTH, 0, size)
 
     def update(self, dt):
         for tkey in list(self.all_text.keys()):
@@ -88,7 +88,8 @@ class TextGroup:
         self.update_text(SCORETXT, str(score).zfill(8))
 
     def update_level(self, level):
-        self.update_text(LEVELTXT, str(level + 1).zfill(3))
+        # self.update_text(LEVELTXT, str(level + 1).zfill(3))
+        pass
 
     def update_text(self, id, value):
         if id in self.all_text.keys():

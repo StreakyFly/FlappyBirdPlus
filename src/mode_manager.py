@@ -21,7 +21,7 @@ class ModeExecutor:
     def play():
         # asyncio.run(FlappyBird().start())
         game_instance = FlappyBird()
-        # game_instance.init_model_controllers(human_player=Config.human_player)  # TODO: comment when testing non-AI things to speed up load time
+        game_instance.init_model_controllers(human_player=Config.human_player)  # TODO: comment when testing non-AI things to speed up load time
         asyncio.run(game_instance.start())
 
     @staticmethod
