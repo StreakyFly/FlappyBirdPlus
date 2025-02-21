@@ -17,7 +17,6 @@ class GameConfig:
         sounds: Sounds,
         settings_manager: SettingsManager,
         debug: bool = False,
-        pacman: bool = False,
         save_results: bool = True,
     ) -> None:
         self.screen = screen
@@ -28,7 +27,6 @@ class GameConfig:
         self.sounds = sounds
         self.settings_manager = settings_manager
         self.debug = debug
-        self.pacman = pacman
         self.save_results = save_results
 
     def tick(self) -> None:

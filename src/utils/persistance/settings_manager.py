@@ -12,7 +12,6 @@ class SettingsManager(FileManager):
             "volume": 0.5,
             "vsync": False,
             "ai_player": False,
-            "pacman": True,
             "debug": False,
         }
         self._initialize_settings()
