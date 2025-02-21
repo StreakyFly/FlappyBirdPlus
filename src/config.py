@@ -14,7 +14,6 @@ class Config:
     env_type: EnvType = EnvType.BASIC_FLAPPY  # <-- change environment type here
     run_id: str = None  # "run_test"  # <-- change the run id here (can/should be None for some modes)
     human_player: bool = not settings_manager.get_setting('ai_player')  # <-- toggle if you want to play the game yourself (only works for Mode.PLAY)
-    pacman: bool = settings_manager.get_setting('pacman')  # <-- toggle if you want to play pacman when you die, for an extra life
     save_results: bool = True  # <-- toggle if you want to save the results to file & database
 
     options = {

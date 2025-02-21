@@ -17,7 +17,6 @@ class SettingsMenu(Menu):
         volume_slider = Slider(config=self.config, label="Volume", initial_value=self.settings_manager.get_setting("volume") * 100, on_slide=self.on_volume_slide)
         vsync_toggle = Toggle(config=self.config, label="V-sync", initial_state=self.settings_manager.get_setting("vsync"), on_toggle=self.on_vsync_toggle)
         ai_player_toggle = Toggle(config=self.config, label="AI Player", initial_state=self.settings_manager.get_setting("ai_player"), on_toggle=self.on_ai_player_toggle)
-        pacman_toggle = Toggle(config=self.config, label="Pacman on death", initial_state=self.settings_manager.get_setting("pacman"), on_toggle=self.on_pacman_toggle)
         debug_toggle = Toggle(config=self.config, label="Debug mode", initial_state=self.settings_manager.get_setting("debug"), on_toggle=self.on_debug_toggle)
         tabs = Tabs(config=self.config, menu=self, tabs={
                         "General": [
@@ -27,8 +26,7 @@ class SettingsMenu(Menu):
                         ],
                         "Gameplay": [
                             {"element": ai_player_toggle, "x": 0, "y": 80, "align": "left"},
-                            {"element": pacman_toggle, "x": 0, "y": 200, "align": "left"},
-                            {"element": debug_toggle, "x": 0, "y": 320, "align": "left"},
+                            {"element": debug_toggle, "x": 0, "y": 200, "align": "left"},
                         ],
                     })
         self.add_element(tabs, 0, 100, "center")
@@ -48,10 +46,6 @@ class SettingsMenu(Menu):
     def on_ai_player_toggle(self, state):
         self.settings_manager.update_setting("ai_player", state)
         self.config.human_player = not state
-
-    def on_pacman_toggle(self, state):
-        self.settings_manager.update_setting("pacman", state)
-        self.config.pacman = state
 
     def on_debug_toggle(self, state):
         self.settings_manager.update_setting("debug", state)

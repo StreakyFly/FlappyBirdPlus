@@ -1,9 +1,7 @@
-import asyncio
 import os
 import sys
 import threading
 from datetime import datetime, timezone
-from typing import Literal
 
 import pygame
 
@@ -12,7 +10,6 @@ from .entities import MenuManager, MainMenu, Background, Floor, Player, PlayerMo
     WelcomeMessage, GameOver, Inventory, ItemManager, ItemName, EnemyManager, CloudSkimmer
 from .ai import ObservationManager
 from .database import scores_service
-from .pacman import Pacman
 
 # from .config import Config <-- imported later to avoid circular import
 
@@ -39,7 +36,6 @@ class FlappyBird:
             sounds=Sounds(),
             settings_manager=Config.settings_manager,
             debug=Config.debug,
-            pacman=Config.pacman,
             save_results=Config.save_results,
         )
 
@@ -73,14 +69,6 @@ class FlappyBird:
         # Miscellaneous
         self.next_closest_pipe_pair = None
 
-        # Pacman stuff
-        self.pacman: Pacman = None
-        self.pacman_shown = False
-        self.transitioning_to: Literal[None, "fp", "pm"] = None
-        self.transition_duration: int = 30
-        self.transition_progress: int = 0
-        self.has_second_chance = True
-
     def init_model_controllers(self, human_player: bool = True):
         """
         Initializes the model controllers for the player and the enemies.
@@ -99,7 +87,6 @@ class FlappyBird:
             self.start_screen()
             self.play()
             self.game_over()
-            self.has_second_chance = True
 
     def reset(self):
         self.config.images.randomize()
@@ -175,12 +162,6 @@ class FlappyBird:
 
             self.player.handle_bad_collisions(self.pipes, self.floor)
             if self.is_player_dead():
-                if self.config.pacman and self.has_second_chance:  # TODO: and player died above the pipe (and fell in)
-                    self.pacman = Pacman(self.config, self.config.images.player_id)
-                    self.transitioning_to = "pm"
-                    pygame.mixer.music.fadeout(1500)
-                    # TODO: transition to pacman minigame
-                    #  - flappy's death animation will also need to be updated
                 return
 
             collided_items = self.player.collided_items(self.item_manager.spawned_items)
@@ -257,152 +238,19 @@ class FlappyBird:
         self.enemy_manager.stop()
         self.inventory.stop()
 
-        if self.score.score > 0 and self.config.save_results and not (self.has_second_chance and self.config.pacman):
+        if self.score.score > 0 and self.config.save_results:
             threading.Thread(target=self.submit_result_async, daemon=True).start()
 
         while True:
-            events = []
-            for event in pygame.event.get():
-                if self.pacman_shown:
-                    self.handle_quit(event)
-                    events.append(event)
-                elif self.handle_event(event):
-                    return
-
-            if self.pacman_shown:
-                res = self.pacman.update(events)
-                if res is not None:
-                    self.transitioning_to = "fp"
-                    self.config.sounds.play_background_music()
-                    if res is True:
-                        if self.continue_game() is True:
-                            self.pacman_shown = False
-                            self.pacman = None
-                            ##################################################
-                            # ABSOLUTELY DISGUSTING QUICK FIX, WILL BE REMOVED
-                            ##################################################
-                            self.gsm.set_state(GameState.END)
-                            self.player.set_mode(PlayerMode.CRASH)
-
-                            self.pipes.stop()
-                            self.floor.stop()
-                            self.item_manager.stop()
-                            self.enemy_manager.stop()
-                            self.inventory.stop()
-
-                            if self.score.score > 0 and self.config.save_results and not (self.has_second_chance and self.config.pacman):
-                                threading.Thread(target=self.submit_result_async, daemon=True).start()
-
-                            while True:
-                                for event in pygame.event.get():
-                                    if self.handle_event(event):
-                                        return
-
-                                self.game_tick()
-                                self.game_over_message.tick()
-                                self.transition()
-
-                                pygame.display.update()
-                                self.config.tick()
-                            #################################################
-            else:
-                self.game_tick()
-                self.game_over_message.tick()
-
-            self.transition()
-
-            pygame.display.update()
-            self.config.tick()
-
-    def continue_game(self):
-        self.has_second_chance = False
-        self.player.hp_manager.current_value = self.player.hp_manager.max_value // 2
-        self.player.invincibility_frames = 90
-        self.player.y = self.config.window.height // 2
-        self.gsm.set_state(GameState.PLAY)
-        self.player.set_mode(PlayerMode.NORMAL)
-
-        # Quick and ugly solution, as I plan to remove the pacman minigame,
-        # as it's just too random, doesn't fit the game, and is too repetitive.
-        for pipe in self.pipes.upper + self.pipes.lower:
-            pipe.vel_x = -7.5
-
-        # resume floor
-        self.floor.vel_x = 7.5
-
-        # resume items
-        self.item_manager.stopped = False
-        for item in self.item_manager.spawned_items:
-            item.vel_x = -10
-
-        # resume enemies
-        for group in self.enemy_manager.spawned_enemy_groups:
-            for enemy in group.members:
-                enemy.running = True
-
-        # resume inventory
-        for slot in self.inventory.inventory_slots:
-            if hasattr(slot.item, "shot_bullets") and slot.item.shot_bullets:
-                slot.item.shot_bullets.clear()
-
-        while True:
-            self.monitor_fps_drops()
-
-            self.perform_entity_actions()
-            # handle events including player input
             for event in pygame.event.get():
                 if self.handle_event(event):
-                    return True
-            self.handle_mouse_buttons()
-
-            if self.player.crossed(self.next_closest_pipe_pair[0]):
-                self.next_closest_pipe_pair = self.get_next_pipe_pair()
-                self.score.add()
-
-            self.player.handle_bad_collisions(self.pipes, self.floor)
-            if self.is_player_dead():
-                # player actually died
-                return True
-
-            collided_items = self.player.collided_items(self.item_manager.spawned_items)
-            self.item_manager.collect_items(collided_items)
-            self.update_bullet_info()
+                    return
 
             self.game_tick()
+            self.game_over_message.tick()
 
             pygame.display.update()
             self.config.tick()
-
-
-    def transition(self):
-        if not self.transitioning_to:
-            return
-
-        self.draw_black_overlay()
-
-        if self.transitioning_to == "pm":
-            self.fade_to_black() if not self.pacman_shown else self.fade_from_black()
-        elif self.transitioning_to == "fp":
-            self.fade_to_black() if self.pacman_shown else self.fade_from_black()
-
-    def fade_to_black(self):
-        self.transition_progress += 1
-        if self.transition_progress == self.transition_duration:
-            self.pacman_shown = not self.pacman_shown
-            if not self.pacman_shown:
-                self.pacman = None
-
-    def fade_from_black(self):
-        self.transition_progress -= 1
-        if self.transition_progress == 0:
-            self.transitioning_to = None
-
-    def draw_black_overlay(self):
-        alpha = min(255, int(255 * (self.transition_progress / self.transition_duration)))
-        fade_surface = pygame.Surface(self.config.screen.get_size())
-        fade_surface.fill((0, 0, 0))
-        fade_surface.set_alpha(alpha)
-        self.config.screen.blit(fade_surface, (0, 0))
 
     def game_tick(self):
         self.background.tick()
@@ -487,7 +335,7 @@ class FlappyBird:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 return True
 
-        elif self.player.mode == PlayerMode.CRASH and not self.pacman:
+        elif self.player.mode == PlayerMode.CRASH:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 if self.player.y + self.player.h >= self.floor.y - 1:  # waits for bird crash animation to end
                     return True
