@@ -82,21 +82,20 @@ class Images:
     def _load_enemy_images(self) -> None:
         self.enemies = dict()
         ENEMY_SPRITES = {
-            'enemy-cloudskimmer_1': 1,
-            'enemy-cloudskimmer-eyes': 1,
-            'enemy-skydart': 3,
+            'cloudskimmer': 1,
+            'cloudskimmer-eyes': 1,
+            'skydart': 3,
         }
 
         for enemy_name, num_sprites in ENEMY_SPRITES.items():
-            base_name = enemy_name.rsplit('_', 1)[0]
-            if base_name not in self.enemies:
-                self.enemies[base_name] = []
+            if enemy_name not in self.enemies:
+                self.enemies[enemy_name] = []
             is_spritesheet = num_sprites > 1
             image = load_image(f'enemies/{enemy_name}', is_spritesheet).convert_alpha()
             if is_spritesheet:
-                self.enemies[base_name].extend(animation_spritesheet_to_frames(image, num_sprites))
+                self.enemies[enemy_name].extend(animation_spritesheet_to_frames(image, num_sprites))
             else:
-                self.enemies[base_name].append(image)
+                self.enemies[enemy_name].append(image)
 
 
 def _items_dir(item_name: str) -> str:
