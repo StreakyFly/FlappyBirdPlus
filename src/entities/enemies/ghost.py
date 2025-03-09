@@ -12,8 +12,8 @@ from .enemy import Enemy, EnemyGroup
 
 class Ghost(Enemy):
     def __init__(self, config: GameConfig, *args, **kwargs):
-        super().__init__(config, Animation(config.images.enemies['enemy-cloudskimmer']), *args, **kwargs)
-        self.eyes = config.images.enemies['enemy-cloudskimmer-eyes'][0]
+        super().__init__(config, Animation(config.images.enemies['cloudskimmer']), *args, **kwargs)
+        self.eyes = config.images.enemies['cloudskimmer-eyes'][0]
         self.time = 0
         self.initial_y = self.y
         self.vel_x = -8

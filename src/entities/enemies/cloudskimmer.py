@@ -14,8 +14,8 @@ from .enemy import Enemy, EnemyGroup
 
 class CloudSkimmer(Enemy):
     def __init__(self, config: GameConfig, pos_id, *args, **kwargs):
-        super().__init__(config, Animation(config.images.enemies['enemy-cloudskimmer']), *args, **kwargs)
-        self.eyes = config.images.enemies['enemy-cloudskimmer-eyes'][0]
+        super().__init__(config, Animation(config.images.enemies['cloudskimmer']), *args, **kwargs)
+        self.eyes = config.images.enemies['cloudskimmer-eyes'][0]
         self.id: Literal[0, 1, 2] = pos_id  # 0: top, 1: middle, 2: bottom (unless the group is changed)
         # should they start at different times? Maybe CloudSkimmerGroup picks a random time, and then each member
         #  starts at a different time from that point within a certain range

@@ -16,7 +16,7 @@ from .enemy import Enemy, EnemyGroup
 
 class SkyDart(Enemy):
     def __init__(self, config: GameConfig, *args, **kwargs):
-        super().__init__(config, Animation(config.images.enemies['enemy-skydart'] + [config.images.enemies['enemy-skydart'][1]]), *args, **kwargs)
+        super().__init__(config, Animation(config.images.enemies['skydart'] + [config.images.enemies['skydart'][1]]), *args, **kwargs)
         self.time = 0
         self.launch_time: int = 0
         self.set_max_hp(60)
