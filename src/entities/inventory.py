@@ -22,8 +22,8 @@ class InventorySlot(Entity):
 
     def draw(self) -> None:
         blit_list = [
-            (self.config.images.inventory_backgrounds[self.type.value], (self.rect.x + 5, self.rect.y + 5)),
-            (self.item.inventory_image, (self.rect.x + 10, self.rect.y + 10)),
+            (self.config.images.user_interface['inventory-bg-taken' if self.item.name != ItemName.EMPTY else 'inventory-bg-empty'], (self.rect.x + 5, self.rect.y + 5)),
+            (self.item.inventory_image if self.item.name != ItemName.EMPTY else self.config.images.items[self.type.value], (self.rect.x + 10, self.rect.y + 10)),
             (self.image, self.rect)]
 
         if self.item.remaining_cooldown > 0:
@@ -76,7 +76,7 @@ class Inventory(Entity):
 
         for i in range(num_slots):
             x = 24 + i * slot_width
-            slot = InventorySlot(self.config, self.config.images.inventory_slot, x=x, y=slot_height)
+            slot = InventorySlot(self.config, self.config.images.user_interface['inventory-slot'], x=x, y=slot_height)
             slot.item = self.item_initializer.init_item(ItemName.EMPTY)
             slot.type = default_item_types[i]  # set the item type for the slot
             self.inventory_slots.append(slot)
