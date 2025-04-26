@@ -141,13 +141,6 @@ class ModelPPO:
             printc("WARNING! n_envs > 1 but use_subproc_vec_env is False. "
                    "Setting use_subproc_vec_env to True is recommended.", color="yellow")
 
-        # TODO figure out how to fix this
-        if use_subproc_vec_env and self.model_cls == MaskablePPO:
-            printc("\nWARNING! MaskablePPO doesn't work with SubprocVecEnv (yet):\n"
-                   "https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/issues/49", color="yellow")
-            printc("Changing use_subproc_vec_env to False!\n", color="red")
-            use_subproc_vec_env = False
-
         vec_env_cls = SubprocVecEnv if use_subproc_vec_env else None
         return make_vec_env(lambda: EnvManager(self.env_type).get_env(), n_envs=n_envs, vec_env_cls=vec_env_cls)
 

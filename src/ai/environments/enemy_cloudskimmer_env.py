@@ -152,6 +152,9 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         self.handle_basic_flappy()
 
         # print(action[0], self.controlled_enemy.gun.remaining_shoot_cooldown, self.controlled_enemy.gun.remaining_reload_cooldown)
+        # Must NOT init EnemyCloudSkimmerModelController(), as it would create a new instance which creates a new
+        #  EnemyCloudSkimmerEnv (this), causing infinite recursion. Yeah, really messed up, but it works... for now -_-
+        # self.enemy_cloudskimmer_controller.perform_action(self.controlled_enemy, action)
         EnemyCloudSkimmerModelController.perform_action(self.controlled_enemy, action)
 
         self.update_bullet_info()
@@ -180,6 +183,12 @@ class EnemyCloudSkimmerEnv(BaseEnv):
 
     def get_observation(self):
         return self.observation_manager.get_observation(self.controlled_enemy)
+
+    def get_action_masks(self) -> np.ndarray:
+        # Must NOT init EnemyCloudSkimmerModelController(), as it would create a new instance which creates a new
+        #  EnemyCloudSkimmerEnv (this), causing infinite recursion. Yeah, really messed up, but it works... for now -_-
+        # return self.enemy_cloudskimmer_controller.get_action_masks(self, self.observation_manager.get_observation(CloudSkimmer))
+        return EnemyCloudSkimmerModelController.get_action_masks(self, self.observation_manager.observation_instances[self.controlled_enemy])
 
     def calculate_reward(self, action) -> int:
         """
