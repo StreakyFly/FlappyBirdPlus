@@ -186,9 +186,8 @@ class EnemyCloudSkimmerEnv(BaseEnv):
 
     def get_action_masks(self) -> np.ndarray:
         # Must NOT init EnemyCloudSkimmerModelController(), as it would create a new instance which creates a new
-        #  EnemyCloudSkimmerEnv (this), causing infinite recursion. Yeah, really messed up, but it works... for now -_-
-        # return self.enemy_cloudskimmer_controller.get_action_masks(self, self.observation_manager.get_observation(CloudSkimmer))
-        return EnemyCloudSkimmerModelController.get_action_masks(self, self.observation_manager.observation_instances[self.controlled_enemy])
+        #  EnemyCloudSkimmerEnv (this), causing infinite recursion. Yeah, really messed up, but (｡◕‿‿◕｡)
+        return EnemyCloudSkimmerModelController.get_action_masks(self.controlled_enemy, self)
 
     def calculate_reward(self, action) -> int:
         """

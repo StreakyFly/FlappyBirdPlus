@@ -211,8 +211,7 @@ class FlappyBird:
             observation = self.observation_manager.get_observation(entity)
             # TODO this if statement will later need to be modified, as advanced flappy bird will use action masks
             use_action_masks = False if isinstance(entity, Player) else True
-            action = controller.predict_action(observation, env=self, use_action_masks=use_action_masks,
-                                               observation_instance=self.observation_manager.observation_instances[entity])
+            action = controller.predict_action(observation, use_action_masks=use_action_masks, entity=entity, env=self)
             actions.append(action)
 
         # perform actions for all entities
