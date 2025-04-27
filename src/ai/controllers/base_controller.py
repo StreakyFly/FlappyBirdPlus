@@ -19,16 +19,19 @@ class BaseModelController:
         self.model_cls = MaskablePPO if getattr(EnvManager(env_type).get_env_class(), 'requires_action_masking', False) else PPO
         self.model = self.model_cls.load(model_path, env=self.norm_env)
 
-    def predict_action(self, observation, deterministic=True, use_action_masks=True, env=None, observation_instance=None):
+    def predict_action(self, observation, deterministic=True, use_action_masks=True, entity=None, env=None):
         """
-        Predict the action for the given observation using the basic_flappy model.
-        The observation is normalized before prediction.
+        Predict the action for the given observation using the trained model.
+        The observation is normalized before prediction, just like in the training phase.
         """
         normalized_obs = self.norm_env.normalize_obs(observation)
 
         if use_action_masks:
-            action, _states = self.model.predict(normalized_obs, deterministic=deterministic,
-                                                 action_masks=self.get_action_masks(env, observation_instance))
+            # If we move the get_action_masks() logic from the controller to the environment, we can get the action
+            #  masks directly from the environment this way. But I think it's best to keep the method in the controller.
+            # action_masks = self.norm_env.venv.envs[0].game_env.get_action_masks(entity, env)
+            action_masks = self.get_action_masks(entity, env)
+            action, _states = self.model.predict(normalized_obs, deterministic=deterministic, action_masks=action_masks)
         else:
             action, _states = self.model.predict(normalized_obs, deterministic=deterministic)
 
@@ -44,7 +47,8 @@ class BaseModelController:
     @staticmethod
     def get_action_masks(*args):
         """
-        Computes and returns the action masks.
-        This method is only needed if the environment requires action masking.
+        Get the action masks for the current game state.
+        Each mask corresponds to whether an action is feasible (1) or not (0).
+        This method is required ONLY if the agent needs action masking.
         """
         raise NotImplementedError("get_action_masks() method should be implemented in a subclass.")
