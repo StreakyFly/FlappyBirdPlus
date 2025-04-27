@@ -117,5 +117,4 @@ class Item(Entity):
         self.image = pygame.transform.flip(self.image, True, False)
 
     def stop(self) -> None:
-        # pass
-        NotImplementedError("stop() method must be implemented in the subclass")
+        raise NotImplementedError("stop() method must be implemented in the subclass")

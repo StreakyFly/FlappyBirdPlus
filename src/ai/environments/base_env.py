@@ -32,7 +32,7 @@ class BaseEnv(FlappyBird):
         Get the action and observation space of the environment.
         :return: action space, observation space
         """
-        NotImplementedError("set_action_and_observation_space() method must be implemented in the subclass")
+        raise NotImplementedError("set_action_and_observation_space() method must be implemented in the subclass")
 
     @staticmethod
     def get_observation_space_clip_modes():
@@ -49,7 +49,7 @@ class BaseEnv(FlappyBird):
 
         :return: a dictionary containing the clipping modes for each part of the observation space
         """
-        NotImplementedError("get_observation_space_clip_modes() method must be implemented in the subclass")
+        raise NotImplementedError("get_observation_space_clip_modes() method must be implemented in the subclass")
 
     def perform_step(self, action: int | list[int]):
         """
@@ -57,14 +57,14 @@ class BaseEnv(FlappyBird):
         :param action: action(s) the agent took
         :return: observation, reward, terminated, truncated
         """
-        NotImplementedError("perform_step() method must be implemented in the subclass")
+        raise NotImplementedError("perform_step() method must be implemented in the subclass")
 
     def get_observation(self):
         """
         Get the current observation of the game.
         :return: game observation
         """
-        NotImplementedError("get_observation() method must be implemented in the subclass")
+        raise NotImplementedError("get_observation() method must be implemented in the subclass")
 
     def get_action_masks(self):
         """
@@ -74,7 +74,7 @@ class BaseEnv(FlappyBird):
         This method is required ONLY if requires_action_masking is True.
         :return: np.ndarray: A numpy array of shape (num_actions,) where each element is either 0 or 1.
         """
-        NotImplementedError("get_action_masks() method must be implemented in the subclass")
+        raise NotImplementedError("get_action_masks() method must be implemented in the subclass")
 
     def calculate_reward(self, *args):
         """
@@ -82,4 +82,4 @@ class BaseEnv(FlappyBird):
         :param args: depends on the environment
         :return: a number representing the reward
         """
-        NotImplementedError("calculate_reward() method must be implemented in the subclass")
+        raise NotImplementedError("calculate_reward() method must be implemented in the subclass")
