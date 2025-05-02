@@ -1,4 +1,5 @@
 import random
+from abc import ABC, abstractmethod
 from typing import List, Dict
 
 import pygame
@@ -11,7 +12,69 @@ import pygame
 #  - different soundtrack for packman of course
 #  - maybe some extra sounds when enemies appear, to make it more dramatic
 
-class Sounds:
+class BaseSounds(ABC):
+    @abstractmethod
+    def set_muted(self, mute: bool) -> None: pass
+
+    @abstractmethod
+    def play(self, sound): pass
+
+    @abstractmethod
+    def play_random(self, sounds): pass
+
+    @abstractmethod
+    def set_global_volume(self, volume: float) -> None: pass
+
+    @abstractmethod
+    def set_music_volume(self, volume: float = None) -> None: pass
+
+    @abstractmethod
+    def set_sounds_volume(self, volume: float = None) -> None: pass
+
+    @staticmethod
+    @abstractmethod
+    def play_background_music() -> None: pass
+
+    @staticmethod
+    @abstractmethod
+    def pause_background_music() -> None: pass
+
+    @staticmethod
+    @abstractmethod
+    def unpause_background_music() -> None: pass
+
+
+class DummySounds(BaseSounds):
+    background_music: pygame.mixer.music = None
+    die: pygame.mixer.Sound = None
+    hit: pygame.mixer.Sound = None
+    swoosh: pygame.mixer.Sound = None
+    point: List[pygame.mixer.Sound] = []
+    flap: List[pygame.mixer.Sound] = []
+    collect_item: List[pygame.mixer.Sound] = []
+    weapons: Dict[str, Dict[str, pygame.mixer.Sound]] = {
+        'ak47': {'shoot': None, 'reload': None},
+        'deagle': {'shoot': None, 'reload': None},
+        'uzi': {'shoot': None, 'reload': None}
+    }
+    hit_quiet: pygame.mixer.Sound = None
+    hit_bullet: pygame.mixer.Sound = None
+
+    def set_muted(self, mute: bool): pass
+    def play(self, sound): pass
+    def play_random(self, sounds): pass
+    def set_global_volume(self, volume): pass
+    def set_music_volume(self, volume=None): pass
+    def set_sounds_volume(self, volume=None): pass
+    @staticmethod
+    def play_background_music(): pass
+    @staticmethod
+    def pause_background_music(): pass
+    @staticmethod
+    def unpause_background_music(): pass
+
+
+class Sounds(BaseSounds):
     background_music: pygame.mixer.music
     die: pygame.mixer.Sound
     hit: pygame.mixer.Sound
@@ -24,10 +87,10 @@ class Sounds:
     hit_quiet: pygame.mixer.Sound
     hit_bullet: pygame.mixer.Sound
 
-    def __init__(self, muted: bool = False) -> None:
-        self.muted = muted
-        pygame.mixer.set_num_channels(0 if muted else 50)
-        self.global_volume = 0 if muted else 0.5
+    def __init__(self, volume: float = 0.5) -> None:
+        self.muted = False
+        pygame.mixer.set_num_channels(50)
+        self.global_volume = volume
         self.music_volume = 1.0
         self.sounds_volume = 1.0
 
@@ -36,6 +99,8 @@ class Sounds:
 
         self.all_sounds = [self.die, self.hit, self.swoosh, self.hit_quiet] + self.point + self.flap + self.collect_item + \
                           [sound for weapon_sounds in self.weapons.values() for sound in weapon_sounds.values()]
+
+        self.set_global_volume(volume)
 
     def set_muted(self, mute: bool) -> None:
         self.muted = mute
@@ -100,8 +165,8 @@ class Sounds:
 
         for weapon_name in weapon_names:
             self.weapons[weapon_name] = {
-                "shoot": _load_item_sound(f'weapons/{weapon_name}-shoot'),
-                "reload": _load_item_sound(f'weapons/{weapon_name}-reload')
+                'shoot': _load_item_sound(f'weapons/{weapon_name}-shoot'),
+                'reload': _load_item_sound(f'weapons/{weapon_name}-reload')
             }
 
 def _load_sound(sound_name: str, extension: str = 'wav') -> pygame.mixer.Sound:

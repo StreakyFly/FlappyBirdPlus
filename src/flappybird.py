@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 import pygame
 
-from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds, ResultsManager
+from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds, DummySounds, ResultsManager
 from .entities import MenuManager, MainMenu, Background, Floor, Player, PlayerMode, Pipes, Score, \
     WelcomeMessage, GameOver, Inventory, ItemManager, ItemName, EnemyManager, CloudSkimmer
 from .ai import ObservationManager
@@ -33,18 +33,13 @@ class FlappyBird:
             fps=Config.fps_cap,
             window=window,
             images=Images(),
-            sounds=Sounds(),
+            sounds=DummySounds() if Config.options['mute'] else Sounds(volume=Config.settings_manager.get_settings('volume')),
             settings_manager=Config.settings_manager,
             debug=Config.debug,
             save_results=Config.save_results,
         )
 
-        if Config.options['mute']:
-            self.config.sounds = Sounds(muted=True)
-        else:
-            self.config.sounds = Sounds()
-            self.config.sounds.set_global_volume(self.config.settings_manager.get_setting("volume"))
-            self.config.sounds.play_background_music()
+        self.config.sounds.play_background_music()
 
         self.gsm = GameStateManager()
         self.background = None
