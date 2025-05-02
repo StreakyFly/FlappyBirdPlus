@@ -30,7 +30,7 @@ class ModelPPO:
     def __init__(self, env_type=None, run_id=None) -> None:
         self.env_type = env_type
         self.model_name = self.env_type.value
-        self.base_dir = os.path.join(r'.\ai-models', 'PPO', self.env_type.value)
+        self.base_dir = os.path.join('ai-models', 'PPO', self.env_type.value)
         self.run_id = run_id if run_id else self._generate_run_id()
 
         env_class = EnvManager(self.env_type).get_env_class()
