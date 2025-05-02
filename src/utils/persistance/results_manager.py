@@ -19,11 +19,11 @@ class ResultsManager(FileManager):
 
     def _load_results(self):
         """ Load results from the results file. """
-        return self.load_file(self.results_file, default=self.default_results)['results']
+        return self.load_file(self.results_file, default=self.default_results)
 
     def _save_results(self, results):
         """ Save results to the results file. """
-        self.save_file(self.results_file, { "results": results })
+        self.save_file(self.results_file, results)
 
     def reset_results(self):
         """ Reset results to default. """
@@ -33,6 +33,10 @@ class ResultsManager(FileManager):
     def submit_result(self, score: int, timestamp: str):
         """ Add a result to the results while ensuring the list remains sorted. """
         new_result = {'score': score, 'timestamp': timestamp}
-        insert_position = bisect_left([-r['score'] for r in self.results], -score, hi=len(self.results))
-        self.results.insert(insert_position, new_result)
+        insert_position = bisect_left([-r['score'] for r in self.results['results']], -score, hi=len(self.results['results']))
+        self.results['results'].insert(insert_position, new_result)
         self._save_results(self.results)
+
+    def get_results(self):
+        """ Get all results. """
+        return self.results['results']
