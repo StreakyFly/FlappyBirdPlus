@@ -86,7 +86,7 @@ class LeaderboardMenu(Menu):
                 if self.results_manager is None:
                     self.results_manager = ResultsManager()
 
-                new_data = self.format_data(self.results_manager.results)
+                new_data = self.format_data(self.results_manager.get_results())
                 for index, entry in enumerate(new_data, start=1):
                     entry['rank'] = index
                 leaderboard.set_data(new_data, column_info)
