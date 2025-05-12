@@ -33,7 +33,7 @@ class FlappyBird:
             fps=Config.fps_cap,
             window=window,
             images=Images(),
-            sounds=DummySounds() if Config.options['mute'] else Sounds(volume=Config.settings_manager.get_settings('volume')),
+            sounds=DummySounds() if Config.options['mute'] else Sounds(volume=Config.settings_manager.get_setting('volume')),
             settings_manager=Config.settings_manager,
             debug=Config.debug,
             save_results=Config.save_results,
