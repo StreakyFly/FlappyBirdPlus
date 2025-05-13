@@ -12,3 +12,6 @@ class Heal(Item):
         self.entity.change_hp(heal_amount)
 
         # TODO play an animation & sound
+
+    def stop(self):
+        pass

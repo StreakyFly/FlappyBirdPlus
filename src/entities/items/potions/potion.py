@@ -8,3 +8,6 @@ class Potion(Item):
     def use(self):
         super().use()
         # TODO do something like play an animation & sound and do whatever the potion does
+
+    def stop(self):
+        pass

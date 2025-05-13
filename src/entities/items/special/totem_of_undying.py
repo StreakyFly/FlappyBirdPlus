@@ -23,3 +23,6 @@ class TotemOfUndying(Item):
         self.entity.apply_invincibility(duration_frames=60)
 
         # TODO play an animation & sound
+
+    def stop(self):
+        pass
