@@ -1,12 +1,12 @@
 import threading
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 from enum import Enum
 
-from src.utils import GameConfig, ResultsManager
 from src.database import scores_service
+from src.utils import GameConfig, ResultsManager
+from .elements import Leaderboard, Tabs
 from .menu import Menu
 from .menu_manager import MenuManager
-from .elements import Leaderboard, Tabs
 
 
 class LeaderboardType(Enum):
@@ -67,7 +67,8 @@ class LeaderboardMenu(Menu):
                 new_data = scores_service.get_scores(1000)  # TODO: implement pagination
                 for index, entry in enumerate(new_data, start=1):
                     entry['rank'] = index
-                leaderboard.set_data(self.format_data(new_data, '%d/%m/%y'), column_info)
+                if new_data[0]['score'] != '---':
+                    leaderboard.set_data(self.format_data(new_data, '%d/%m/%y'), column_info)
 
             threading.Thread(target=fetch_and_set_data, daemon=True).start()
 

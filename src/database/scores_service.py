@@ -1,5 +1,6 @@
-from .database import supabase
 import requests
+
+from .database import supabase
 
 
 def submit_score(username: str, score: int):
@@ -16,11 +17,8 @@ def submit_score(username: str, score: int):
         print("No internet connection. Score not submitted.")
         return
 
-    # TODO: get rid of these print statements
-    if response and response.data:
-        print(f"Score for '{username}' added successfully!")
-    else:
-        print(f"Error adding score for '{username}'.")
+    if not response or not response.data:
+        print(f"Error adding score {score} for '{username}'.")
 
 
 def get_scores(count: int = 100):
