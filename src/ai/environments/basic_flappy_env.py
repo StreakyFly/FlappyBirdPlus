@@ -1,9 +1,12 @@
-import pygame
-import numpy as np
 import gymnasium as gym
+import numpy as np
+import pygame
+from torch import nn
 
 from .base_env import BaseEnv
+from ..normalizers.vec_box_only_normalize import VecBoxOnlyNormalize
 from ..observations import ObservationManager
+from ..training_config import TrainingConfig
 
 
 class BasicFlappyEnv(BaseEnv):
@@ -15,6 +18,71 @@ class BasicFlappyEnv(BaseEnv):
     def reset(self):
         super().reset()
         self.observation_manager.create_observation_instance(self.player, self)
+
+    @staticmethod
+    def get_training_config() -> TrainingConfig:
+        VERSION: str = "default"  # which training config to use
+
+        match VERSION:  # noqa
+            case "default":
+                training_config = TrainingConfig(
+                    learning_rate=0.0003,
+                    n_steps=2048,
+                    batch_size=64,
+                    gamma=0.99,
+                    clip_range=0.2,
+
+                    policy_kwargs=dict(
+                        # Out of [128, 128], [64, 64], [32, 32], [8, 8], [8], [4] and [2], the [16, 16] reached great results the fastest.
+                        # It wasn't properly tested, only a single run was done with each of them,
+                        # but all of them did amazing, with only some time difference.
+                        # [8], [4] and [2] needed more total_timesteps to reach the same skill, but they were still able
+                        # to reach it without any problems. [128, 128] took even longer (2x longer than [2] or 4x longer than [16, 16]).
+                        # [1] however didn't learn, even after 6.5m timesteps (roughly 10x times what others needed for
+                        # great results), maybe if I left it for longer it would have, but that's a problem for another day.
+                        # So it seems like [16, 16] is the golden middle, going in either direction (lower or higher)
+                        # makes the training slower with each neuron added/removed, but it still works until a certain point.
+                        net_arch=dict(pi=[16, 16], vf=[16, 16]),
+                        # The minimum network size that learned to play in reasonable time - just 2 neurons!
+                        # net_arch=dict(pi=[2], vf=[2]),
+                        activation_fn=nn.Tanh,
+                        ortho_init=True,
+                    ),
+
+                    save_freq=40_000,
+                    total_timesteps=1_500_000,
+
+                    normalizer=VecBoxOnlyNormalize,
+                    clip_norm_obs=10.0,
+                )
+
+            case "relu":
+                training_config = TrainingConfig(
+                    learning_rate=0.0003,
+                    n_steps=2048,
+                    batch_size=64,
+                    gamma=0.99,
+                    clip_range=0.1,  # smaller clip_range prevents policy collapse
+
+                    policy_kwargs=dict(
+                        net_arch=dict(pi=[32, 32], vf=[32, 32]),
+                        # ReLU variations: LeakyReLU (slower than ReLU but more stable), GELU (untested), ELU (untested)
+                        activation_fn=nn.LeakyReLU,
+                        ortho_init=True,
+                    ),
+
+                    save_freq=50_000,
+                    total_timesteps=2_500_000,
+
+                    normalizer=VecBoxOnlyNormalize,
+                    # normalizer=VecMinMaxNormalize,  # the biggest garbage ever written, don't use if you value your time
+                    clip_norm_obs=5.0,  #  smaller clip_norm_obs prevents policy collapse
+                )
+
+            case _:
+                raise ValueError(f"Unknown training config version: {VERSION}")
+
+        return training_config
 
     @staticmethod
     def get_action_and_observation_space():

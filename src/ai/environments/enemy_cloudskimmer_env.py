@@ -1,13 +1,16 @@
 from weakref import WeakSet
 
-import pygame
-import numpy as np
 import gymnasium as gym
+import numpy as np
+import pygame
+from torch import nn
 
-from .base_env import BaseEnv
-from ..observations import ObservationManager
-from ..controllers import BasicFlappyModelController, EnemyCloudSkimmerModelController
 from src.entities.enemies import CloudSkimmer
+from .base_env import BaseEnv
+from ..controllers import BasicFlappyModelController, EnemyCloudSkimmerModelController
+from ..normalizers.vec_box_only_normalize import VecBoxOnlyNormalize
+from ..observations import ObservationManager
+from ..training_config import TrainingConfig
 
 """
 Randomly select one of the enemies to control.
@@ -79,6 +82,58 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         self.observation_manager.create_observation_instance(entity=self.player, env=self)
         self.observation_manager.create_observation_instance(entity=self.controlled_enemy, env=self,
                                                              controlled_enemy_id=self.controlled_enemy_id)
+
+    @staticmethod
+    def get_training_config() -> TrainingConfig:
+        VERSION: str = "default"  # which training config to use
+
+        match VERSION:  # noqa
+            case "default":
+                training_config = TrainingConfig(
+                    learning_rate=0.0003,
+                    n_steps=2048,
+                    batch_size=64,
+                    gamma=0.99,
+                    clip_range=0.2,
+
+                    policy_kwargs=dict(
+                        net_arch=dict(pi=[64, 64], vf=[64, 64]),
+                        activation_fn=nn.Tanh,
+                        ortho_init=True,
+                    ),
+
+                    save_freq=80_000,
+                    total_timesteps=5_000_000,
+
+                    normalizer=VecBoxOnlyNormalize,
+                    clip_norm_obs=10.0,
+                )
+
+            case "default":
+                training_config = TrainingConfig(
+                    learning_rate=0.0003,
+                    n_steps=2048,
+                    batch_size=64,
+                    gamma=0.99,
+                    clip_range=0.1,
+
+                    policy_kwargs=dict(
+                        net_arch=dict(pi=[64, 64], vf=[64, 64]),
+                        activation_fn=nn.LeakyReLU,  # try normal ReLU as well
+                        ortho_init=True,
+                    ),
+
+                    save_freq=80_000,
+                    total_timesteps=5_000_000,
+
+                    normalizer=VecBoxOnlyNormalize,
+                    clip_norm_obs=5.0,
+                )
+
+            case _:
+                raise ValueError(f"Unknown training config version: {VERSION}")
+
+        return training_config
 
     @staticmethod
     def get_action_and_observation_space() -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Dict]:
@@ -193,7 +248,11 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         """
         Agent should be rewarded for:
          - hitting/damaging the player (huge reward) + bonus, if the bullet hit the player after bouncing off a pipe
-         - hitting a pipe (small reward) - so the likelihood of learning a cool bounce-off-pipe strategy is higher
+         - hitting a pipe (small reward) - so the likelihood of learning a cool bounce-off-pipe strategy is higher - NONONO, we're gonna do this differently:
+            - train the agent in simpler environment at first, with static pipes and static player, hiding behind the pipes at different positions, so they learn trickshots
+            - then make player move, but still behind the pipes
+            - then make the pipes move
+            - finally make the player play normally
          - not firing (small reward each frame the agent doesn't fire, so if he fires but doesn't hit the player, he
            won't get the reward, which is like if he got punished - punishing him if bullet despawns without hitting
            the player might be more logical, however not only is it harder to implement, it might also confuse the
@@ -214,37 +273,37 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         #     reward += 4
         # or punishment for firing?
         if action[0] == 1:
-            reward -= 20
+            reward -= 0.2
         # reward for reloading
         elif action[0] == 2:
-            reward += 30
+            reward += 0.1
 
         # reward for not rotating
         # if action[1] == 0:
         #     reward += 0.2
         # punishment for rotation direction change
-        if self.prev_rotation_action != action[1]:
-            self.prev_rotation_action = action[1]
-            reward -= 20
+        # if self.prev_rotation_action != action[1]:
+        #     self.prev_rotation_action = action[1]
+        #     reward -= 0.2
 
         for bullet in self.all_bullets_from_last_frame.union(self.controlled_enemy.gun.shot_bullets):
             # reward for hitting the player
             if bullet.hit_entity == 'player':
-                reward += 200
+                reward += 2
                 # bonus reward if the bullet hit the player after bouncing
                 if bullet.bounced:
-                    reward += 800
+                    reward += 10
             # punishment for hitting himself or his teammates
             elif bullet.hit_entity == 'enemy':
-                reward -= 400
+                reward -= 3
             # reward for hitting a pipe
             elif bullet.hit_entity == 'pipe' and bullet not in self.bullets_bounced_off_pipes:
                 self.bullets_bounced_off_pipes.add(bullet)
-                reward += 40
+                reward += 0.4
 
         self.all_bullets_from_last_frame = set(self.controlled_enemy.gun.shot_bullets)
 
-        if abs(reward) > 81:
+        if abs(reward) > 2.2:
             print(reward, end=', ')
 
         return reward

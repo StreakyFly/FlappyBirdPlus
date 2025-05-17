@@ -1,22 +1,23 @@
 from typing import Type, Callable, Optional
 
-from .gym_env import GymEnv
+from .base_env import BaseEnv
 from .env_types import EnvType
+from .gym_env import GymEnv
 
 
 class EnvManager:
     def __init__(self, env_type: EnvType):
-        map_env_to_getclass_method: dict[EnvType, Callable[[], Type]] = {
+        map_env_to_getclass_method: dict[EnvType, Callable[[], Type[BaseEnv]]] = {
             EnvType.BASIC_FLAPPY: self.get_basic_flappy_env_class,
             EnvType.ADVANCED_FLAPPY: self.get_advanced_flappy_env_class,
             EnvType.ENEMY_CLOUDSKIMMER: self.get_enemy_cloudskimmer_env_class,
             # EnvType.ENEMY_AEROTHIEF: self.get_enemy_aerothief_env_class,
         }
 
-        self.env_class: Type = map_env_to_getclass_method.get(env_type)()
+        self.env_class: Type[BaseEnv] = map_env_to_getclass_method.get(env_type)()
         self.env: Optional[GymEnv] = None
 
-    def get_env_class(self) -> Type:
+    def get_env_class(self) -> Type[BaseEnv]:
         """
         Returns the environment class.
         """
@@ -50,16 +51,16 @@ class EnvManager:
                 self.env.reset()
 
     @staticmethod
-    def get_basic_flappy_env_class() -> Type:
+    def get_basic_flappy_env_class() -> Type[BaseEnv]:
         from .basic_flappy_env import BasicFlappyEnv
         return BasicFlappyEnv
 
     @staticmethod
-    def get_advanced_flappy_env_class() -> Type:
+    def get_advanced_flappy_env_class() -> Type[BaseEnv]:
         from .advanced_flappy_env import AdvancedFlappyEnv
         return AdvancedFlappyEnv
 
     @staticmethod
-    def get_enemy_cloudskimmer_env_class() -> Type:
+    def get_enemy_cloudskimmer_env_class() -> Type[BaseEnv]:
         from .enemy_cloudskimmer_env import EnemyCloudSkimmerEnv
         return EnemyCloudSkimmerEnv

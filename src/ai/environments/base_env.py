@@ -1,6 +1,7 @@
+from src.ai.training_config import TrainingConfig
+from src.entities import PlayerMode
 from src.flappybird import FlappyBird
 from src.utils import GameState
-from src.entities import PlayerMode
 
 
 class BaseEnv(FlappyBird):
@@ -25,6 +26,13 @@ class BaseEnv(FlappyBird):
         self.reset()
         self.gsm.set_state(GameState.PLAY)
         self.player.set_mode(PlayerMode.NORMAL)
+
+    @staticmethod
+    def get_training_config() -> TrainingConfig:
+        """
+        Get the training configuration for the environment.
+        """
+        return TrainingConfig()
 
     @staticmethod
     def get_action_and_observation_space():

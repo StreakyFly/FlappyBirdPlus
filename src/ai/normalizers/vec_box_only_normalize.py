@@ -1,10 +1,10 @@
-from stable_baselines3.common.vec_env import VecNormalize, VecEnv
 from gymnasium import spaces
+from stable_baselines3.common.vec_env import VecNormalize, VecEnv
 
-from ..utils import printc
+from src.utils import printc
 
 
-class BoxOnlyVecNormalize(VecNormalize):
+class VecBoxOnlyNormalize(VecNormalize):
     """
     VecNormalize raises an error when the observation space is of type spaces.Dict and contains non-Box spaces.
     This class simply fills the norm_obs_keys with only Box space keys if the observation space is a Dict.
@@ -26,8 +26,7 @@ class BoxOnlyVecNormalize(VecNormalize):
         if isinstance(venv.observation_space, spaces.Dict):
             norm_obs_keys = self.extract_box_keys_from_dict(venv.observation_space)
 
-        super(BoxOnlyVecNormalize, self).__init__(venv, training, norm_obs, norm_reward,
-                                                  clip_obs, clip_reward, gamma, epsilon, norm_obs_keys)
+        super().__init__(venv, training, norm_obs, norm_reward, clip_obs, clip_reward, gamma, epsilon, norm_obs_keys)
 
     @staticmethod
     def extract_box_keys_from_dict(observation_space):
