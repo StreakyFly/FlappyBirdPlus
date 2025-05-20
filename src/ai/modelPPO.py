@@ -46,8 +46,8 @@ class ModelPPO:
         self._initialize_directories()
 
     @staticmethod
-    def _get_current_time() -> str:
-        return time.strftime('%Y%m%d_%H%M%S')
+    def _get_current_time(time_format: str = '%Y%m%d_%H%M%S') -> str:
+        return time.strftime(time_format)
 
     def _initialize_directories(self) -> None:
         base_dir = os.path.join('ai-models', 'PPO', self.env_type.value)
@@ -61,6 +61,7 @@ class ModelPPO:
         os.makedirs(self.checkpoints_dir, exist_ok=True)
         os.makedirs(self.tensorboard_dir, exist_ok=True)
         os.makedirs(self.training_config_dir, exist_ok=True)
+        self._create_notes_file(dir_path=run_dir)
 
     def _save_training_config(self, continue_training: bool) -> None:
         def serialize(obj):
@@ -76,6 +77,13 @@ class ModelPPO:
         config_path = os.path.join(self.training_config_dir, filename)
         with open(config_path, 'w') as f:
             json.dump(config_dict, f, indent=4, default=serialize)
+
+    def _create_notes_file(self, dir_path: str) -> None:
+        notes_path = os.path.join(dir_path, 'notes.md')
+        if not os.path.exists(notes_path):
+            with open(notes_path, 'w') as f:
+                f.write(f"# Training Notes\n")
+                f.write(f"**Start Time**: {self._get_current_time(time_format='%d. %m. %Y %H:%M:%S')}\n\n")
 
     def train(self, norm_env=None, model=None, continue_training: bool = False) -> None:
         self._save_training_config(continue_training=continue_training)
