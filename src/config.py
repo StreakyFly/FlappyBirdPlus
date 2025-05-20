@@ -1,8 +1,9 @@
 from typing import Literal
 
-from .utils import printc, SettingsManager
-from .modes import Mode
 from .ai.environments import EnvType
+from .ai.environments.env_types import EnvVariant
+from .modes import Mode
+from .utils import printc, SettingsManager
 
 
 class Config:
@@ -10,8 +11,9 @@ class Config:
     fps_cap: int = 30  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
     debug: bool = settings_manager.get_setting('debug')  # <-- toggle debug mode
     mode: Mode = Mode.PLAY  # <-- change the mode here
-    algorithm: Literal['PPO', 'DQN'] = 'PPO'  # <-- change the algorithm here
-    env_type: EnvType = EnvType.BASIC_FLAPPY  # <-- change environment type here
+    algorithm: Literal['PPO', 'DQN'] = 'PPO'  # <-- change the algorithm here (PPO is the only one fully supported)
+    env_type: EnvType = EnvType.ENEMY_CLOUDSKIMMER  # <-- change environment type here
+    env_variant: EnvVariant = EnvVariant.STATIC  # <-- change environment variant here (doesn't work for Mode.PLAY)
     run_id: str = None  # "run_test"  # <-- change the run id here (can/should be None for some modes)
     human_player: bool = not settings_manager.get_setting('ai_player')  # <-- toggle if you want to play the game yourself (only works for Mode.PLAY)
     save_results: bool = True  # <-- toggle if you want to save the results to file & database
@@ -33,6 +35,8 @@ class Config:
                 printc("CONFIG WARNING! Headless mode is enabled but FPS is capped. Use 0 for no FPS cap.", color="orange")
             if cls.mode == Mode.RUN_MODEL:
                 printc("CONFIG WARNING! Headless mode is enabled but mode is set to Mode.RUN_MODEL.", color="orange")
+        if cls.env_variant != EnvVariant.MAIN and cls.mode == Mode.PLAY:
+            printc("CONFIG WARNING! Mode.PLAY will NOT take the env_variant into account. EnvVariant.MAIN will be used instead.", color="orange")
         if cls.algorithm == 'PPO' and cls.run_id is None and cls.mode in [Mode.CONTINUE_TRAINING, Mode.EVALUATE_MODEL, Mode.RUN_MODEL]:
             raise ValueError("The selected mode requires a run_id.")
         if cls.mode == Mode.TRAIN and cls.run_id is not None:

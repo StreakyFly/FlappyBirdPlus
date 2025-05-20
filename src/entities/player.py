@@ -1,15 +1,17 @@
+import random
+from collections.abc import Callable
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 import pygame
 
-from ..utils import GameConfig, GameState, GameStateManager, Animation
+from .attribute_bar import AttributeBar
 from .entity import Entity
 from .floor import Floor
-from .pipe import Pipe, Pipes
 from .items import SpawnedItem
-from .attribute_bar import AttributeBar
 from .particles import ParticleManager
+from .pipe import Pipe, Pipes
+from ..utils import GameConfig, GameStateManager, Animation
 
 
 # MAYBE ALSO ADD HUNGER BAR??
@@ -22,6 +24,7 @@ class PlayerMode(Enum):
     SHM = "SHM"  # Simple Harmonic Motion
     NORMAL = "NORMAL"
     CRASH = "CRASH"
+    TRAIN = "TRAIN"  # custom mode for training
 
 
 class Player(Entity):
@@ -52,6 +55,8 @@ class Player(Entity):
                                            x=self.x, y=int(self.y) - 40, w=self.w, h=10)
         self.particle_manager = ParticleManager(config=config)
 
+        self.tick_train: Optional[Callable] = None
+
     def set_mode(self, mode: PlayerMode) -> None:
         self.mode = mode
         if mode == PlayerMode.NORMAL:
@@ -65,6 +70,8 @@ class Player(Entity):
             if self.crash_entity == "pipe":
                 self.config.sounds.play(self.config.sounds.die)
             self.reset_vals_crash()
+        elif mode == PlayerMode.TRAIN:
+            self.reset_vals_train()
 
     def reset_vals_normal(self) -> None:
         self.vel_y = -16.875  # player's velocity along Y axis
@@ -99,6 +106,20 @@ class Player(Entity):
         self.vel_y = 13.125
         self.max_vel_y = 28.125
         self.vel_rot = -8
+
+    def reset_vals_train(self) -> None:
+        self.vel_y = 0  # player's velocity along Y axis
+        self.max_vel_y = 0  # max vel along Y, max descend speed
+        self.min_vel_y = 0  # min vel along Y, max ascend speed
+        self.acc_y = 0  # players downward acceleration
+
+        self.rotation = random.randint(-90, 20)  # player's current rotation
+        self.vel_rot = 0  # player's rotation speed
+        self.rot_min = -90  # player's min rotation angle
+        self.rot_max = 20  # player's max rotation angle
+
+        self.flap_acc = 0  # players speed on flapping
+        self.flapped = False  # True when player flaps
 
     def tick_shm(self) -> None:
         if self.vel_y >= self.max_vel_y or self.vel_y <= self.min_vel_y:
@@ -146,6 +167,9 @@ class Player(Entity):
                 self.tick_normal()
             case PlayerMode.CRASH:
                 self.tick_crash()
+            case PlayerMode.TRAIN:
+                if self.tick_train is not None:
+                    self.tick_train()
 
         self.tick_hp()
         self.particle_manager.tick()
@@ -220,3 +244,6 @@ class Player(Entity):
 
     def apply_invincibility(self, duration_frames: int = 60) -> None:
         self.invincibility_frames = duration_frames
+
+    def set_tick_train(self, tick_train: Callable) -> None:
+        self.tick_train = tick_train

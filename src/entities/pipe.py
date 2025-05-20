@@ -1,8 +1,8 @@
 import random
 from typing import List
 
-from ..utils import GameConfig
 from .entity import Entity
+from ..utils import GameConfig
 
 
 class Pipe(Entity):
@@ -37,6 +37,11 @@ class Pipes(Entity):
         for up_pipe, low_pipe in zip(self.upper, self.lower):
             up_pipe.tick()
             low_pipe.tick()
+
+    def draw(self) -> None:
+        for up_pipe, low_pipe in zip(self.upper, self.lower):
+            up_pipe.draw()
+            low_pipe.draw()
 
     def stop(self) -> None:
         for pipe in self.upper + self.lower:

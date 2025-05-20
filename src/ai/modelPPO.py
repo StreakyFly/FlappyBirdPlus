@@ -10,7 +10,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy as normal_evaluate_policy
-from stable_baselines3.common.vec_env import VecNormalize, VecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import VecEnv, SubprocVecEnv, VecEnvWrapper
 
 from src.utils import printc
 from .environments import EnvManager
@@ -25,12 +25,13 @@ from .training_config import TrainingConfig
 
 
 class ModelPPO:
-    def __init__(self, env_type=None, run_id=None) -> None:
+    def __init__(self, env_type=None, env_variant=None, run_id=None) -> None:
         self.env_type = env_type
+        self.env_variant = env_variant
         self.model_name = self.env_type.value
         self.run_id = run_id or self._generate_run_id()
 
-        env_class: Type[BaseEnv] = EnvManager(self.env_type).get_env_class()
+        env_class: Type[BaseEnv] = EnvManager(self.env_type, self.env_variant).get_env_class()
         self.training_config: TrainingConfig = env_class.get_training_config()
         self.use_action_masking = getattr(env_class, 'requires_action_masking', False)
         self.model_cls = MaskablePPO if self.use_action_masking else PPO
@@ -142,13 +143,13 @@ class ModelPPO:
                    "Setting use_subproc_vec_env to True is recommended.", color="yellow")
 
         vec_env_cls = SubprocVecEnv if use_subproc_vec_env else None
-        return make_vec_env(lambda: EnvManager(self.env_type).get_env(), n_envs=n_envs, vec_env_cls=vec_env_cls)
+        return make_vec_env(lambda: EnvManager(self.env_type, self.env_variant).get_env(), n_envs=n_envs, vec_env_cls=vec_env_cls)
 
     def _load_model(self, path: str = None, env: VecEnv = None) -> PPO | MaskablePPO:
         path = path or self.final_model_path
         return self.model_cls.load(path, env)
 
-    def _load_normalization_stats(self, path: str = None, env: VecEnv = None, for_training: bool = True) -> VecNormalize:
+    def _load_normalization_stats(self, path: str = None, env: VecEnv = None, for_training: bool = True) -> VecEnvWrapper:
         if hasattr(self.training_config.normalizer, 'load'):
             path = path or self.norm_stats_path
             norm_env = self.training_config.normalizer.load(path, env)

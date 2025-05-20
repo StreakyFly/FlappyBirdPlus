@@ -5,12 +5,12 @@ import numpy as np
 import pygame
 from torch import nn
 
+from src.ai.controllers import BasicFlappyModelController, EnemyCloudSkimmerModelController
+from src.ai.environments.base_env import BaseEnv
+from src.ai.normalizers.vec_box_only_normalize import VecBoxOnlyNormalize
+from src.ai.observations import ObservationManager
+from src.ai.training_config import TrainingConfig
 from src.entities.enemies import CloudSkimmer
-from .base_env import BaseEnv
-from ..controllers import BasicFlappyModelController, EnemyCloudSkimmerModelController
-from ..normalizers.vec_box_only_normalize import VecBoxOnlyNormalize
-from ..observations import ObservationManager
-from ..training_config import TrainingConfig
 
 """
 Randomly select one of the enemies to control.
@@ -109,7 +109,7 @@ class EnemyCloudSkimmerEnv(BaseEnv):
                     clip_norm_obs=10.0,
                 )
 
-            case "default":
+            case "relu":
                 training_config = TrainingConfig(
                     learning_rate=0.0003,
                     n_steps=2048,
@@ -229,14 +229,16 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         # print()  # breakpoint here
 
         # return (observation,
-        return (self.get_observation(),  # observation
-                # reward,
-                self.calculate_reward(action=action),  # reward,
-                self.controlled_enemy not in self.enemy_manager.spawned_enemy_groups[0].members,  # terminated
-                self.step > 1200,  # truncated; end the episode if it lasts too long
-                {})  # info
+        return (
+            self.get_observation(),  # observation
+            # reward,
+            self.calculate_reward(action=action),  # reward,
+            self.controlled_enemy not in self.enemy_manager.spawned_enemy_groups[0].members,  # terminated
+            self.step > 1200,  # truncated; end the episode if it lasts too long
+            {}  # info
+        )
 
-    def get_observation(self):
+    def get_observation(self) -> dict[str, np.ndarray]:
         return self.observation_manager.get_observation(self.controlled_enemy)
 
     def get_action_masks(self) -> np.ndarray:
@@ -273,10 +275,10 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         #     reward += 4
         # or punishment for firing?
         if action[0] == 1:
-            reward -= 0.2
+            reward -= 0.08
         # reward for reloading
         elif action[0] == 2:
-            reward += 0.1
+            reward += 0.04
 
         # reward for not rotating
         # if action[1] == 0:
@@ -289,22 +291,19 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         for bullet in self.all_bullets_from_last_frame.union(self.controlled_enemy.gun.shot_bullets):
             # reward for hitting the player
             if bullet.hit_entity == 'player':
-                reward += 2
+                reward += 5
                 # bonus reward if the bullet hit the player after bouncing
                 if bullet.bounced:
-                    reward += 10
+                    reward += 20
             # punishment for hitting himself or his teammates
             elif bullet.hit_entity == 'enemy':
-                reward -= 3
+                reward -= 2
             # reward for hitting a pipe
             elif bullet.hit_entity == 'pipe' and bullet not in self.bullets_bounced_off_pipes:
                 self.bullets_bounced_off_pipes.add(bullet)
-                reward += 0.4
+                reward += 0.2
 
         self.all_bullets_from_last_frame = set(self.controlled_enemy.gun.shot_bullets)
-
-        if abs(reward) > 2.2:
-            print(reward, end=', ')
 
         return reward
 

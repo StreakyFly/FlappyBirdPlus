@@ -1,12 +1,12 @@
-import os
 import asyncio
 import cProfile
+import os
 
-from .modes import Mode
-from .config import Config
-from .utils import printc
-from .flappybird import FlappyBird
 from .ai.environments import EnvManager
+from .config import Config
+from .flappybird import FlappyBird
+from .modes import Mode
+from .utils import printc
 
 """  # noqa: E265
 Very simple control flow diagram:
@@ -26,7 +26,7 @@ class ModeExecutor:
 
     @staticmethod
     def test_env():
-        EnvManager(env_type=Config.env_type).test_env()
+        EnvManager(env_type=Config.env_type, env_variant=Config.env_variant).test_env()
 
     @staticmethod
     def train():
@@ -51,7 +51,7 @@ class ModeExecutor:
             model = ModelDQN(env_type=Config.env_type)
         elif Config.algorithm == 'PPO':
             from .ai.modelPPO import ModelPPO
-            model = ModelPPO(env_type=Config.env_type, run_id=Config.run_id)
+            model = ModelPPO(env_type=Config.env_type, env_variant=Config.env_variant, run_id=Config.run_id)
         else:
             raise ValueError(f"Invalid algorithm: {Config.algorithm}")
 

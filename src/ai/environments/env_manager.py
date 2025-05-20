@@ -1,20 +1,19 @@
 from typing import Type, Callable, Optional
 
 from .base_env import BaseEnv
-from .env_types import EnvType
+from .env_types import EnvType, EnvVariant
 from .gym_env import GymEnv
 
 
 class EnvManager:
-    def __init__(self, env_type: EnvType):
-        map_env_to_getclass_method: dict[EnvType, Callable[[], Type[BaseEnv]]] = {
+    def __init__(self, env_type: EnvType, env_variant: EnvVariant = EnvVariant.MAIN):
+        map_env_to_getclass_method: dict[EnvType, Callable[[EnvVariant], Type[BaseEnv]]] = {
             EnvType.BASIC_FLAPPY: self.get_basic_flappy_env_class,
             EnvType.ADVANCED_FLAPPY: self.get_advanced_flappy_env_class,
             EnvType.ENEMY_CLOUDSKIMMER: self.get_enemy_cloudskimmer_env_class,
-            # EnvType.ENEMY_AEROTHIEF: self.get_enemy_aerothief_env_class,
         }
 
-        self.env_class: Type[BaseEnv] = map_env_to_getclass_method.get(env_type)()
+        self.env_class: Type[BaseEnv] = map_env_to_getclass_method.get(env_type)(env_variant)
         self.env: Optional[GymEnv] = None
 
     def get_env_class(self) -> Type[BaseEnv]:
@@ -51,16 +50,28 @@ class EnvManager:
                 self.env.reset()
 
     @staticmethod
-    def get_basic_flappy_env_class() -> Type[BaseEnv]:
-        from .basic_flappy_env import BasicFlappyEnv
-        return BasicFlappyEnv
+    def get_basic_flappy_env_class(env_variant: EnvVariant) -> Type[BaseEnv]:
+        if env_variant == EnvVariant.MAIN:
+            from .basic_flappy_env import BasicFlappyEnv
+            return BasicFlappyEnv
+        else:
+            raise ValueError(f"Invalid env_variant: {env_variant}. BASIC_FLAPPY supports [MAIN] only.")
 
     @staticmethod
-    def get_advanced_flappy_env_class() -> Type[BaseEnv]:
-        from .advanced_flappy_env import AdvancedFlappyEnv
-        return AdvancedFlappyEnv
+    def get_advanced_flappy_env_class(env_variant: EnvVariant) -> Type[BaseEnv]:
+        if env_variant == EnvVariant.MAIN:
+            from .advanced_flappy_env import AdvancedFlappyEnv
+            return AdvancedFlappyEnv
+        else:
+            raise ValueError(f"Invalid env_variant: {env_variant}. ADVANCED_FLAPPY supports [MAIN] only.")
 
     @staticmethod
-    def get_enemy_cloudskimmer_env_class() -> Type[BaseEnv]:
-        from .enemy_cloudskimmer_env import EnemyCloudSkimmerEnv
-        return EnemyCloudSkimmerEnv
+    def get_enemy_cloudskimmer_env_class(env_variant: EnvVariant) -> Type[BaseEnv]:
+        if env_variant == EnvVariant.MAIN:
+            from src.ai.environments.enemy_cloudskimmer.main_env import EnemyCloudSkimmerEnv
+            return EnemyCloudSkimmerEnv
+        elif env_variant == EnvVariant.STATIC:
+            from src.ai.environments.enemy_cloudskimmer.static_env import EnemyCloudSkimmerStaticEnv
+            return EnemyCloudSkimmerStaticEnv
+        else:
+            raise ValueError(f"Invalid env_variant: {env_variant}. ENEMY_CLOUDSKIMMER supports [MAIN, STATIC] only.")

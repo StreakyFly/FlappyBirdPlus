@@ -5,7 +5,6 @@ import pygame
 
 from ...item import Item
 
-
 # TODO Simple collision animation/explosion when colliding with objects.
 
 """
@@ -326,7 +325,7 @@ class Bullet(Item):
     def handle_pipe_collision(self, pipe) -> bool:
         if self.pipe_to_ignore == pipe:
             return False
-        if self.frame < 2:
+        if self.frame == 0:  # this is actually the second frame, not first (as bullet doesn't tick on spawn)
             self.pipe_to_ignore = pipe
             return False
 
