@@ -1,3 +1,4 @@
+import json
 import os
 import time
 from typing import Type
@@ -29,7 +30,7 @@ class ModelPPO:
         self.env_type = env_type
         self.env_variant = env_variant
         self.model_name = self.env_type.value
-        self.run_id = run_id or self._generate_run_id()
+        self.run_id = run_id or f"run_{self._get_current_time()}"
 
         env_class: Type[BaseEnv] = EnvManager(self.env_type, self.env_variant).get_env_class()
         self.training_config: TrainingConfig = env_class.get_training_config()
@@ -38,27 +39,47 @@ class ModelPPO:
 
         self.checkpoints_dir = None
         self.tensorboard_dir = None
+        self.training_config_dir = None
         self.final_model_path = None
         self.norm_stats_path = None
 
         self._initialize_directories()
 
     @staticmethod
-    def _generate_run_id() -> str:
-        return f"run_{time.strftime('%Y%m%d_%H%M%S')}"
+    def _get_current_time() -> str:
+        return time.strftime('%Y%m%d_%H%M%S')
 
     def _initialize_directories(self) -> None:
         base_dir = os.path.join('ai-models', 'PPO', self.env_type.value)
         run_dir = os.path.join(base_dir, self.run_id)
         self.checkpoints_dir = os.path.join(run_dir, 'checkpoints')
         self.tensorboard_dir = os.path.join(run_dir, 'tensorboard_logs')
+        self.training_config_dir = os.path.join(run_dir, 'training_configs')
         self.final_model_path = os.path.join(run_dir, self.env_type.value)
         self.norm_stats_path = os.path.join(run_dir, self.env_type.value + '_normalization_stats.pkl')
         os.makedirs(run_dir, exist_ok=True)
         os.makedirs(self.checkpoints_dir, exist_ok=True)
         os.makedirs(self.tensorboard_dir, exist_ok=True)
+        os.makedirs(self.training_config_dir, exist_ok=True)
+
+    def _save_training_config(self, continue_training: bool) -> None:
+        def serialize(obj):
+            if isinstance(obj, type):
+                return f"{obj.__module__}.{obj.__name__}"
+            return str(obj)
+
+        # add additional info to the training config
+        config_dict = self.training_config.__dict__.copy()
+        config_dict["policy_type"] = self.model_cls.__name__
+
+        filename = f"training_config_{'initial_' if not continue_training else 'updated_'}{self._get_current_time()}.json"
+        config_path = os.path.join(self.training_config_dir, filename)
+        with open(config_path, 'w') as f:
+            json.dump(config_dict, f, indent=4, default=serialize)
 
     def train(self, norm_env=None, model=None, continue_training: bool = False) -> None:
+        self._save_training_config(continue_training=continue_training)
+
         if norm_env is None:
             env = self._create_environments(n_envs=6, use_subproc_vec_env=True)
             norm_env = self.training_config.normalizer(env, norm_obs=True, norm_reward=True, clip_obs=self.training_config.clip_norm_obs)
