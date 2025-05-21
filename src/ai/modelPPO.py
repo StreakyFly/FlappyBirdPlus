@@ -32,9 +32,9 @@ class ModelPPO:
         self.model_name = self.env_type.value
         self.run_id = run_id or f"run_{self._get_current_time()}"
 
-        env_class: Type[BaseEnv] = EnvManager(self.env_type, self.env_variant).get_env_class()
-        self.training_config: TrainingConfig = env_class.get_training_config()
-        self.use_action_masking = getattr(env_class, 'requires_action_masking', False)
+        self.env_class: Type[BaseEnv] = EnvManager(self.env_type, self.env_variant).get_env_class()
+        self.training_config: TrainingConfig = self.env_class.get_training_config()
+        self.use_action_masking = getattr(self.env_class, 'requires_action_masking', False)
         self.model_cls = MaskablePPO if self.use_action_masking else PPO
 
         self.checkpoints_dir = None
@@ -64,14 +64,30 @@ class ModelPPO:
         self._create_notes_file(dir_path=run_dir)
 
     def _save_training_config(self, continue_training: bool) -> None:
+        import inspect
+
         def serialize(obj):
             if isinstance(obj, type):
                 return f"{obj.__module__}.{obj.__name__}"
             return str(obj)
 
-        # add additional info to the training config
+        # Add additional info to the training config
         config_dict = self.training_config.__dict__.copy()
-        config_dict["policy_type"] = self.model_cls.__name__
+        # Add policy_type
+        config_dict['policy_type'] = self.model_cls.__name__
+        # Add calculate_rewards() method's code
+        config_dict['calculate_reward'] = inspect.getsource(self.env_class.calculate_reward)
+        # Add entire environment file code and its inheritance tree until BaseEnv
+        env_files = {}
+        for cls in inspect.getmro(self.env_class):
+            if cls == BaseEnv:
+                break
+            file_path = inspect.getfile(cls)
+            if file_path not in env_files:
+                with open(file_path, 'r') as f:
+                    relative_path = os.path.relpath(file_path, start='')
+                    env_files[relative_path] = f.read()
+        config_dict['environment_files'] = env_files
 
         filename = f"training_config_{'initial_' if not continue_training else 'updated_'}{self._get_current_time()}.json"
         config_path = os.path.join(self.training_config_dir, filename)
