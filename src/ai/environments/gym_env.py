@@ -1,10 +1,10 @@
 from typing import Literal
 
-from gymnasium import Env as GymnasiumEnv, spaces
 import numpy as np
+from gymnasium import Env as GymnasiumEnv, spaces
 
-from .base_env import BaseEnv
 from src.utils import printc
+from .base_env import BaseEnv
 
 
 class GymEnv(GymnasiumEnv):
@@ -91,6 +91,9 @@ class GymEnv(GymnasiumEnv):
                 if isinstance(space, spaces.Box):
                     observation[key] = np.clip(obs, space.low, space.high)
                 elif isinstance(space, spaces.Discrete):
+                    # Discrete space may be np.ndarray for compatibility with VecFrameStack, which requires Box space
+                    if isinstance(obs, np.ndarray):
+                        obs = int(obs.item())  # turn [2.] -> 2
                     observation[key] = np.clip(obs, space.start, space.n - 1)
                 elif isinstance(space, spaces.MultiDiscrete):  # TODO ########## not tested if correct yet ##########
                     observation[key] = np.clip(obs, space.start, space.nvec - 1)
@@ -99,7 +102,11 @@ class GymEnv(GymnasiumEnv):
                 else:
                     raise NotImplementedError(f"Observation space of type '{type(space)}' not implemented yet.")
             elif mode == -1:
+                # Discrete space may be np.ndarray for compatibility with VecFrameStack, which requires Box space
+                if isinstance(space, spaces.Discrete) and isinstance(obs, np.ndarray):
+                    obs = int(obs.item())
+
                 if not space.contains(obs):
-                    raise ValueError(f"Invalid {type(space).__name__} observation: {obs}")
+                    raise ValueError(f"Invalid '{type(space).__name__}' observation: {obs}")
 
         return observation

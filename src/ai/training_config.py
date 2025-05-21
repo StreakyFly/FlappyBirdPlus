@@ -40,7 +40,10 @@ class TrainingConfig:
     # total number of environment steps to train for
     total_timesteps: int = 1_000_000
 
-    # optional wrapper to normalize observations and/or rewards
+    # wrapper to normalize observations and/or rewards (technically optional, but not tested without yet)
     normalizer: Optional[Callable] = VecBoxOnlyNormalize
     # max abs value for normalized observations
     clip_norm_obs: float = 10.0
+
+    # how many frames to stack together for the model input
+    frame_stack: int = -1  # -1 means no stacking

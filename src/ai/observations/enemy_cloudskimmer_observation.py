@@ -2,9 +2,9 @@ from weakref import WeakKeyDictionary, WeakSet
 
 import numpy as np
 
-from .base_observation import BaseObservation
-from src.entities.items import Gun
 from src.entities.enemies import CloudSkimmer
+from src.entities.items import Gun
+from .base_observation import BaseObservation
 
 
 class EnemyCloudSkimmerObservation(BaseObservation):
@@ -35,17 +35,23 @@ class EnemyCloudSkimmerObservation(BaseObservation):
         game_state = {
             'player_y_position': np.array([e.player.y], dtype=np.float32),
             'player_y_velocity': np.array([e.player.vel_y], dtype=np.float32),
-            'controlled_enemy': self.controlled_enemy_id,
+            # Even thought 'controlled_enemy' is Discrete space, we do it like a Box for VecFrameStack compatibility, as it only works with Box spaces
+            # 'controlled_enemy': self.controlled_enemy_id,
+            'controlled_enemy': np.array([self.controlled_enemy_id], dtype=np.float32),
             'remaining_bullets': np.array([gun.quantity], dtype=np.float32),
             # this is gun's raw rotation - animation_rotation is not taken into account
             'gun_rotation': np.array([self.entity.gun_rotation], dtype=np.float32),
             'enemy_x_position': np.array([self.entity.x], dtype=np.float32),
+            # TODO: replace enemy_existance with enemy_velocities?
             'enemy_existence': np.array(enemy_existence, dtype=np.float32),
+            # TODO: why do we put y positions separately? Why not as "enemy_y_positions"?
+            # 'enemy_y_positions': np.array(enemy_y_pos, dtype=np.float32),
             'top_enemy_y_position': np.array([enemy_y_pos[0]], dtype=np.float32),
             'middle_enemy_y_position': np.array([enemy_y_pos[1]], dtype=np.float32),
             'bottom_enemy_y_position': np.array([enemy_y_pos[2]], dtype=np.float32),
             'first_pipe_x_position': np.array([first_pipe_center_x_position], dtype=np.float32),
             'pipe_y_positions': np.array(pipe_center_y_positions, dtype=np.float32),
+            # TODO: replace bullet_existence with bullet_velocities?
             'bullet_existence': np.array(bullet_existence, dtype=np.float32),
             'bullet_positions': np.array(bullet_pos, dtype=np.float32)
         }
@@ -95,6 +101,8 @@ class EnemyCloudSkimmerObservation(BaseObservation):
 
             bullet_index = self.bullet_index_dict[bullet]
             bullet_existence[bullet_index] = 1
+            # bullet_velocities[bullet_index * 2] = bullet.velocity.x
+            # bullet_velocities[bullet_index * 2 + 1] = bullet.velocity.y
             bullet_pos[bullet_index * 2] = bullet.curr_front_pos.x  # bullet.x
             bullet_pos[bullet_index * 2 + 1] = bullet.curr_front_pos.y  # bullet.y
 
@@ -120,6 +128,8 @@ class EnemyCloudSkimmerObservation(BaseObservation):
 
             self.bullet_index_dict[new_bullet] = replace_bullet_index
             bullet_existence[replace_bullet_index] = 1
+            # bullet_velocities[bullet_index * 2] = bullet.velocity.x
+            # bullet_velocities[bullet_index * 2 + 1] = bullet.velocity.y
             bullet_pos[replace_bullet_index * 2] = new_bullet.curr_front_pos.x  # new_bullet.x
             bullet_pos[replace_bullet_index * 2 + 1] = new_bullet.curr_front_pos.y  # new_bullet.y
 

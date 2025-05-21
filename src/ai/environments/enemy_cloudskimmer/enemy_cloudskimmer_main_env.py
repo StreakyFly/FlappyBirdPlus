@@ -107,6 +107,8 @@ class EnemyCloudSkimmerEnv(BaseEnv):
 
                     normalizer=VecBoxOnlyNormalize,
                     clip_norm_obs=10.0,
+
+                    frame_stack=4
                 )
 
             case "relu":
@@ -128,6 +130,8 @@ class EnemyCloudSkimmerEnv(BaseEnv):
 
                     normalizer=VecBoxOnlyNormalize,
                     clip_norm_obs=5.0,
+
+                    frame_stack=4
                 )
 
             case _:

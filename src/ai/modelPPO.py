@@ -11,7 +11,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy as normal_evaluate_policy
-from stable_baselines3.common.vec_env import VecEnv, SubprocVecEnv, VecEnvWrapper
+from stable_baselines3.common.vec_env import VecEnv, SubprocVecEnv, VecEnvWrapper, VecFrameStack
 
 from src.utils import printc
 from .environments import EnvManager
@@ -85,18 +85,19 @@ class ModelPPO:
                 f.write(f"# Training Notes\n")
                 f.write(f"**Start Time**: {self._get_current_time(time_format='%d. %m. %Y %H:%M:%S')}\n\n")
 
-    def train(self, norm_env=None, model=None, continue_training: bool = False) -> None:
+    def train(self, norm_venv: VecEnvWrapper = None, model=None, continue_training: bool = False) -> None:
         self._save_training_config(continue_training=continue_training)
 
-        if norm_env is None:
-            env = self._create_environments(n_envs=6, use_subproc_vec_env=True)
-            norm_env = self.training_config.normalizer(env, norm_obs=True, norm_reward=True, clip_obs=self.training_config.clip_norm_obs)
+        if not continue_training:
+            venv = self._create_venv(n_envs=6, use_subproc_vec_env=True)
+            norm_venv = self._wrap_with_normalizer(path=self.norm_stats_path, venv=venv, load_existing=False)
+            norm_venv = self._wrap_with_frame_stack(norm_venv)
 
         if model is None:
-            policy = 'MultiInputPolicy' if isinstance(norm_env.observation_space, spaces.Dict) else 'MlpPolicy'
+            policy = 'MultiInputPolicy' if isinstance(norm_venv.observation_space, spaces.Dict) else 'MlpPolicy'
             # create the model using the normalized environment; use cpu as it's faster than gpu in this case
             model = self.model_cls(
-                policy, norm_env, verbose=1, device='cpu', tensorboard_log=self.tensorboard_dir,
+                policy, norm_venv, verbose=1, device='cpu', tensorboard_log=self.tensorboard_dir,
                 learning_rate=self.training_config.learning_rate,
                 n_steps=self.training_config.n_steps,
                 batch_size=self.training_config.batch_size,
@@ -124,24 +125,26 @@ class ModelPPO:
 
         # save the final model & the normalization statistics
         model.save(self.final_model_path)
-        norm_env.save(self.norm_stats_path)
+        norm_venv.save(self.norm_stats_path)
 
     def continue_training(self) -> None:
-        env = self._create_environments(n_envs=6, use_subproc_vec_env=True)
-        norm_env = self._load_normalization_stats(path=self.norm_stats_path, env=env)
-        model = self._load_model(self.final_model_path, env=norm_env)
+        venv = self._create_venv(n_envs=6, use_subproc_vec_env=True)
+        norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=venv)
+        norm_env = self._wrap_with_frame_stack(norm_env)
+        model = self._load_model(path=self.final_model_path, venv=norm_env)
 
         self.train(norm_env, model, continue_training=True)
 
     def run(self) -> None:
-        env = self._create_environments(n_envs=1, use_subproc_vec_env=False)
-        norm_env = self._load_normalization_stats(path=self.norm_stats_path, env=env, for_training=False)
-        model = self._load_model(self.final_model_path, env=norm_env)
+        env = self._create_venv(n_envs=1, use_subproc_vec_env=False)
+        norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=env, for_training=False)
+        norm_env = self._wrap_with_frame_stack(norm_env)
+        model = self._load_model(path=self.final_model_path, venv=norm_env)
 
         obs = norm_env.reset()
         while True:
             if self.use_action_masking:
-                action_masks = env.envs[0].env.action_masks()  # ಠ_ಠ
+                action_masks = norm_env.envs[0].env.action_masks()  # ಠ_ಠ
                 action, _ = model.predict(obs, deterministic=True, action_masks=action_masks)
             else:
                 action, _ = model.predict(obs, deterministic=True)
@@ -150,20 +153,23 @@ class ModelPPO:
                 obs = norm_env.reset()
 
     def evaluate(self) -> None:
-        env = self._create_environments(n_envs=6, use_subproc_vec_env=True)
-        norm_env = self._load_normalization_stats(path=self.norm_stats_path, env=env, for_training=False)
-        model = self._load_model(self.final_model_path, env=norm_env)
+        env = self._create_venv(n_envs=6, use_subproc_vec_env=True)
+        norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=env, for_training=False)
+        norm_env = self._wrap_with_frame_stack(norm_env)
+        model = self._load_model(path=self.final_model_path, venv=norm_env)
 
         printc("WARNING! Each episode ends after termination. "
                "If termination never happens, the episode will never end.", color="yellow")
 
         evaluate_policy = maskable_evaluate_policy if self.use_action_masking else normal_evaluate_policy
-        mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10,
-                                                       deterministic=True, reward_threshold=None)
+        mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10, deterministic=True, reward_threshold=None)
         print(f"mean_reward: {mean_reward: .2f} +/- {std_reward: .2f}")
         norm_env.close()
 
-    def _create_environments(self, n_envs: int = 1, use_subproc_vec_env=False) -> VecEnv:
+    def _create_venv(self, n_envs: int = 1, use_subproc_vec_env=False) -> VecEnv:
+        """
+        Creates a vectorized environment with the specified number of environments.
+        """
         if self.env_type is None:
             raise ValueError("env_type must be set before creating the environment. It is currently None.")
 
@@ -174,19 +180,37 @@ class ModelPPO:
         vec_env_cls = SubprocVecEnv if use_subproc_vec_env else None
         return make_vec_env(lambda: EnvManager(self.env_type, self.env_variant).get_env(), n_envs=n_envs, vec_env_cls=vec_env_cls)
 
-    def _load_model(self, path: str = None, env: VecEnv = None) -> PPO | MaskablePPO:
+    def _load_model(self, path: str = None, venv: VecEnv = None) -> PPO | MaskablePPO:
         path = path or self.final_model_path
-        return self.model_cls.load(path, env)
+        return self.model_cls.load(path, venv)
 
-    def _load_normalization_stats(self, path: str = None, env: VecEnv = None, for_training: bool = True) -> VecEnvWrapper:
-        if hasattr(self.training_config.normalizer, 'load'):
+    def _wrap_with_normalizer(self, path: str = None, venv: VecEnv = None, for_training: bool = True, load_existing: bool = True) -> VecEnvWrapper:
+        """
+        Wraps the environment with a normalizer.
+        If load_existing is True and the normalizer has a load method, it will load the normalization
+        statistics from the specified path and wrap the environment with the loaded normalizer.
+        Otherwise, it will wrap the environment with a new normalizer.
+        """
+        if self.training_config.normalizer is None:
+            # The easiest fix would probably be to put "return VecEnvWrapper(venv)" here, but I haven't tested it yet.
+            raise ValueError("Normalizer is set to None. If you are certain this is intentional, modify the code to proceed.")
+
+        if load_existing and hasattr(self.training_config.normalizer, 'load'):
             path = path or self.norm_stats_path
-            norm_env = self.training_config.normalizer.load(path, env)
+            norm_env = self.training_config.normalizer.load(path, venv)
 
             if not for_training:
                 norm_env.training = False
                 norm_env.norm_reward = False
         else:
-            norm_env = env
+            norm_env = self.training_config.normalizer(venv, norm_obs=True, norm_reward=True, clip_obs=self.training_config.clip_norm_obs)
 
         return norm_env
+
+    def _wrap_with_frame_stack(self, venv: VecEnv) -> VecEnvWrapper:
+        """
+        Wraps the environment with VecFrameStack if frame stacking is enabled.
+        """
+        if self.training_config.frame_stack > 1:
+            return VecFrameStack(venv, n_stack=self.training_config.frame_stack)
+        return venv if isinstance(venv, VecEnvWrapper) else VecEnvWrapper(venv)
