@@ -68,10 +68,10 @@ class EnvManager:
     @staticmethod
     def get_enemy_cloudskimmer_env_class(env_variant: EnvVariant) -> Type[BaseEnv]:
         if env_variant == EnvVariant.MAIN:
-            from src.ai.environments.enemy_cloudskimmer.main_env import EnemyCloudSkimmerEnv
+            from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_main_env import EnemyCloudSkimmerEnv
             return EnemyCloudSkimmerEnv
         elif env_variant == EnvVariant.STATIC:
-            from src.ai.environments.enemy_cloudskimmer.static_env import EnemyCloudSkimmerStaticEnv
+            from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_static_env import EnemyCloudSkimmerStaticEnv
             return EnemyCloudSkimmerStaticEnv
         else:
             raise ValueError(f"Invalid env_variant: {env_variant}. ENEMY_CLOUDSKIMMER supports [MAIN, STATIC] only.")

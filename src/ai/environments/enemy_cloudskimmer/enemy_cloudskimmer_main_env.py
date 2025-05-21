@@ -97,7 +97,7 @@ class EnemyCloudSkimmerEnv(BaseEnv):
                     clip_range=0.2,
 
                     policy_kwargs=dict(
-                        net_arch=dict(pi=[64, 64], vf=[64, 64]),
+                        net_arch=dict(pi=[32, 32], vf=[32, 32]),
                         activation_fn=nn.Tanh,
                         ortho_init=True,
                     ),
@@ -118,7 +118,7 @@ class EnemyCloudSkimmerEnv(BaseEnv):
                     clip_range=0.1,
 
                     policy_kwargs=dict(
-                        net_arch=dict(pi=[64, 64], vf=[64, 64]),
+                        net_arch=dict(pi=[32, 32], vf=[32, 32]),
                         activation_fn=nn.LeakyReLU,  # try normal ReLU as well
                         ortho_init=True,
                     ),

@@ -1,4 +1,4 @@
-from src.ai.environments.enemy_cloudskimmer.main_env import EnemyCloudSkimmerEnv
+from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_main_env import EnemyCloudSkimmerEnv
 
 
 """

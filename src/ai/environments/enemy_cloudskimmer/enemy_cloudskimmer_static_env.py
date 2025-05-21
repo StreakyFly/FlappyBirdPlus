@@ -4,7 +4,7 @@ import numpy as np
 import pygame
 
 from src.ai.controllers import EnemyCloudSkimmerModelController
-from src.ai.environments.enemy_cloudskimmer.main_env import EnemyCloudSkimmerEnv
+from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_main_env import EnemyCloudSkimmerEnv
 from src.entities import PlayerMode, CloudSkimmer
 
 """
@@ -90,6 +90,10 @@ class EnemyCloudSkimmerStaticEnv(EnemyCloudSkimmerEnv):
         Focus on hitting the target, ideally with a trickshot.
         """
         reward = 0
+
+        # lil punishment when firing
+        if action[0] == 1:
+            reward -= 0.05
 
         for bullet in self.all_bullets_from_last_frame.union(self.controlled_enemy.gun.shot_bullets):
             # reward for hitting the player
