@@ -213,6 +213,16 @@ class ModelPPO:
 
         if load_existing and hasattr(self.training_config.normalizer, 'load'):
             path = path or self.norm_stats_path
+
+            # This workaround is needed because VecBoxOnlyNormalize turns spaces.Discrete to spaces.Box for training,
+            # so we must apply the same preprocessing when loading to avoid observation space mismatches.
+            # Yes - we also wrap it with VecBoxOnlyNormalize when loading, but the sanity check that checks if
+            # set observation space matches the saved observation space is ran before the wrapper is applied,
+            # so it throws an error if we don't preprocess the observation space before wrapping it.
+            if isinstance(venv.observation_space, spaces.Dict) and hasattr(self.training_config.normalizer, 'preprocess_observation_space'):
+                new_space, _ = self.training_config.normalizer.preprocess_observation_space(venv.observation_space)
+                venv.observation_space = new_space
+
             norm_env = self.training_config.normalizer.load(path, venv)
 
             if not for_training:
