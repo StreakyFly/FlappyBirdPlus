@@ -13,7 +13,7 @@ from .enemy import Enemy, EnemyGroup
 # TODO ghosts need to be better shaded, with more detail. Possibly even have a subtle sprite animation (waves on bottom)
 
 class CloudSkimmer(Enemy):
-    def __init__(self, config: GameConfig, pos_id, *args, **kwargs):
+    def __init__(self, config: GameConfig, pos_id, amplitude, stop_dist, slow_dist, *args, **kwargs):
         super().__init__(config, Animation(config.images.enemies['cloudskimmer']), *args, **kwargs)
         self.eyes = config.images.enemies['cloudskimmer-eyes'][0]
         self.id: Literal[0, 1, 2] = pos_id  # 0: top, 1: middle, 2: bottom (unless the group is changed)
@@ -23,7 +23,9 @@ class CloudSkimmer(Enemy):
         self.initial_y = self.y
         self.vel_x = -8
         self.initial_vel_x = self.vel_x
-        self.amplitude = 15  # oscillation amplitude
+        self.amplitude = amplitude  # oscillation amplitude
+        self.stop_distance = stop_dist  # distance at which the cloudskimmer stops
+        self.slow_down_distance = slow_dist  # distance at which the cloudskimmer starts slowing down
         self.frequency = 0.15  # oscillation frequency
         self.sin_y = 0  # sin wave vertical position
 
@@ -32,7 +34,7 @@ class CloudSkimmer(Enemy):
         self.gun: Union[Gun, Item] = None
         self.gun_rotation = 0
         # self.gun_rotation = random.randint(-60, 60)  # TODO remove duh
-        self.gun_rotation_speed = 6
+        self.gun_rotation_speed = 3  # was 6 for a while, but then I figured out this is not precise enough to always hit the target
 
     def tick(self):
         if self.running:
@@ -51,9 +53,6 @@ class CloudSkimmer(Enemy):
     def set_gun(self, gun: Union[Item, Gun], ammo_item) -> None:
         self.gun = gun
         gun.update_ammo_object(ammo_item)
-
-    def set_amplitude(self, amplitude: int) -> None:
-        self.amplitude = amplitude
 
     def stop_advancing(self) -> None:
         self.vel_x = 0
@@ -91,17 +90,23 @@ class CloudSkimmer(Enemy):
 
 
 class CloudSkimmerGroup(EnemyGroup):
-    def __init__(self, config: GameConfig, x: int, y: int, *args, **kwargs):
-        self.item_initializer = ItemInitializer(config, None)
+    def __init__(self, config: GameConfig, x: int, y: int, env, *args, **kwargs):
+        self.env = env
+        self.item_initializer = ItemInitializer(config, env=env)
+        self.x_gap = 90  # gap between some members in the group
         super().__init__(config, x, y, *args, **kwargs)
         self.in_position = False
-        self.STOP_DISTANCE = 540
-        self.SLOW_DOWN_DISTANCE = 710
+        # self.STOP_DISTANCE = 540
+        # self.SLOW_DOWN_DISTANCE = 710
 
     def spawn_members(self) -> None:
-        positions = [(self.x + 90, self.y - 125),
+        positions = [(self.x + self.x_gap, self.y - 125),
                      (self.x, self.y),
-                     (self.x + 90, self.y + 125)]
+                     (self.x + self.x_gap, self.y + 125)]
+
+        distances = [(540, 710),
+                     (540 - self.x_gap, 710 - self.x_gap),
+                     (540, 710)]
 
         amplitudes = [18, 15, 18]
 
@@ -111,25 +116,36 @@ class CloudSkimmerGroup(EnemyGroup):
                    (ItemName.WEAPON_DEAGLE, self.item_initializer.init_item(ItemName.EMPTY), 210, (-13, 35)),
                    (ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 35))]
 
-        for i, (pos, amplitude, weapon_info) in enumerate(zip(positions, amplitudes, weapons)):
+        for i, ((px, py), (stop_dist, slow_dist), amplitude, weapon_info) in enumerate(zip(positions, distances, amplitudes, weapons)):
             weapon, ammo_item, ammo_quantity, weapon_offset = weapon_info
-            member = CloudSkimmer(self.config, x=pos[0], y=pos[1], pos_id=i)
+            member = CloudSkimmer(self.config, x=px, y=py, pos_id=i, amplitude=amplitude, stop_dist=stop_dist, slow_dist=slow_dist)
             gun: Union[Item, Gun] = self.item_initializer.init_item(weapon, member)
             gun.flip()
             gun.update_offset(weapon_offset)
             ammo_item.quantity = ammo_quantity
             member.set_gun(gun, ammo_item)
-            member.set_amplitude(amplitude)
             self.members.append(member)
 
     def tick(self):
         if self.in_position:
             pass
         else:
-            if self.members and self.members[0].x < self.SLOW_DOWN_DISTANCE:
+            # THIS LOGIC IS NOT OK, because if the members[0] dies before reaching the position, second member's position
+            # will be taken into account instead, which will cause the group to stop at different position than intended
+            # if self.members and self.members[0].x < self.SLOW_DOWN_DISTANCE:
+            #     for member in self.members:
+            #         member.slow_down(self.SLOW_DOWN_DISTANCE - self.STOP_DISTANCE, self.members[0].x - self.STOP_DISTANCE)
+            #     if self.members[0].x < self.STOP_DISTANCE:
+            #         self.in_position = True
+            #         for member in self.members:
+            #             member.stop_advancing()
+
+            # Quick "fix" for the above logic - we simply put specific distances for each member,
+            #  so it doesn't matter which one's x position we check, they will all slow down & stop at the same position
+            if self.members and self.members[0].x < self.members[0].slow_down_distance:
                 for member in self.members:
-                    member.slow_down(self.SLOW_DOWN_DISTANCE - self.STOP_DISTANCE, self.members[0].x - self.STOP_DISTANCE)
-                if self.members[0].x < self.STOP_DISTANCE:
+                    member.slow_down(self.members[0].slow_down_distance - self.members[0].stop_distance, self.members[0].x - self.members[0].stop_distance)
+                if self.members[0].x < self.members[0].stop_distance:
                     self.in_position = True
                     for member in self.members:
                         member.stop_advancing()

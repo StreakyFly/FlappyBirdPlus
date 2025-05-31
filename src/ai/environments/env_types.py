@@ -17,11 +17,11 @@ class EnvVariant(Enum):
     but they are optional and only included when needed.
     """
     MAIN = 'main'  # the default, full environment
-    STATIC = 'static'  # a simplified version of the environment, where entities are mostly static
+    SIMPLE = 'simple'  # a simplified version of the environment
 
 
 ENV_TYPE_TO_VARIANTS: Dict[EnvType, List[EnvVariant]] = {
     EnvType.BASIC_FLAPPY: [EnvVariant.MAIN],
-    EnvType.ENEMY_CLOUDSKIMMER: [EnvVariant.MAIN, EnvVariant.STATIC],
+    EnvType.ENEMY_CLOUDSKIMMER: [EnvVariant.MAIN, EnvVariant.SIMPLE],
     EnvType.ADVANCED_FLAPPY: [EnvVariant.MAIN]
 }

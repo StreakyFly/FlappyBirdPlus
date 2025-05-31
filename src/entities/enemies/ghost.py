@@ -96,6 +96,9 @@ class GhostGroup(EnemyGroup):
                     member.launch()
                     break
         else:
+            # fixme: if the members[0] dies before reaching the position, second member's position will be taken
+            #  into account instead, which will cause the group to stop at different position than intended
+            #  We did a quick fix for this in CloudSkimmerGroup, but I hate it, so we gotta come up with a better solution!
             if self.members and self.members[0].x < self.SLOW_DOWN_DISTANCE:
                 for member in self.members:
                     member.slow_down(self.SLOW_DOWN_DISTANCE - self.STOP_DISTANCE, self.members[0].x - self.STOP_DISTANCE)

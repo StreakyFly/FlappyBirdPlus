@@ -1,4 +1,5 @@
 from typing import Literal
+from typing import Optional
 
 from .ai.environments import EnvType
 from .ai.environments.env_types import EnvVariant
@@ -9,12 +10,14 @@ from .utils import printc, SettingsManager
 class Config:
     settings_manager = SettingsManager()  # load settings
     fps_cap: int = 30  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
+    num_cores: int = 8  # <-- change the number of cores to use during training (more != faster training)
     debug: bool = settings_manager.get_setting('debug')  # <-- toggle debug mode
-    mode: Mode = Mode.PLAY  # <-- change the mode here
+    mode: Mode = Mode.RUN_MODEL  # <-- change the mode here
     algorithm: Literal['PPO', 'DQN'] = 'PPO'  # <-- change the algorithm here (PPO is the only one fully supported)
     env_type: EnvType = EnvType.ENEMY_CLOUDSKIMMER  # <-- change environment type here
-    env_variant: EnvVariant = EnvVariant.STATIC  # <-- change environment variant here (doesn't work for Mode.PLAY)
-    run_id: str = None  # "run_test"  # <-- change the run id here (can/should be None for some modes)
+    env_variant: EnvVariant = EnvVariant.SIMPLE  # <-- change environment variant here (doesn't work for Mode.PLAY)
+    run_id: Optional[str] = "run_20250530_131801" #None  # "run_test"  # <-- change the run id here (can/should be None for some modes)
+    seed: Optional[int] = 42  # <-- change the training seed here (can be None; used only by the PPO algorithm, not the game environment)
     human_player: bool = not settings_manager.get_setting('ai_player')  # <-- toggle if you want to play the game yourself (only works for Mode.PLAY)
     save_results: bool = True  # <-- toggle if you want to save the results to file & database
 

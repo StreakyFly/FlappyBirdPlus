@@ -30,6 +30,7 @@ Masking Bullet Data:
 During the later stages of training, static placeholder values for bullet info should be introduced.
 This step teaches the model to gradually ignore these inputs, which are not critical for decision-making post-training.
 It ensures that during deployment, the model can operate effectively even when bullet data is not provided.
+Nahh... probably not necessary cuz fired bullet info shouldn't affect future firing. We'll see.
 """
 
 
@@ -80,35 +81,36 @@ class EnemyCloudSkimmerEnv(BaseEnv):
     def fill_observation_manager(self):
         self.observation_manager.observation_instances.clear()
         self.observation_manager.create_observation_instance(entity=self.player, env=self)
-        self.observation_manager.create_observation_instance(entity=self.controlled_enemy, env=self,
-                                                             controlled_enemy_id=self.controlled_enemy_id)
+        self.observation_manager.create_observation_instance(entity=self.controlled_enemy, env=self, controlled_enemy_id=self.controlled_enemy_id)
 
     @staticmethod
     def get_training_config() -> TrainingConfig:
-        VERSION: str = "default"  # which training config to use
+        VERSION: str = "relu"  # which training config to use
 
         match VERSION:  # noqa
-            case "default":
+            case "tanh":
                 training_config = TrainingConfig(
                     learning_rate=0.0003,
                     n_steps=2048,
                     batch_size=64,
-                    gamma=0.99,
+                    gamma=0.992,
+                    gae_lambda=0.954,
                     clip_range=0.2,
+                    ent_coef=0.005,
 
                     policy_kwargs=dict(
-                        net_arch=dict(pi=[32, 32], vf=[32, 32]),
+                        net_arch=dict(pi=[64, 64], vf=[64, 64]),
                         activation_fn=nn.Tanh,
                         ortho_init=True,
                     ),
 
-                    save_freq=80_000,
-                    total_timesteps=5_000_000,
+                    save_freq=40_000,
+                    total_timesteps=7_000_000,
 
                     normalizer=VecBoxOnlyNormalize,
                     clip_norm_obs=10.0,
 
-                    frame_stack=4
+                    frame_stack=-1
                 )
 
             case "relu":
@@ -117,21 +119,48 @@ class EnemyCloudSkimmerEnv(BaseEnv):
                     n_steps=2048,
                     batch_size=64,
                     gamma=0.99,
+                    gae_lambda=0.95,
                     clip_range=0.1,
+                    ent_coef=0.005,
 
                     policy_kwargs=dict(
-                        net_arch=dict(pi=[32, 32], vf=[32, 32]),
-                        activation_fn=nn.LeakyReLU,  # try normal ReLU as well
+                        net_arch=dict(pi=[64, 64], vf=[64, 64]),
+                        activation_fn=nn.LeakyReLU,
                         ortho_init=True,
                     ),
 
-                    save_freq=80_000,
-                    total_timesteps=5_000_000,
+                    save_freq=40_000,
+                    total_timesteps=7_000_000,
 
                     normalizer=VecBoxOnlyNormalize,
                     clip_norm_obs=5.0,
 
-                    frame_stack=4
+                    frame_stack=-1
+                )
+
+            case "silu":
+                training_config = TrainingConfig(
+                    learning_rate=0.0003,
+                    n_steps=2048,
+                    batch_size=64,
+                    gamma=0.99,
+                    gae_lambda=0.95,
+                    clip_range=0.2,
+                    ent_coef=0.001,
+
+                    policy_kwargs=dict(
+                        net_arch=dict(pi=[64, 64], vf=[64, 64]),
+                        activation_fn=nn.SiLU,
+                        ortho_init=True,
+                    ),
+
+                    save_freq=40_000,
+                    total_timesteps=7_000_000,
+
+                    normalizer=VecBoxOnlyNormalize,
+                    clip_norm_obs=10.0,
+
+                    frame_stack=-1
                 )
 
             case _:
@@ -140,7 +169,7 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         return training_config
 
     @staticmethod
-    def get_action_and_observation_space() -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Dict]:
+    def OLDEST_get_action_and_observation_space() -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Dict]:
         # index 0 -> 0: do nothing, 1: fire, 2: reload
         # index 1 -> 0: do nothing, 1: rotate up, 2: rotate down
         action_space = gym.spaces.MultiDiscrete([3, 3])
@@ -181,22 +210,254 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         return action_space, observation_space
 
     @staticmethod
+    def OLD_get_action_and_observation_space() -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Dict]:
+        # index 0 -> 0: do nothing, 1: fire, 2: reload
+        # index 1 -> 0: do nothing, 1: rotate up, 2: rotate down
+        action_space = gym.spaces.MultiDiscrete([3, 3])
+
+        TOP_PIPE_BOTTOM_LOW = 160
+        TOP_PIPE_BOTTOM_HIGH = 415
+        BOTTOM_PIPE_TOP_LOW = TOP_PIPE_BOTTOM_LOW + 225  # 225 is pipes.vertical_gap
+        BOTTOM_PIPE_TOP_HIGH = TOP_PIPE_BOTTOM_HIGH + 225  # 225 is pipes.vertical_gap
+        observation_space = gym.spaces.Dict({
+            # 0: top, 1: middle, 2: bottom (0: not controlled, 1: controlled); gun type can be derived from this as guns are always in the same order
+            'controlled_enemy': gym.spaces.MultiBinary(3),  # must be one-hot
+            # 0: top, 1: middle, 2: bottom (0: doesn't exist, 1: exists)
+            'enemy_existence': gym.spaces.MultiBinary(3),  # TODO: possibly replace with enemy velocities?
+            # 'Neural nets tolerate redundancy much better than missing information or brittle assumptions.
+            #  Structure and order matter more than minor repetition.' - ChatGPT, 2025
+            # Which is why I am passing all enemy X positions, even though two of them are the exact same.
+            'enemy_positions': gym.spaces.Box(
+                low=np.array([
+                    [579, 247],  # top enemy
+                    [489, 375],  # middle enemy
+                    [579, 497],  # bottom enemy
+                ], dtype=np.float32),
+                high=np.array([
+                    [1130, 283],  # top enemy
+                    [1040, 405],  # middle enemy
+                    [1130, 533],  # bottom enemy
+                ], dtype=np.float32),
+                shape=(3, 2),  # 3 enemies, each with x and y position
+                dtype=np.float32
+            ),
+
+            # [1, 0] = deagle, [0, 1] = ak47
+            'weapon_type': gym.spaces.MultiBinary(2),  # must be one-hot
+            # position where the bullet will spawn
+            'bullet_spawn_position': gym.spaces.Box(
+                # I can't be bothered figuring out the exact values, so let's just use some rough estimates
+                # This isn't a problem, as VecNormalize doesn't use these values anyway, but might help with debugging.
+                low=np.array([300, 100], dtype=np.float32),
+                high=np.array([1300, 700], dtype=np.float32),
+                shape=(2,),
+                dtype=np.float32
+            ),
+            # this is gun's raw rotation - animation_rotation is not taken into account
+            'gun_rotation': gym.spaces.Box(low=-60, high=60, shape=(1,), dtype=np.float32),
+            # remaining loaded bullets in the gun
+            'remaining_bullets': gym.spaces.Box(low=0, high=30, shape=(1,), dtype=np.float32),
+
+            'player_y_position': gym.spaces.Box(low=-90, high=785, shape=(1,), dtype=np.float32),
+            'player_y_velocity': gym.spaces.Box(low=-17, high=21, shape=(1,), dtype=np.float32),
+            'player_rotation': gym.spaces.Box(low=-90, high=20, shape=(1,), dtype=np.float32),
+
+            # center positions of the pipes
+            # 'pipe_positions': gym.spaces.Box(
+            #     low=np.array([
+            #         [-265, 272],  # first pipe
+            #         [125, 272],  # second pipe
+            #         [515, 272],  # third pipe
+            #         [905, 272],  # fourth pipe
+            #     ]),
+            #     high=np.array([
+            #         [125, 528],  # first pipe
+            #         [515, 528],  # second pipe
+            #         [905, 528],  # third pipe
+            #         [1295, 528],  # fourth pipe
+            #     ]),
+            #     shape=(4, 2),  # 4 pipes, each with x and y position
+            #     dtype=np.float32
+            # ),
+
+            # corner positions of the pipes (top corners of bottom pipe and bottom corners of top pipe)
+            # Do we need to be this specific when defining the low/high values? Probably not, as VecNormalize doesn't
+            # even use these values, but let's do it anyway. If we pass an observation that is out of bounds, we'll get
+            # an error, which could save us AN ETERNITY of debugging. Does it help with training? Nah, at least not
+            # with VecNormalize. Does it help with debugging? Yeah, in some situations it might—by like A LOT.
+            # (As long as you set the clip mode to -1!! and NOT 1, as that will just clip it without warning).
+            'pipe_positions': gym.spaces.Box(
+                low=np.array([
+                    [  # pipe pair 0
+                        [[-330, TOP_PIPE_BOTTOM_LOW], [-200, TOP_PIPE_BOTTOM_LOW]],  # top pipe: left, right
+                        [[-330, BOTTOM_PIPE_TOP_LOW], [-200, BOTTOM_PIPE_TOP_LOW]],  # bottom pipe: left, right
+                    ],
+                    [  # pipe pair 1
+                        [[  60, TOP_PIPE_BOTTOM_LOW], [ 190, TOP_PIPE_BOTTOM_LOW]],
+                        [[  60, BOTTOM_PIPE_TOP_LOW], [ 190, BOTTOM_PIPE_TOP_LOW]],
+                    ],
+                    [  # pipe pair 2
+                        [[ 450, TOP_PIPE_BOTTOM_LOW], [ 580, TOP_PIPE_BOTTOM_LOW]],
+                        [[ 450, BOTTOM_PIPE_TOP_LOW], [ 580, BOTTOM_PIPE_TOP_LOW]],
+                    ],
+                    [  # pipe pair 3
+                        [[ 840, TOP_PIPE_BOTTOM_LOW], [ 970, TOP_PIPE_BOTTOM_LOW]],
+                        [[ 840, BOTTOM_PIPE_TOP_LOW], [ 970, BOTTOM_PIPE_TOP_LOW]],
+                    ]
+                ]),
+                high=np.array([
+                    [  # pipe pair 0
+                        [[  60, TOP_PIPE_BOTTOM_HIGH], [ 190, TOP_PIPE_BOTTOM_HIGH]],
+                        [[  60, BOTTOM_PIPE_TOP_HIGH], [ 190, BOTTOM_PIPE_TOP_HIGH]],
+                    ],
+                    [  # pipe pair 1
+                        [[ 450, TOP_PIPE_BOTTOM_HIGH], [ 580, TOP_PIPE_BOTTOM_HIGH]],
+                        [[ 450, BOTTOM_PIPE_TOP_HIGH], [ 580, BOTTOM_PIPE_TOP_HIGH]],
+                    ],
+                    [  # pipe pair 2
+                        [[ 840, TOP_PIPE_BOTTOM_HIGH], [ 970, TOP_PIPE_BOTTOM_HIGH]],
+                        [[ 840, BOTTOM_PIPE_TOP_HIGH], [ 970, BOTTOM_PIPE_TOP_HIGH]],
+                    ],
+                    [  # pipe pair 3
+                        [[1230, TOP_PIPE_BOTTOM_HIGH], [1360, TOP_PIPE_BOTTOM_HIGH]],
+                        [[1230, BOTTOM_PIPE_TOP_HIGH], [1360, BOTTOM_PIPE_TOP_HIGH]],
+                    ]
+                ]),
+                shape=(4, 2, 2, 2),
+                dtype=np.float32
+            ),
+
+
+            # 0: b1, 1: b2, 2: b3, 3: b4, ... (0: doesn't exist, 1: exists)
+            'bullet_existence': gym.spaces.MultiBinary(5),  # TODO: possibly replace with bullet velocities?
+            # x and y positions of bullets
+            # Up - bullet gets removed off-screen => 0 + max height of bullet = -24 ~ -20 (can't be fired at 90 angle)
+            # Down - bullet gets stopped when hitting floor => 797
+            # Left - bullet before -256 is useless as it can't bounce back => -256
+            # Right - bullet after 1144 is useless as it can't bounce back => 1144 (1144, because that's the first point
+            #  where CloudSkimmers can fire from, if the x is larger, that means the bullet bounced and flew past them)
+            'bullet_positions': gym.spaces.Box(
+                low=np.full((5, 2), [-256, -20], dtype=np.float32),
+                high=np.full((5, 2), [1144, 797], dtype=np.float32),
+                shape=(5, 2),  # 10 bullets, each with x and y position
+                dtype=np.float32
+            )
+        })
+
+        return action_space, observation_space
+
+    @staticmethod
+    def get_action_and_observation_space() -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Dict]:
+        # index 0 -> 0: do nothing, 1: fire, 2: reload
+        # index 1 -> 0: do nothing, 1: rotate up, 2: rotate down
+        action_space = gym.spaces.MultiDiscrete([3, 3])
+
+        TOP_PIPE_BOTTOM_LOW = 160
+        TOP_PIPE_BOTTOM_HIGH = 415
+        BOTTOM_PIPE_TOP_LOW = TOP_PIPE_BOTTOM_LOW + 225  # 225 is pipes.vertical_gap
+        BOTTOM_PIPE_TOP_HIGH = TOP_PIPE_BOTTOM_HIGH + 225  # 225 is pipes.vertical_gap
+        # 'Neural nets tolerate redundancy much better than missing information or brittle assumptions.
+        #  Structure and order matter more than minor repetition.' - ChatGPT, 2025
+        observation_space = gym.spaces.Dict({
+            'enemy_info': gym.spaces.Box(
+                low=np.array([
+                    [0, 0, 579, 247],  # top enemy (exists, controlled, px, py)
+                    [0, 0, 489, 375],  # middle enemy
+                    [0, 0, 579, 497],  # bottom enemy
+                ], dtype=np.float32),
+                high=np.array([
+                    [1, 1, 1130, 283],  # top enemy
+                    [1, 1, 1040, 405],  # middle enemy
+                    [1, 1, 1130, 533],  # bottom enemy
+                ], dtype=np.float32),
+                shape=(3, 4),  # 3 enemies, each with exists flag, is controlled flag, x and y position, and y velocity
+                dtype=np.float32
+            ),
+            'controlled_enemy_extra_info': gym.spaces.Box(
+                # Gun rotation is gun's raw rotation (animation_rotation is not taken into account).
+                # Bullet spawn position doesn't have tightly defined bounds, just a rough estimate.
+                low=np.array([0, -60, 300, 100, 0], dtype=np.float32),
+                high=np.array([1, 60, 1200, 700, 30], dtype=np.float32),
+                shape=(5,),  # weapon type, gun rotation, bullet spawn x position, bullet spawn y position, remaining bullets in current magazine
+                dtype=np.float32
+            ),
+            'player_info': gym.spaces.Box(
+                #                     py,  vy, rotation
+                low=np.array([ -90, -17, -90 ], dtype=np.float32),
+                high=np.array([785,  21,  20 ], dtype=np.float32),
+                shape=(3,),  # y position, y velocity, rotation
+                dtype=np.float32
+            ),
+            # corner positions of the pipes (top corners of bottom pipe and bottom corners of top pipe)
+            # Do we need to be this specific when defining the low/high values? Probably not, as VecNormalize doesn't
+            # even use these values, but let's do it anyway. If we pass an observation that is out of bounds, we'll get
+            # an error, which could save us AN ETERNITY of debugging. Does it help with training? Nah, at least not
+            # with VecNormalize. Does it help with debugging? Yeah, in some situations it might—by like A LOT.
+            # (As long as you set the clip mode to -1!! and NOT 1, as that will just clip it without warning).
+            'pipe_positions': gym.spaces.Box(
+                low=np.array([
+                    [  # pipe pair 0
+                        [[-330, TOP_PIPE_BOTTOM_LOW], [-200, TOP_PIPE_BOTTOM_LOW]],  # top pipe: left, right
+                        [[-330, BOTTOM_PIPE_TOP_LOW], [-200, BOTTOM_PIPE_TOP_LOW]],  # bottom pipe: left, right
+                    ],
+                    [  # pipe pair 1
+                        [[  60, TOP_PIPE_BOTTOM_LOW], [ 190, TOP_PIPE_BOTTOM_LOW]],
+                        [[  60, BOTTOM_PIPE_TOP_LOW], [ 190, BOTTOM_PIPE_TOP_LOW]],
+                    ],
+                    [  # pipe pair 2
+                        [[ 450, TOP_PIPE_BOTTOM_LOW], [ 580, TOP_PIPE_BOTTOM_LOW]],
+                        [[ 450, BOTTOM_PIPE_TOP_LOW], [ 580, BOTTOM_PIPE_TOP_LOW]],
+                    ],
+                    [  # pipe pair 3
+                        [[ 840, TOP_PIPE_BOTTOM_LOW], [ 970, TOP_PIPE_BOTTOM_LOW]],
+                        [[ 840, BOTTOM_PIPE_TOP_LOW], [ 970, BOTTOM_PIPE_TOP_LOW]],
+                    ]
+                ]),
+                high=np.array([
+                    [  # pipe pair 0
+                        [[  60, TOP_PIPE_BOTTOM_HIGH], [ 190, TOP_PIPE_BOTTOM_HIGH]],
+                        [[  60, BOTTOM_PIPE_TOP_HIGH], [ 190, BOTTOM_PIPE_TOP_HIGH]],
+                    ],
+                    [  # pipe pair 1
+                        [[ 450, TOP_PIPE_BOTTOM_HIGH], [ 580, TOP_PIPE_BOTTOM_HIGH]],
+                        [[ 450, BOTTOM_PIPE_TOP_HIGH], [ 580, BOTTOM_PIPE_TOP_HIGH]],
+                    ],
+                    [  # pipe pair 2
+                        [[ 840, TOP_PIPE_BOTTOM_HIGH], [ 970, TOP_PIPE_BOTTOM_HIGH]],
+                        [[ 840, BOTTOM_PIPE_TOP_HIGH], [ 970, BOTTOM_PIPE_TOP_HIGH]],
+                    ],
+                    [  # pipe pair 3
+                        [[1230, TOP_PIPE_BOTTOM_HIGH], [1360, TOP_PIPE_BOTTOM_HIGH]],
+                        [[1230, BOTTOM_PIPE_TOP_HIGH], [1360, BOTTOM_PIPE_TOP_HIGH]],
+                    ]
+                ]),
+                shape=(4, 2, 2, 2),
+                dtype=np.float32
+            ),
+            # Up - bullet gets removed off-screen => 0 + max height of bullet = -24 ~ -20 (can't be fired at 90 angle)
+            # Down - bullet gets stopped when hitting floor => 797
+            # Left - bullet before -256 is useless as it can't bounce back => -256
+            # Right - bullet after 1144 is useless as it can't bounce back => 1144 (1144, because that's the first point
+            #  where CloudSkimmers can fire from, if the x is larger, that means the bullet bounced and flew past them)
+            'bullet_info': gym.spaces.Box(
+                #                                     px,  py,  vx,  vy, bounced
+                low=np.full((5, 5), [ -256, -20, -56, -46,  0 ], dtype=np.float32),
+                high=np.full((5, 5), [1144, 797,  37,  46,  1 ], dtype=np.float32),
+                shape=(5, 5),  # 5 bullets, each with x and y position, x and y velocity, and bounced flag
+                dtype=np.float32
+            )
+        })
+
+        return action_space, observation_space
+
+    @staticmethod
     def get_observation_space_clip_modes() -> dict[str, int]:
         observation_space_clip_modes = {
-            'player_y_position': 1,
-            'player_y_velocity': 1,
-            'controlled_enemy': -1,
-            'remaining_bullets': -1,
-            'gun_rotation': -1,
-            'enemy_x_position': 1,
-            'enemy_existence': -1,
-            'top_enemy_y_position': 1,
-            'middle_enemy_y_position': 1,
-            'bottom_enemy_y_position': 1,
-            'first_pipe_x_position': 1,
-            'pipe_y_positions': 1,
-            'bullet_existence': -1,
-            'bullet_positions': 1
+            'enemy_info': -1,
+            'controlled_enemy_extra_info': -1,
+            'player_info': -1,
+            'pipe_positions': -1,
+            'bullet_info': -1,
         }
         return observation_space_clip_modes
 
@@ -215,8 +476,6 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         #  EnemyCloudSkimmerEnv (this), causing infinite recursion. Yeah, really messed up, but it works... for now -_-
         # self.enemy_cloudskimmer_controller.perform_action(self.controlled_enemy, action)
         EnemyCloudSkimmerModelController.perform_action(self.controlled_enemy, action)
-
-        self.update_bullet_info()
 
         self.background.tick()
         self.pipes.tick()
@@ -238,7 +497,7 @@ class EnemyCloudSkimmerEnv(BaseEnv):
             # reward,
             self.calculate_reward(action=action),  # reward,
             self.controlled_enemy not in self.enemy_manager.spawned_enemy_groups[0].members,  # terminated
-            self.step > 1200,  # truncated; end the episode if it lasts too long
+            self.step > 1200,  # truncated - end the episode if it lasts too long
             {}  # info
         )
 

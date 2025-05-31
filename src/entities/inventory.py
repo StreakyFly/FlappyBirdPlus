@@ -42,7 +42,7 @@ class InventorySlot(Entity):
 
             self.config.screen.blit(text_surface, text_rect)
 
-    def create_cooldown_overlay(self) -> [pygame.Surface, int]:
+    def create_cooldown_overlay(self) -> tuple[pygame.Surface, int]:
         height = int((self.rect.height - 15) * (self.item.remaining_cooldown / self.item.total_cooldown))
         cooldown_overlay = pygame.Surface((self.rect.width - 15, height), pygame.SRCALPHA)
         cooldown_overlay.fill((0, 0, 0, 150))
@@ -50,10 +50,10 @@ class InventorySlot(Entity):
 
 
 class Inventory(Entity):
-    def __init__(self, config: GameConfig, player) -> None:
+    def __init__(self, config: GameConfig, player, env) -> None:
         super().__init__(config)
         self.inventory_slots: List[InventorySlot] = []
-        self.item_initializer = ItemInitializer(config, player)
+        self.item_initializer = ItemInitializer(config=config, env=env, entity=player)
         self.create_inventory_slots()
         self.empty_item = self.item_initializer.init_item(ItemName.EMPTY)
         self.inventory_slots[0].item = self.item_initializer.init_item(ItemName.WEAPON_AK47)

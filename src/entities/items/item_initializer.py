@@ -9,8 +9,9 @@ from .weapons import AK47, Deagle, Uzi, AmmoBox, BigBullet, MediumBullet, SmallB
 
 
 class ItemInitializer:
-    def __init__(self, config: GameConfig, entity):
+    def __init__(self, config: GameConfig, env=None, entity=None):
         self.config = config
+        self.env = env
         self.entity = entity
 
     def init_item(self, item_name: ItemName, entity=None) -> Item:
@@ -34,11 +35,11 @@ class ItemInitializer:
             case n.POTION_SHIELD:
                 item = ShieldPotion(c, t.POTION, n.POTION_SHIELD, 1, entity)
             case n.WEAPON_AK47:
-                item = AK47(c, t.WEAPON, n.WEAPON_AK47, 30, entity)
+                item = AK47(config=c, item_type=t.WEAPON, item_name=n.WEAPON_AK47, spawn_quantity=30, entity=entity, env=self.env)
             case n.WEAPON_DEAGLE:
-                item = Deagle(c, t.WEAPON, n.WEAPON_DEAGLE, 7, entity)
+                item = Deagle(config=c, item_type=t.WEAPON, item_name=n.WEAPON_DEAGLE, spawn_quantity=7, entity=entity, env=self.env)
             case n.WEAPON_UZI:
-                item = Uzi(c, t.WEAPON, n.WEAPON_UZI, 32, entity)
+                item = Uzi(config=c, item_type=t.WEAPON, item_name=n.WEAPON_UZI, spawn_quantity=32, entity=entity, env=self.env)
             case n.AMMO_BOX:
                 item = AmmoBox(config=c, item_type=t.AMMO, item_name=n.AMMO_BOX, spawn_quantity=30)
             case n.BULLET_BIG:

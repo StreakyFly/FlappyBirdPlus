@@ -31,5 +31,6 @@ class BasicFlappyObservation(BaseObservation):
                              vertical_distance_to_next_next_pipe_center
                              ]
 
+        # TODO: change to e.player.cy (but you must re-train the model then)
         game_state = np.array([e.player.y, e.player.vel_y] + distances_to_pipe, dtype=np.float32)
         return game_state

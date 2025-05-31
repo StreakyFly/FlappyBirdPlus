@@ -12,7 +12,7 @@ class Deagle(Gun):
             ammo_name=ItemName.BULLET_MEDIUM,
             ammo_class=MediumBullet,
             damage=85,
-            ammo_speed=50,
+            ammo_speed=52,
             magazine_size=7,
             shoot_cooldown=28,
             reload_cooldown=63

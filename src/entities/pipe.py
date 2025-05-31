@@ -34,9 +34,14 @@ class Pipes(Entity):
     def tick(self) -> None:
         self.manage_pipes()
 
+        # Commented code is to determine corner low/high X values (for observation space)
+        #  Y values should not be taken from here but from upper_pipe_bottom_y logic in make_random_pipes() method
+        # for i, (up_pipe, low_pipe) in enumerate(zip(self.upper, self.lower)):
         for up_pipe, low_pipe in zip(self.upper, self.lower):
+            # print(f"{i}: {up_pipe.x}, {up_pipe.y + up_pipe.h}, {up_pipe.x + up_pipe.w}, {up_pipe.y + up_pipe.h} | {low_pipe.x}, {low_pipe.y}, {low_pipe.x + low_pipe.w}, {low_pipe.y}")
             up_pipe.tick()
             low_pipe.tick()
+            # print(f"{i}: {up_pipe.x}, {up_pipe.y + up_pipe.h}, {up_pipe.x + up_pipe.w}, {up_pipe.y + up_pipe.h} | {low_pipe.x}, {low_pipe.y}, {low_pipe.x + low_pipe.w}, {low_pipe.y}")
 
     def draw(self) -> None:
         for up_pipe, low_pipe in zip(self.upper, self.lower):
@@ -46,6 +51,13 @@ class Pipes(Entity):
     def stop(self) -> None:
         for pipe in self.upper + self.lower:
             pipe.vel_x = 0
+
+    def clear(self) -> None:
+        """
+        Removes all pipes from the environment.
+        """
+        self.upper = []
+        self.lower = []
 
     def spawn_initial_pipes(self):
         pipe_x = self.config.window.width + self.horizontal_gap

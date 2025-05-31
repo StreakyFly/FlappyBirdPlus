@@ -4,8 +4,8 @@ from typing import Optional
 
 import pygame
 
+from src.entities import Player
 from src.utils import GameConfig, Animation
-from src.entities import ItemInitializer, Player
 from .enemy import Enemy, EnemyGroup
 
 
@@ -108,7 +108,6 @@ class SkyDart(Enemy):
 #  The bird should start turning up when getting close to the floor, so it doesn't crash into it.
 class SkyDartGroup(EnemyGroup):
     def __init__(self, config: GameConfig, x: int, y: int, target: Player, *args, **kwargs):
-        self.item_initializer = ItemInitializer(config, None)
         super().__init__(config, x, y, *args, **kwargs)
         self.target = target  # to get player's position in order to target them
         self.in_position = False
@@ -137,6 +136,9 @@ class SkyDartGroup(EnemyGroup):
                     member.launch()
                     break
         else:
+            # fixme: if the members[0] dies before reaching the position, second member's position will be taken
+            #  into account instead, which will cause the group to stop at different position than intended
+            #  We did a quick fix for this in CloudSkimmerGroup, but I hate it, so we gotta come up with a better solution!
             if self.members and self.members[0].x < self.SLOW_DOWN_DISTANCE:
                 for member in self.members:
                     member.slow_down(self.SLOW_DOWN_DISTANCE - self.STOP_DISTANCE, self.members[0].x - self.STOP_DISTANCE)

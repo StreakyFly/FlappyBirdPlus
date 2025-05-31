@@ -9,9 +9,9 @@ from src.ai.environments import EnvManager, EnvType
 
 class BaseModelController:
     def __init__(self, env_type: EnvType, model_name: str, algorithm: str = 'PPO'):
-        root_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..")
-        model_path = os.path.join(root_dir, 'ai-models', algorithm, env_type.name, model_name)
-        norm_stats_path = os.path.join(root_dir, 'ai-models', algorithm, env_type.name, f"{model_name}_normalization_stats.pkl")
+        root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        model_path = os.path.join(root_dir, 'ai-models', algorithm, env_type.name.lower(), model_name)
+        norm_stats_path = os.path.join(root_dir, 'ai-models', algorithm, env_type.name.lower(), f"{model_name}_normalization_stats.pkl")
 
         self.dummy_env = DummyVecEnv([lambda: EnvManager(env_type).get_env()])
         self.norm_env = VecNormalize.load(norm_stats_path, self.dummy_env)

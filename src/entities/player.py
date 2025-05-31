@@ -71,7 +71,7 @@ class Player(Entity):
                 self.config.sounds.play(self.config.sounds.die)
             self.reset_vals_crash()
         elif mode == PlayerMode.TRAIN:
-            self.reset_vals_train()
+            self.reset_vals_still()
 
     def reset_vals_normal(self) -> None:
         self.vel_y = -16.875  # player's velocity along Y axis
@@ -107,13 +107,13 @@ class Player(Entity):
         self.max_vel_y = 28.125
         self.vel_rot = -8
 
-    def reset_vals_train(self) -> None:
+    def reset_vals_still(self) -> None:
         self.vel_y = 0  # player's velocity along Y axis
         self.max_vel_y = 0  # max vel along Y, max descend speed
         self.min_vel_y = 0  # min vel along Y, max ascend speed
         self.acc_y = 0  # players downward acceleration
 
-        self.rotation = random.randint(-90, 20)  # player's current rotation
+        self.rotation = 0  # player's current rotation
         self.vel_rot = 0  # player's rotation speed
         self.rot_min = -90  # player's min rotation angle
         self.rot_max = 20  # player's max rotation angle

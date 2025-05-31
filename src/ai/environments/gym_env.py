@@ -32,7 +32,7 @@ class GymEnv(GymnasiumEnv):
 
     def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[np.ndarray, dict]:
         if seed or options:
-            printc("WARNING! Seed and options are not supported in FlappyBird() yet.", color='yellow')
+            printc("[WARN] Seed and options are not supported in FlappyBird() yet.", color='yellow')
 
         self.game_env.reset_env()
 
@@ -63,9 +63,9 @@ class GymEnv(GymnasiumEnv):
         do nothing with the observation depending on the observation_space_clip_modes.
 
         Modes:
-        -1: raise an error if the observation is out of bounds;
-        0: do nothing;
-        1: clip the observation to the valid range of the observation space;
+        -1: raise an error if the observation is out of bounds
+        0: print a warning if the observation is out of bounds, but do not raise an error
+        1: clip the observation to the valid range of the observation space
 
         :param observation: the observation to process
         :return: the processed observation
@@ -77,9 +77,12 @@ class GymEnv(GymnasiumEnv):
             if mode == 1:
                 self.observation_space: spaces.Box
                 observation = np.clip(observation, self.observation_space.low, self.observation_space.high)
-            elif mode == -1:
+            elif mode == -1 or mode == 0:
                 if not self.observation_space.contains(observation):
-                    raise ValueError(f"Observation {observation} is out of bounds.")
+                    if mode == 0:
+                        printc(f"[WARN] Observation {observation} is out of bounds.", color='yellow')
+                    else:
+                        raise ValueError(f"Observation {observation} is out of bounds.")
             return observation
 
         # if self.observation_space is of type Dict
@@ -101,12 +104,15 @@ class GymEnv(GymnasiumEnv):
                     observation[key] = np.clip(obs, 0, 1)
                 else:
                     raise NotImplementedError(f"Observation space of type '{type(space)}' not implemented yet.")
-            elif mode == -1:
+            elif mode == -1 or mode == 0:
                 # Discrete space may be np.ndarray for compatibility with VecFrameStack, which requires Box space
                 if isinstance(space, spaces.Discrete) and isinstance(obs, np.ndarray):
                     obs = int(obs.item())
 
                 if not space.contains(obs):
-                    raise ValueError(f"Invalid '{type(space).__name__}' observation: {obs}")
+                    if mode == 0:
+                        printc(f"[WARN] Invalid '{type(space).__name__}' observation for key '{key}': {obs}", color='yellow')
+                    else:
+                        raise ValueError(f"Invalid '{type(space).__name__}' observation for key '{key}': {obs}")
 
         return observation

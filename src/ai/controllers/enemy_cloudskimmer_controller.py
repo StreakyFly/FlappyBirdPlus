@@ -27,8 +27,8 @@ class EnemyCloudSkimmerModelController(BaseModelController):
         gun: Gun = entity.gun
 
         # initialize masks for each action type, all actions are initially available
-        fire_reload_masks = np.ones(3, dtype=int)  # [do nothing, fire, reload]
-        rotation_masks = np.ones(3, dtype=int)  # [do nothing, rotate up, rotate down]
+        fire_reload_masks = np.ones(3, dtype=np.int8)  # [do nothing, fire, reload]
+        rotation_masks = np.ones(3, dtype=np.int8)  # [do nothing, rotate up, rotate down]
 
         # gun can't be neither fired nor reloaded if it's on reload cooldown
         if gun.remaining_reload_cooldown > 0:

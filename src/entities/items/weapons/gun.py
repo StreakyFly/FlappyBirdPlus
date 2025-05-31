@@ -19,8 +19,9 @@ be pushed back and up incrementally, reflecting a more realistic behavior.
 
 
 class Gun(Item):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, env, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.env = env  # so bullets know where other entities are, for collision detection
         self.ammo_name = None
         self.ammo_class = None
         self.damage = 0
@@ -243,6 +244,7 @@ class Gun(Item):
 
     def spawn_bullet(self) -> None:
         bullet = self.ammo_class(config=self.config,
+                                 env=self.env,
                                  item_name=self.ammo_name,
                                  item_type=ItemType.AMMO,
                                  damage=self.damage,
@@ -253,6 +255,8 @@ class Gun(Item):
                                  entity=self.entity)
         self.shot_bullets.add(bullet)
         bullet.draw()  # don't tick() the bullet yet, it will be ticked in the next frame, just draw it for now
+        bullet.handle_collision()  # handle collision immediately (to set pipe_to_ignore if bullet spawns above a pipe)
+        bullet.frame += 1  # increment the frame cuz frame 0 has been processed, bullet drawn and collision handled 👍
         if self.config.debug:
             bullet.debug_draw()
 

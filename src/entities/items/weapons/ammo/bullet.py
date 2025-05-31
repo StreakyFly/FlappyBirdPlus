@@ -96,7 +96,7 @@ class Bullet(Item):
     VISUAL_BACKGROUND_VELOCITY = pygame.Vector2(-7.5, 0)  # how much the background moves on the screen
     REAL_CAMERA_VELOCITY = pygame.Vector2(7.5, 0)  # how much the camera moves in the game world
 
-    def __init__(self, spawn_position: pygame.Vector2 = pygame.Vector2(0, 0), damage: int = 0,
+    def __init__(self, env=None, spawn_position: pygame.Vector2 = pygame.Vector2(0, 0), damage: int = 0,
                  speed: float = 0, angle: float = 0, flipped: bool = False,
                  spawn_pos_offset: Optional[Union[pygame.Vector2, Callable[['Bullet'], pygame.Vector2]]] = None,
                  *args, **kwargs):
@@ -138,6 +138,9 @@ class Bullet(Item):
         if flipped:
             self.flip()
 
+        if self.real:
+            self.set_entities(env)
+
         self.set_spawn_position()
 
         self.prev_front_pos: pygame.Vector2 = self.calculate_bullet_front_position()
@@ -151,6 +154,16 @@ class Bullet(Item):
         self.speed = -self.speed
         self.velocity = self.calculate_velocity()
         self.spawn_pos_offset.x = -self.spawn_pos_offset.x
+
+    def set_entities(self, env):
+        # yeah uhm... spaghetti at its finest having this here aha... ha ha but like IT WORKS OKAY??
+        # AND THERE IS NO 1 FRAME DELAY LIKE BEFORE, MKEY??
+        spawned_enemies = []
+        for enemy_group in env.enemy_manager.spawned_enemy_groups:
+            spawned_enemies.extend(enemy_group.members)
+        self.pipes = env.pipes.upper + env.pipes.lower
+        self.enemies = spawned_enemies
+        self.player = env.player
 
     def tick(self) -> None:
         if not self.real:  # so the inventory slot's bullet doesn't update for no reason
@@ -234,11 +247,6 @@ class Bullet(Item):
         self.x = offset_x
         self.y = offset_y
 
-    def set_entities(self, player, enemies, pipes):
-        self.player = player
-        self.enemies = enemies
-        self.pipes = pipes
-
     def should_remove(self) -> bool:
         """
         Check if the bullet should be removed from the game.
@@ -270,7 +278,9 @@ class Bullet(Item):
             self.move_with_background()
             return
 
-        # TODO maybe make the bullets bounce only once every few hits? Like 20% bounce rate?
+        # TODO: maybe make the bullets bounce only once every few hits? Like 20% bounce rate?
+        #  Nah, that would let enemies fire through pipes which would be too difficult to dodge and
+        #  trickshotting would be ruined — let's not implement gambling mechanics just yet...
         # bounce the bullet if it hits a pipe for the first time
         for pipe in self.pipes if not self.bounced else []:
             if not self.collide(pipe):
@@ -292,7 +302,8 @@ class Bullet(Item):
             return
 
         # handle hitting player
-        if self.player and self.collide(self.player):
+        if (self.player and self.collide(self.player) and
+                (self.entity != self.player or (self.entity == self.player and self.bounced))):
             self.hit_entity = 'player'
             self.player.deal_damage(self.damage)
             self.config.sounds.play(self.config.sounds.hit_bullet)
@@ -325,7 +336,7 @@ class Bullet(Item):
     def handle_pipe_collision(self, pipe) -> bool:
         if self.pipe_to_ignore == pipe:
             return False
-        if self.frame == 0:  # this is actually the second frame, not first (as bullet doesn't tick on spawn)
+        if self.frame == 0:
             self.pipe_to_ignore = pipe
             return False
 

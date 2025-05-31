@@ -32,25 +32,26 @@ class EnemyManager:
         # TODO improve spawning logic
         if self.spawned_enemy_groups:
             return False
-        self.count += 1
-        if self.count < self.wait:
-            return False
-        self.wait = random.randint(120, 300)
-        self.count = 0
+        # self.count += 1
+        # if self.count < self.wait:
+        #     return False
+        # self.wait = random.randint(120, 300)
+        # self.count = 0
         return True
 
     def spawn_enemy(self) -> None:
         # TODO implement this
-        # self.spawn_cloudskimmer()  # temporary
+        self.spawn_cloudskimmer()  # temporary
+
         # self.spawn_skydart()  # temporary
-        self.group_to_spawn()
-        self.group_to_spawn = self.spawn_skydart if self.group_to_spawn == self.spawn_cloudskimmer else self.spawn_cloudskimmer
+        # self.group_to_spawn()
+        # self.group_to_spawn = self.spawn_skydart if self.group_to_spawn == self.spawn_cloudskimmer else self.spawn_cloudskimmer
 
     def spawn_cloudskimmer(self):
         # TODO play sound effect when spawning enemy, for this one some ghost sound effect
 
         # Warning! Changing the x and y position will require additional training of the CloudSkimmer agent.
-        self.spawned_enemy_groups.append(CloudSkimmerGroup(self.config, x=1000, y=350))
+        self.spawned_enemy_groups.append(CloudSkimmerGroup(self.config, x=1000, y=350, env=self.env))
 
     def spawn_skydart(self):
         # TODO implement this

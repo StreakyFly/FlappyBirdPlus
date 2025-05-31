@@ -1,9 +1,27 @@
 import random
+
+import numpy as np
 import pygame
 
 
+def one_hot(index: int, total: int) -> np.ndarray:
+    """
+    Creates a one-hot encoded vector of size `total` with a 1 at the specified `index`.
+
+    :param index: The index to set to 1 in the one-hot vector.
+    :param total: The total size of the one-hot vector.
+    :return: A numpy array representing the one-hot encoded vector.
+    """
+    if index < 0 or index >= total:
+        raise ValueError(f"Index {index} is out of bounds for one-hot encoding of size {total}.")
+    vec = np.zeros(total, dtype=np.int8)
+    vec[index] = 1
+    return vec
+
+
 def get_random_value(value: list | tuple, random_type: str = "auto", as_int: bool = False):
-    """Returns a random value based on the specified random_type.
+    """
+    Returns a random value based on the specified random_type.
 
     - "range": Assumes `value` is (min, max) and picks a number in the range.
     - "choice": Assumes `value` is a list/tuple and picks one randomly.

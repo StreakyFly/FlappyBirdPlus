@@ -5,6 +5,7 @@ import numpy as np
 from src.entities.enemies import CloudSkimmer
 from src.entities.items import Gun
 from .base_observation import BaseObservation
+from ...utils import printc
 
 
 class EnemyCloudSkimmerObservation(BaseObservation):
@@ -12,65 +13,96 @@ class EnemyCloudSkimmerObservation(BaseObservation):
         super().__init__(entity, env)
         self.controlled_enemy_id: int = controlled_enemy_id  # 0: top, 1: middle, 2: bottom
         self.use_bullet_info: bool = use_bullet_info
+        self.bullet_info = [[0, 0, 0, 0, 0] for _ in range(5)]
 
         self.bullet_index_dict = WeakKeyDictionary()  # map bullets to their initial index in the list
         self.replaced_bullets = WeakSet()  # old bullets that were replaced by new ones in the observation space
 
     def get_observation(self):
         e = self.env
-        first_pipe_center_x_position = e.pipes.upper[0].x + e.pipes.upper[0].w // 2
-        pipe_center_y_positions = []
-        for i, pipe_pair in enumerate(zip(e.pipes.upper, e.pipes.lower)):
-            pipe_center = e.get_pipe_pair_center(pipe_pair)
-            pipe_center_y_positions.append(pipe_center[1])
 
-        gun: Gun = self.entity.gun
+        # pipe_center_positions = [[0, 0] for _ in range(4)]
+        # if e.pipes.upper:
+        #     pipe_center_positions = []
+        #     for i, pipe_pair in enumerate(zip(e.pipes.upper, e.pipes.lower)):
+        #         pipe_center = e.get_pipe_pair_center(pipe_pair)
+        #         pipe_center_positions.append(pipe_center)
 
-        enemy_existence, enemy_y_pos = self.get_enemy_info(e.enemy_manager)
+        enemy_info, controlled_enemy_extra_info = self.get_enemy_info(e.enemy_manager, self.controlled_enemy_id)
+
+        #                  py             vy            rotation
+        player_info = [e.player.cy, e.player.vel_y, e.player.rotation]
+
+        pipe_corner_positions = self.get_pipe_info()
+
         if self.use_bullet_info:
-            bullet_existence, bullet_pos = self.get_bullet_info(gun, e.player)
-        else:
-            bullet_existence, bullet_pos = [0] * 10, [0, 0] * 10
+            self.bullet_info = self.get_bullet_info(self.entity.gun, e.player)
 
         game_state = {
-            'player_y_position': np.array([e.player.y], dtype=np.float32),
-            'player_y_velocity': np.array([e.player.vel_y], dtype=np.float32),
-            # Even thought 'controlled_enemy' is Discrete space, we do it like a Box for VecFrameStack compatibility, as it only works with Box spaces
-            # 'controlled_enemy': self.controlled_enemy_id,
-            'controlled_enemy': np.array([self.controlled_enemy_id], dtype=np.float32),
-            'remaining_bullets': np.array([gun.quantity], dtype=np.float32),
-            # this is gun's raw rotation - animation_rotation is not taken into account
-            'gun_rotation': np.array([self.entity.gun_rotation], dtype=np.float32),
-            'enemy_x_position': np.array([self.entity.x], dtype=np.float32),
-            # TODO: replace enemy_existance with enemy_velocities?
-            'enemy_existence': np.array(enemy_existence, dtype=np.float32),
-            # TODO: why do we put y positions separately? Why not as "enemy_y_positions"?
-            # 'enemy_y_positions': np.array(enemy_y_pos, dtype=np.float32),
-            'top_enemy_y_position': np.array([enemy_y_pos[0]], dtype=np.float32),
-            'middle_enemy_y_position': np.array([enemy_y_pos[1]], dtype=np.float32),
-            'bottom_enemy_y_position': np.array([enemy_y_pos[2]], dtype=np.float32),
-            'first_pipe_x_position': np.array([first_pipe_center_x_position], dtype=np.float32),
-            'pipe_y_positions': np.array(pipe_center_y_positions, dtype=np.float32),
-            # TODO: replace bullet_existence with bullet_velocities?
-            'bullet_existence': np.array(bullet_existence, dtype=np.float32),
-            'bullet_positions': np.array(bullet_pos, dtype=np.float32)
+            'enemy_info': np.array(enemy_info, dtype=np.float32),
+            'controlled_enemy_extra_info': np.array(controlled_enemy_extra_info, dtype=np.float32),
+            'player_info': np.array(player_info, dtype=np.float32),
+            'pipe_positions': np.array(pipe_corner_positions, dtype=np.float32),
+            'bullet_info': np.array(self.bullet_info, dtype=np.float32),
         }
 
         return game_state
 
+    def get_pipe_info(self):
+        pipe_corner_positions = [[[[(0, 0), (0, 0)], [(0, 0), (0, 0)]] for _ in range(4)]]  # shape (4, 2, 2, 2)
+
+        if self.env.pipes.upper:
+            pipe_corner_positions = []
+            for i, (up_pipe, low_pipe) in enumerate(zip(self.env.pipes.upper, self.env.pipes.lower)):
+                top_pipe_corners = [
+                    [up_pipe.x, up_pipe.y + up_pipe.h],  # left bottom corner of top pipe
+                    [up_pipe.x + up_pipe.w, up_pipe.y + up_pipe.h],  # right bottom corner of top pipe
+                ]
+                bottom_pipe_corners = [
+                    [low_pipe.x, low_pipe.y],  # left top corner of bottom pipe
+                    [low_pipe.x + low_pipe.w, low_pipe.y],  # right top corner of bottom pipe
+                ]
+                pipe_corner_positions.append([
+                    top_pipe_corners,
+                    bottom_pipe_corners
+                ])
+
+        return pipe_corner_positions
+
     @staticmethod
-    def get_enemy_info(enemy_manager):
-        enemy_existence = [0] * 3  # flag whether that enemy exists or not
-        enemy_y_pos = [0] * 3  # enemy's y position
+    def get_enemy_info(enemy_manager, controlled_enemy_id: int):
+        # enemy_pos = [[0, 0]] * 3  # NUH-UH STOP RIGHT THERE BUCKAROO, THIS CREATES THREE REFERENCES TO THE SAME LIST -_-
+        # enemy_pos = [[0, 0] for _ in range(3)]  # enemy's x and y position
+
+        placeholder_pos = [[579, 489, 579], [265, 390, 515]]  # cuz 0 is out of observation bounds, so we use these values instead
+        #             exists controlled        px                     py
+        enemy_info = [[  0,      0,    placeholder_pos[0][i], placeholder_pos[1][i] ] for i in range(3)]  # enemy info for each enemy
+        controlled_enemy_extra_info = [
+            0,    # weapon type (0: Deagle, 1: AK-47)
+            0,    # gun rotation
+            500,  # bullet spawn x position (not 0, as that would be out of observation bounds)
+            390,  # bullet spawn y position (not 0, as that would be out of observation bounds)
+            0,    # bullets remaining in current magazine
+        ]
 
         for enemy in enemy_manager.spawned_enemy_groups[0].members:
             enemy_index = enemy.id
-            enemy_existence[enemy_index] = 1
-            enemy_y_pos[enemy_index] = enemy.y
+            enemy_info[enemy_index][0] = 1
+            enemy_info[enemy_index][1] = int(enemy_index == controlled_enemy_id)
+            enemy_info[enemy_index][2] = enemy.cx
+            enemy_info[enemy_index][3] = enemy.cy
 
-        return enemy_existence, enemy_y_pos
+            if enemy_index == controlled_enemy_id:
+                bullet_spawn_position = enemy.gun.calculate_initial_bullet_position()
+                controlled_enemy_extra_info[0] = int(controlled_enemy_id != 1)  # (0: Deagle, 1: AK-47)
+                controlled_enemy_extra_info[1] = enemy.gun_rotation
+                controlled_enemy_extra_info[2] = bullet_spawn_position.x
+                controlled_enemy_extra_info[3] = bullet_spawn_position.y
+                controlled_enemy_extra_info[4] = enemy.gun.quantity
 
-    def get_bullet_info(self, gun, player):
+        return enemy_info, controlled_enemy_extra_info
+
+    def get_bullet_info(self, gun: Gun, player):
         """
         Gets information about bullets fired by the gun.
         Bullets should always be put in the same slot in the lists as long as the bullet exist.
@@ -80,12 +112,15 @@ class EnemyCloudSkimmerObservation(BaseObservation):
 
         :param gun: Gun object that fired the bullets
         :param player: Player object to access its attributes
-        :return: List of bullet info (0: does the bullet exist, 1: bullet x position, 2: bullet y position) * 10 bullets
+        :return: List of bullet info (x, y position, x, y velocity, did bullet already bounce) (5 bullets max, the rest placeholders)
         """
 
-        # 10 bullets max
-        bullet_existence = [0] * 10  # flag whether that bullet exists or not
-        bullet_pos = [0, 0] * 10  # bullet's x and y position (curr_front_pos)
+        # 5 bullets max
+        bullet_existence = [0] * 5  # flag whether that bullet exists or not
+        # bullet_pos = [[0, 0]] * 5  # NUH-UH STOP RIGHT THERE BUCKAROO, THIS CREATES FIVE REFERENCES TO THE SAME LIST -_-
+        # bullet_info = [[[0, 0], [0, 0], 0] for _ in range(5)]  # x, y position; x, y velocity; whether the bullet bounced
+        #              #px, py, vx, vy, bounced  # "Flat is justice—for the neural net." - ChatGPT 2025
+        bullet_info = [[ 0,  0,  0,  0,  0 ] for _ in range(5)]
 
         new_bullet = None
 
@@ -101,10 +136,11 @@ class EnemyCloudSkimmerObservation(BaseObservation):
 
             bullet_index = self.bullet_index_dict[bullet]
             bullet_existence[bullet_index] = 1
-            # bullet_velocities[bullet_index * 2] = bullet.velocity.x
-            # bullet_velocities[bullet_index * 2 + 1] = bullet.velocity.y
-            bullet_pos[bullet_index * 2] = bullet.curr_front_pos.x  # bullet.x
-            bullet_pos[bullet_index * 2 + 1] = bullet.curr_front_pos.y  # bullet.y
+            bullet_info[bullet_index][0] = bullet.curr_front_pos.x  # bullet.x
+            bullet_info[bullet_index][1] = bullet.curr_front_pos.y  # bullet.y
+            bullet_info[bullet_index][2] = bullet.velocity.x
+            bullet_info[bullet_index][3] = bullet.velocity.y
+            bullet_info[bullet_index][4] = int(bullet.bounced)
 
         # if a new bullet was fired, put it in the first free slot or replace the oldest bullet if all slots are filled
         if new_bullet:
@@ -112,6 +148,7 @@ class EnemyCloudSkimmerObservation(BaseObservation):
                 replace_bullet_index = bullet_existence.index(0)
             # (this exception will be thrown very rarely, if ever, as it's very unlikely that all slots are filled)
             except ValueError:  # replace the oldest bullet
+                printc("[WARN] All bullet slots are filled, replacing the oldest bullet.", color="orange")
                 oldest_bullet = None
                 oldest_bullet_age = 0
                 for bullet in gun.shot_bullets:
@@ -128,12 +165,13 @@ class EnemyCloudSkimmerObservation(BaseObservation):
 
             self.bullet_index_dict[new_bullet] = replace_bullet_index
             bullet_existence[replace_bullet_index] = 1
-            # bullet_velocities[bullet_index * 2] = bullet.velocity.x
-            # bullet_velocities[bullet_index * 2 + 1] = bullet.velocity.y
-            bullet_pos[replace_bullet_index * 2] = new_bullet.curr_front_pos.x  # new_bullet.x
-            bullet_pos[replace_bullet_index * 2 + 1] = new_bullet.curr_front_pos.y  # new_bullet.y
+            bullet_info[replace_bullet_index][0] = new_bullet.curr_front_pos.x  # new_bullet.x
+            bullet_info[replace_bullet_index][1] = new_bullet.curr_front_pos.y  # new_bullet.y
+            bullet_info[replace_bullet_index][2] = new_bullet.velocity.x
+            bullet_info[replace_bullet_index][3] = new_bullet.velocity.y
+            bullet_info[replace_bullet_index][4] = int(new_bullet.bounced)
 
-        return bullet_existence, bullet_pos
+        return bullet_info
 
     @staticmethod
     def is_bullet_info_useful(bullet, player):

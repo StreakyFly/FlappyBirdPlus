@@ -42,8 +42,10 @@ class EnvManager:
         """
         self.create_env()
 
+        use_action_masking: bool = getattr(self.env_class, 'requires_action_masking', False)
+
         for _ in range(10_000):
-            action = self.env.action_space.sample()  # take a random action
+            action = self.env.action_space.sample(tuple(self.env.action_masks()) if use_action_masking else None)  # take a random action
             obs, reward, terminated, truncated, info = self.env.step(action)
 
             if terminated or truncated:
@@ -70,8 +72,8 @@ class EnvManager:
         if env_variant == EnvVariant.MAIN:
             from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_main_env import EnemyCloudSkimmerEnv
             return EnemyCloudSkimmerEnv
-        elif env_variant == EnvVariant.STATIC:
-            from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_static_env import EnemyCloudSkimmerStaticEnv
-            return EnemyCloudSkimmerStaticEnv
+        elif env_variant == EnvVariant.SIMPLE:
+            from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_simple_env import EnemyCloudskimmerSimpleEnv
+            return EnemyCloudskimmerSimpleEnv
         else:
             raise ValueError(f"Invalid env_variant: {env_variant}. ENEMY_CLOUDSKIMMER supports [MAIN, STATIC] only.")

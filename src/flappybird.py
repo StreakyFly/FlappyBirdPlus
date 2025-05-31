@@ -94,7 +94,7 @@ class FlappyBird:
         self.game_over_message = GameOver(self.config)
         self.pipes = Pipes(self.config)
         self.score = Score(self.config)
-        self.inventory = Inventory(self.config, self.player)
+        self.inventory = Inventory(self.config, self.player, env=self)
         self.item_manager = ItemManager(self.config, self.inventory, self.pipes)
         self.enemy_manager = EnemyManager(self.config, self)
         self.next_closest_pipe_pair = (self.pipes.upper[0], self.pipes.lower[0])
@@ -161,7 +161,6 @@ class FlappyBird:
 
             collided_items = self.player.collided_items(self.item_manager.spawned_items)
             self.item_manager.collect_items(collided_items)
-            self.update_bullet_info()
 
             self.game_tick()
 
@@ -278,29 +277,6 @@ class FlappyBird:
             self.inventory.use_item(5)
             return False
         return True
-
-    def update_bullet_info(self):
-        # TODO Any idea how to optimize passing info to bullets?
-        #  Pass reference of the game environment to the guns, which will pass it to bullets when firing? This way we
-        #  don't have to pass the info to all bullets every frame, but only when they are fired.
-        spawned_enemies = set()
-        current_bullets = set()
-        inventory_slot = self.inventory.inventory_slots[0]
-
-        # player bullets
-        if inventory_slot.item.name != ItemName.EMPTY and inventory_slot.item.shot_bullets:
-            current_bullets.update(inventory_slot.item.shot_bullets)
-
-        # enemy bullets
-        for group in self.enemy_manager.spawned_enemy_groups:
-            spawned_enemies.update(group.members)
-            if group.members and isinstance(group.members[0], CloudSkimmer):
-                for enemy in group.members:
-                    current_bullets.update(enemy.gun.shot_bullets)
-
-        pipes = self.pipes.upper + self.pipes.lower
-        for bullet in current_bullets:
-            bullet.set_entities(self.player, list(spawned_enemies), pipes)
 
     def handle_event(self, event) -> bool:
         """

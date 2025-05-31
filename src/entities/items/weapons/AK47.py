@@ -12,7 +12,7 @@ class AK47(Gun):
             ammo_name=ItemName.BULLET_BIG,
             ammo_class=BigBullet,
             damage=35,
-            ammo_speed=34,
+            ammo_speed=38,
             magazine_size=30,
             shoot_cooldown=7,   # int(self.config.fps * 0.23), fps being 30  <-- we don't want it tied to the fps
             reload_cooldown=84  # int(self.config.fps * 2.8), fps being 30  <-- as we're using fixed time steps

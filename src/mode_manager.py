@@ -81,8 +81,10 @@ def print_config():
     print_option_value_pair("Mode:", Config.mode.name, color='green')
     if Config.mode == Mode.PLAY:
         print_option_value_pair("Environment type:", Config.env_type.name, comment="(not used)", color='gray')
+        print_option_value_pair("Environment variant:", Config.env_variant.name, comment="(not used)", color='gray')
     else:
         print_option_value_pair("Environment type:", Config.env_type.name, color='blue')
+        print_option_value_pair("Environment variant:", Config.env_variant.name, color='cyan')
 
     printc("Options:", color='yellow', end='')
     printc(" { ", end='')
