@@ -1,3 +1,4 @@
+import random
 from typing import Literal
 
 import numpy as np
@@ -31,8 +32,14 @@ class GymEnv(GymnasiumEnv):
         return observation, reward, terminated, truncated, info
 
     def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[np.ndarray, dict]:
-        if seed or options:
-            printc("[WARN] Seed and options are not supported in FlappyBird() yet.", color='yellow')
+        if options:
+            printc("[WARN] Options are not supported in FlappyBird() yet.", color='orange')
+
+        if seed is not None:
+            # Set seed, so each environment instance can have its own seed.
+            printc(f"[INFO] Setting seed for current environment instance to {seed}.", color='blue')
+            random.seed(seed)
+            np.random.seed(seed)
 
         self.game_env.reset_env()
 
