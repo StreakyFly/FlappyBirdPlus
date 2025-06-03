@@ -13,6 +13,20 @@ Very simple control flow diagram:
 main -> mode_manager -> FlappyBird().start()
                      -> EnvManager().test_env() -> GymEnv -> FlappyBird().init_env()
                      -> modelPPO -> EnvManager().get_env() -> GymEnv -> FlappyBird().init_env()
+                     
+###################################################################################################
+Random seed needs to be set for all modes at the right time!
+Loading a trained model with Stable Baselines3 sets the seed to the one used during training.
+If we want to override it, we must do so **after** loading the model!
+This is currently handled in the following files (at the time of writing...):
+ - modelPPO.py, in the ModelPPO class in _load_model() method, after loading the model
+ - base_controller.py, in the BaseModelController class in __init__() method, after loading the model
+ - gym_env.py, in the GymEnv class in reset() method
+
+For Mode.PLAY, the seed is not set directly in the FlappyBird() class, but is set when
+controllers are initialized (by base_controller.py, as previously mentioned).
+If you don't call init_model_controllers() in FlappyBird(), the seed will not be set for Mode.PLAY.
+###################################################################################################
 """
 
 
@@ -78,6 +92,7 @@ def print_option_value_pair(option, value, comment=None, color='default'):
 
 
 def print_config():
+    print()
     print_option_value_pair("Mode:", Config.mode.name, color='green')
     if Config.mode == Mode.PLAY:
         print_option_value_pair("Environment type:", Config.env_type.name, comment="(not used)", color='gray')

@@ -1,10 +1,10 @@
-import random
 from typing import Literal
 
 import numpy as np
 from gymnasium import Env as GymnasiumEnv, spaces
 
-from src.utils import printc
+from src.config import Config
+from src.utils import printc, set_random_seed
 from .base_env import BaseEnv
 
 
@@ -24,6 +24,8 @@ class GymEnv(GymnasiumEnv):
         self.observation_space_clip_modes = self.game_env.get_observation_space_clip_modes()
         self.is_observation_space_of_type_box = isinstance(self.observation_space, spaces.Box)
 
+        self._first_reset_done = False  # flag to check if the first reset has been done
+
     def step(self, action):
         observation, reward, terminated, truncated, info = self.game_env.perform_step(action)
 
@@ -35,13 +37,20 @@ class GymEnv(GymnasiumEnv):
         if options:
             printc("[WARN] Options are not supported in FlappyBird() yet.", color='orange')
 
-        if seed is not None:
+        # If seed should be handled by us, use the Config seed.
+        if Config.handle_seed:
+            set_random_seed(Config.seed)
+        # Otherwise, use the provided seed.
+        elif seed is not None:
             # Set seed, so each environment instance can have its own seed.
-            printc(f"[INFO] Setting seed for current environment instance to {seed}.", color='blue')
-            random.seed(seed)
-            np.random.seed(seed)
+            set_random_seed(seed)
+        # If no seed is provided (unlikely(?)), print a warning.
+        else:
+            if not self._first_reset_done:
+                printc("[WARN] No seed provided; no global random seed will be set here.", color='orange')
 
         self.game_env.reset_env()
+        self._first_reset_done = True
 
         observation = self.game_env.get_observation()
         info = {}

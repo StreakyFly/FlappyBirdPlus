@@ -1,10 +1,12 @@
 import os
 
-from stable_baselines3 import PPO
 from sb3_contrib import MaskablePPO
+from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 from src.ai.environments import EnvManager, EnvType
+from src.config import Config
+from src.utils import set_random_seed
 
 
 class BaseModelController:
@@ -18,6 +20,9 @@ class BaseModelController:
 
         self.model_cls = MaskablePPO if getattr(EnvManager(env_type).get_env_class(), 'requires_action_masking', False) else PPO
         self.model = self.model_cls.load(model_path, env=self.norm_env)
+
+        if Config.handle_seed:
+            set_random_seed(Config.seed)  # set random seed after loading the model, to override the model's seed
 
     def predict_action(self, observation, deterministic=True, use_action_masks=True, entity=None, env=None):
         """

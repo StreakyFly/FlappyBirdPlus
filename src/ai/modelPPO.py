@@ -14,7 +14,7 @@ from stable_baselines3.common.evaluation import evaluate_policy as normal_evalua
 from stable_baselines3.common.vec_env import VecEnv, SubprocVecEnv, VecEnvWrapper, VecFrameStack
 
 from src.config import Config
-from src.utils import printc
+from src.utils import printc, set_random_seed
 from .environments import EnvManager, EnvType
 from .environments.base_env import BaseEnv
 from .environments.env_types import EnvVariant
@@ -39,7 +39,7 @@ class ModelPPO:
         self.use_action_masking: bool = getattr(self.env_class, 'requires_action_masking', False)
         self.model_cls: Type[Union[PPO, MaskablePPO]] = MaskablePPO if self.use_action_masking else PPO
 
-        self.seed: int = Config.seed  # seed for the training (used only by the PPO algorithm, not the game environment)
+        self.seed: int = Config.seed  # seed for the training (applied globally(?), so it affects the model and all environments)
         self.num_cores: int = Config.num_cores  # number of cores to use during training
 
         self.checkpoints_dir = None
@@ -163,7 +163,12 @@ class ModelPPO:
 
     def _load_model(self, path: str = None, venv: VecEnv = None) -> PPO | MaskablePPO:
         path = path or self.final_model_path
-        return self.model_cls.load(path, venv)
+        model = self.model_cls.load(path, venv)
+
+        if Config.handle_seed:
+            set_random_seed(Config.seed)  # set random seed after loading the model, to override the model's seed
+
+        return model
 
     def _wrap_with_normalizer(self, path: str = None, venv: VecEnv = None, for_training: bool = True, load_existing: bool = True) -> VecEnvWrapper:
         """
@@ -297,9 +302,8 @@ class ModelPPO:
             else:
                 if key in ['policy_type', 'calculate_reward', 'environment_files']:
                     printc(f"[INFO] Skipping attribute '{key}' as it is not part of TrainingConfig.", color="blue")
-                elif key == 'seed':
-                    printc(f"[INFO] Setting seed to {value}.", color="blue")
-                    self.seed = value
+                elif key in ['seed']:  # SB3 loads the seed from the trained model, so we don't need to set it here
+                    printc(f"[INFO] Skipping attribute '{key}' as it should be handled elsewhere.", color="blue")
                 else:
                     printc(f"[WARN] Unexpected attribute '{key}' found in training config.", color="yellow")
 

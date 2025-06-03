@@ -1,7 +1,49 @@
 import random
+import time
 
 import numpy as np
 import pygame
+
+
+def set_random_seed(seed: int = None):
+    """
+    Sets global random seeds for Python, NumPy, TensorFlow, and PyTorch.
+    If `seed` is a non-negative value, it sets them to that value.
+    If `seed` is None, it sets them to a dynamic time-based seed.
+
+    :param seed: The seed value to set. If None, uses a dynamic seed based on the current time.
+    """
+    if seed is not None:
+        if not isinstance(seed, int):
+            raise TypeError(f"Seed must be an integer, got {type(seed).__name__} instead.")
+        elif seed < 0:
+            raise ValueError(f"Seed is set to: '{seed}'. What the heck do you want me to do with that?")
+
+    if seed is None:
+        # Use a dynamic seed
+        seed = time.time_ns() % (2 ** 32)
+        printc(f"[INFO] Setting dynamic random seed: {seed}", color="blue")
+    else:
+        printc(f"[INFO] Setting explicit random seed: {seed}", color="blue")
+
+    random.seed(seed)
+    np.random.seed(seed)
+
+    try:
+        import tensorflow as tf  # noqa
+        tf.random.set_seed(seed)
+    except ImportError:
+        # Don't print this to reduce debug clutter, as you don't use TensorFlow in this project.
+        # printc("[INFO] TensorFlow not available, skipping TensorFlow random seed.", color="blue")
+        pass
+
+    try:
+        import torch
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+    except ImportError:
+        printc("[INFO] PyTorch not available, skipping PyTorch random seed.", color="blue")
 
 
 def one_hot(index: int, total: int) -> np.ndarray:
