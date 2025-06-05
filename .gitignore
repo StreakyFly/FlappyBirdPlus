@@ -6,6 +6,7 @@ more-song-options.txt
 upload-to-frida.ps1
 .fridaignore
 frida_upload.tar.gz
+training.txt
 
 
 # Model training data (I'll delete most of it, only keep da best/interesting ones) and push them later

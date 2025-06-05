@@ -3,11 +3,13 @@ import os
 import time
 from typing import Type, Union
 
+import numpy as np
 from gymnasium import spaces
 from sb3_contrib import MaskablePPO
 # from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
 from sb3_contrib.common.maskable.evaluation import evaluate_policy as maskable_evaluate_policy
 from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy as normal_evaluate_policy
@@ -19,12 +21,6 @@ from .environments import EnvManager, EnvType
 from .environments.base_env import BaseEnv
 from .environments.env_types import EnvVariant
 from .training_config import TrainingConfig
-
-
-# TODO Action masking hasn't been tested yet, so it's possible that it hasn't been implemented properly.
-#  Some necessary adjustments might be missing, so if something isn't working properly, the issue is
-#  probably somewhere in this file.
-#  Docs: https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html
 
 
 class ModelPPO:
@@ -54,7 +50,7 @@ class ModelPPO:
         self._save_training_config(continue_training=continue_training)
 
         if not continue_training:
-            venv = self._create_venv(n_envs=self.num_cores, use_subproc_vec_env=True)
+            venv = self._create_venv(n_envs=self.num_cores, use_subproc_vec_env=True, monitor=True)
             norm_venv = self._wrap_with_normalizer(path=self.norm_stats_path, venv=venv, load_existing=False)
             norm_venv = self._wrap_with_frame_stack(norm_venv)
 
@@ -95,11 +91,13 @@ class ModelPPO:
             name_prefix=self.model_name,
             save_vecnormalize=True)
 
+        callback_list = CallbackList([checkpoint_callback, LogAllInfoCallback()])
+
         # train the model
         model.learn(
             total_timesteps=self.training_config.total_timesteps,
             tb_log_name=self.model_name,
-            callback=checkpoint_callback,
+            callback=callback_list,
             reset_num_timesteps=not continue_training)
 
         # save the final model & the normalization statistics
@@ -107,7 +105,7 @@ class ModelPPO:
         norm_venv.save(self.norm_stats_path)
 
     def continue_training(self) -> None:
-        venv = self._create_venv(n_envs=self.num_cores, use_subproc_vec_env=True)
+        venv = self._create_venv(n_envs=self.num_cores, use_subproc_vec_env=True, monitor=True)
         norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=venv)
         norm_env = self._wrap_with_frame_stack(norm_env)
         model = self._load_model(path=self.final_model_path, venv=norm_env)
@@ -116,7 +114,7 @@ class ModelPPO:
 
     def run(self) -> None:
         self._load_training_config()
-        env = self._create_venv(n_envs=1, use_subproc_vec_env=False)
+        env = self._create_venv(n_envs=1, use_subproc_vec_env=False, monitor=False)
         norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=env, for_training=False)
         norm_env = self._wrap_with_frame_stack(norm_env)
         model = self._load_model(path=self.final_model_path, venv=norm_env)
@@ -134,7 +132,7 @@ class ModelPPO:
 
     def evaluate(self) -> None:
         self._load_training_config()
-        env = self._create_venv(n_envs=self.num_cores, use_subproc_vec_env=True)
+        env = self._create_venv(n_envs=self.num_cores, use_subproc_vec_env=True, monitor=False)
         norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=env, for_training=False)
         norm_env = self._wrap_with_frame_stack(norm_env)
         model = self._load_model(path=self.final_model_path, venv=norm_env)
@@ -147,7 +145,7 @@ class ModelPPO:
         print(f"mean_reward: {mean_reward: .2f} +/- {std_reward: .2f}")
         norm_env.close()
 
-    def _create_venv(self, n_envs: int = 1, use_subproc_vec_env=False) -> VecEnv:
+    def _create_venv(self, n_envs: int = 1, use_subproc_vec_env: bool = False, monitor: bool = False) -> VecEnv:
         """
         Creates a vectorized environment with the specified number of environments.
         """
@@ -158,8 +156,13 @@ class ModelPPO:
             printc("[WARN] n_envs > 1 but use_subproc_vec_env is False. "
                    "Setting use_subproc_vec_env to True is recommended.", color="yellow")
 
-        vec_env_cls = SubprocVecEnv if use_subproc_vec_env else None
-        return make_vec_env(lambda: EnvManager(self.env_type, self.env_variant).get_env(), n_envs=n_envs, vec_env_cls=vec_env_cls)
+        return make_vec_env(
+            lambda: EnvManager(self.env_type, self.env_variant).get_env(),
+            n_envs=n_envs,
+            # seed=self.seed,  # just found out you can pass seed here, but I'm not gonna do it just yet, cuz my current seed logic "works"-ish and I don't wanna break it
+            vec_env_cls=SubprocVecEnv if use_subproc_vec_env else None,
+            monitor_dir=self.monitor_dir if monitor else None,
+        )
 
     def _load_model(self, path: str = None, venv: VecEnv = None) -> PPO | MaskablePPO:
         path = path or self.final_model_path
@@ -218,15 +221,20 @@ class ModelPPO:
     def _initialize_directories(self) -> None:
         base_dir = os.path.join('ai-models', 'PPO', self.env_type.value)
         run_dir = os.path.join(base_dir, self.run_id)
+
         self.checkpoints_dir = os.path.join(run_dir, 'checkpoints')
         self.tensorboard_dir = os.path.join(run_dir, 'tensorboard_logs')
+        self.monitor_dir = os.path.join(run_dir, 'monitor_logs', f"session_{self._get_current_time()}")
         self.training_config_dir = os.path.join(run_dir, 'training_configs')
         self.final_model_path = os.path.join(run_dir, self.env_type.value)
         self.norm_stats_path = os.path.join(run_dir, self.env_type.value + '_normalization_stats.pkl')
+
         os.makedirs(run_dir, exist_ok=True)
         os.makedirs(self.checkpoints_dir, exist_ok=True)
         os.makedirs(self.tensorboard_dir, exist_ok=True)
+        # os.makedirs(self.monitor_dir, exist_ok=True)  # Nuh-uh, don't create this dir yourself, it will be created when needed
         os.makedirs(self.training_config_dir, exist_ok=True)
+
         self._create_notes_file(dir_path=run_dir)
 
     def _save_training_config(self, continue_training: bool) -> None:
@@ -276,7 +284,7 @@ class ModelPPO:
             key=os.path.getctime
         )
         config_path = config_files[0] if config_files else None
-        if not os.path.exists(config_path):
+        if config_path is None or not os.path.exists(config_path):
             printc(f"[WARN] Training config file not found: {config_path}. Using default training config.", color="orange")
             return
 
@@ -315,3 +323,30 @@ class ModelPPO:
             with open(notes_path, 'w') as f:
                 f.write(f"# Training Notes\n")
                 f.write(f"**Start Time**: {self._get_current_time(time_format='%d. %m. %Y %H:%M:%S')}\n\n")
+
+
+class LogAllInfoCallback(BaseCallback):
+    def __init__(self, prefix: str = "rollout_extra", verbose: int = 0):
+        super().__init__(verbose)
+        self.prefix = prefix
+
+    def _on_step(self) -> bool:
+        log_data = {}
+
+        for info, done in zip(self.locals["infos"], self.locals["dones"]):
+            if done:
+                for key, value in info.items():
+                    if key == "TimeLimit.truncated":  # exclude this key
+                        continue
+                    if isinstance(value, (int, float)):  # ensure only numerical values are logged
+                        if key not in log_data:
+                            log_data[key] = []
+                        log_data[key].append(value)
+
+        # Log means across all finished episodes in this iteration
+        for key, values in log_data.items():
+            if values:
+                mean_value = np.mean(values)
+                self.logger.record(f"{self.prefix}/ep_{key}_mean", mean_value)
+
+        return True

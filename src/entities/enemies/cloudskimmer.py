@@ -1,11 +1,19 @@
 import math
-import random
 from typing import Union, Literal
 
 from src.utils import GameConfig, Animation
-from ..items import ItemName, ItemInitializer, Item, Gun
 from .enemy import Enemy, EnemyGroup
+from ..items import ItemName, ItemInitializer, Item, Gun
 
+
+# TODO: if bullet that hasn't bounced off a pipe, hits CloudSkimmer's gun, the gun should be destroyed/explode,
+#  the CloudSkimmer should loose some HP and look scarred or maybe run away/off screen, back where it came from!
+# TODO: When CloudSkimmer gets hit by the player, its face should turn angry and it could shoot faster for a while?
+#  Or maybe when one of the CloudSkimmers dies, the others get angry and shoot faster?
+# TODO: when one of the CloudSkimmers hits his teammate, the teammate should get angry and they should start shooting
+#  at each other xD — this would only work if the CloudSkimmers hit each other VERY rarely - or maybe there could
+#  be a 3% chance of this happening, so it doesn't happen too often, but still happens sometimes?
+#  This would obviously be manually programmed, not done by the agent. Agent should only focus on hitting the player.
 
 # TODO: Should there be random occasional cooldowns, so CloudSkimmers don't constantly fire?
 # TODO ghosts should spawn in random colors. As they get damaged, they could change color or become more transparent.
@@ -29,12 +37,13 @@ class CloudSkimmer(Enemy):
         self.frequency = 0.15  # oscillation frequency
         self.sin_y = 0  # sin wave vertical position
 
-        self.set_max_hp(150)
+        self.set_max_hp(200)
 
         self.gun: Union[Gun, Item] = None
         self.gun_rotation = 0
-        # self.gun_rotation = random.randint(-60, 60)  # TODO remove duh
-        self.gun_rotation_speed = 3  # was 6 for a while, but then I figured out this is not precise enough to always hit the target
+        self.gun_rotation_speed = 3  # Too low (like 3) and rotation becomes too slow to do sick trickshots in time,
+                                     # too high and the agent can't aim precisely.
+                                     # Continuous action space could fix this, but we'll rock with discrete for now.
 
     def tick(self):
         if self.running:
@@ -61,8 +70,8 @@ class CloudSkimmer(Enemy):
         self.vel_x = round(self.initial_vel_x * ((remaining_distance + 25) / (total_distance + 25)))  # without rounding this, the gun is jittery
 
     def shoot(self) -> None:
-        # if self.x > 670:  # if the enemy is not on the screen yet, don't shoot
-        #     return
+        if self.x > 800:  #670:  # if the enemy is not on the screen yet, don't shoot
+            return
         self.gun.use(0)
 
     def reload(self) -> None:

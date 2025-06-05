@@ -8,10 +8,13 @@ Current state of the game:
 
 https://github.com/user-attachments/assets/f86d4411-f890-4ca8-a3de-40508af201c6
 
+This video is kinda old, a lot of stuff has been updated since.
 
-Inventory slot backgrounds and some item icons are placeholders and will be replaced.
 
-# TODO:
+# ⚠️ DANGER ZONE AFTER THIS—contains random shit I wrote when I thought I knew what I was doing but it turns out that in fact I did not. So whatever is written after this might be complete utter garbage joyfully produced by past me.
+
+
+## TODO:
 0. make fighting enemies a bit easier and more fun! (fighting CloudSkimmers is too hard)
 1. barely touching the top/bottom of a pipe shouldn't immediately kill the bird, but only slightly damage it
 2. add animation for reloading guns, bullet collisions (sparks/tiny explosions), collecting items, enemy deaths and other items 
@@ -32,15 +35,10 @@ Inventory slot backgrounds and some item icons are placeholders and will be repl
 
 <br/>
 
-Training the CloudSkimmer AI agents: WIP
-
-Training the SkyDart AI agents: TBD
-
-Training the robot AI agents: TBD
-
-<br/>
-
 Training the Player AI agent (once the game is complete):
+
+Take this input/output with a big grain of salt (it was written when I had no experience yet), after experimenting and training the CloudSkimmer I learned that a lot of things I
+thought would be a good idea turned out wrong and a lot of things I thought would negatively affect the training turned out to be beneficial.
 
 Input:
  - player position, rotation, health & shield

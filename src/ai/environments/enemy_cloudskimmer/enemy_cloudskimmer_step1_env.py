@@ -3,54 +3,46 @@ from typing import Literal
 
 import numpy as np
 import pygame
+from torch import nn
 
 from src.ai.controllers import EnemyCloudSkimmerModelController
-from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_main_env import EnemyCloudSkimmerEnv
+from src.ai.normalizers.vec_box_only_normalize import VecBoxOnlyNormalize
+from src.ai.training_config import TrainingConfig
 from src.entities import PlayerMode, CloudSkimmer
-
-# LMFAOOO great plan Mr. StreakyFly, great plan - worked like a charm! Once I deleted it and did something else.
-"""
-TODO: write this comment better, but like
-A simpler environment compared to main_env.py, cuz pipes and player won't move, so agents
-can first learn that they have to hit the target and how to hit trickshots
-which should be much simpler to figure out when the target and the rest of the env isn't moving
-
-The target should be static, but can move every 5 seconds or so, to different position, so
-it doesn't overfit to one position. Same with the pipes.
-
-TODO: maybe constantly move the player up and down? At different speeds? Cuz teleporting might be confusing.
-"""
+from .enemy_cloudskimmer_main_env import EnemyCloudSkimmerEnv
 
 
-class EnemyCloudskimmerSimpleEnv(EnemyCloudSkimmerEnv):
+class EnemyCloudSkimmerStep1Env(EnemyCloudSkimmerEnv):
+    """
+    This simplified environment is the first step in training the enemy CloudSkimmer agent.
+    The agent should learn to hit the target either directly, or with a trickshot if necessary,
+    and shouldn't worry a lot about hitting its teammates or self, or when to reload.
+
+    Key features:
+    - Only the top and bottom enemies are controlled by the agent; the middle one is excluded.
+    - Reloading is masked, so the agent doesn't have to worry about it just yet.
+    - The player movement is drastically slowed down, so its randomness isn't that big of a problem.
+
+    Observations:
+    I noticed that agent trained with player_speed_factor = 1 performs much worse than one trained with
+    low player_speed_factor, like 0.3, even when running the trained model in environment with player_speed_factor = 1!
+    """
+
     def __init__(self):
         super().__init__()
-        # self.reset_env()  # TEMP: I don't think this is necessary, it's already called in base_env
-
+        self.player_speed_factor = 0.3  # how fast the player moves
         self.flap_state: Literal['flap_more', 'flap_less'] = 'flap_more'
         self.wait_until_next_flap = 3
+        self.reset_env()  # reset the environment to apply the player speed factor
 
     def reset_env(self):
         super().reset_env()
         self.player.set_mode(PlayerMode.TRAIN)
-        self.player.reset_vals_normal()
-
-        player_speed_factor = 0.3  # how fast the player moves
-        self.player.vel_y = -16.875 * player_speed_factor  # player's velocity along Y axis
-        self.player.max_vel_y = 19 * player_speed_factor  # 18.75  # max vel along Y, max descend speed
-        self.player.min_vel_y = -15 * player_speed_factor  # min vel along Y, max ascend speed
-        self.player.acc_y = 1.875 * player_speed_factor  # players downward acceleration
-        self.player.vel_rot = -2.7 * player_speed_factor  # player's rotation speed
-        self.player.flap_acc = -16.875 * player_speed_factor  # players speed on flapping
-
+        self.set_player_speed_factor(self.player_speed_factor)
         self.player.set_tick_train(self.tick_player_up_and_down)
-        # self.pipes.clear()
-        # self.place_pipes_well()
 
     def pick_random_enemy(self):
-        # self.controlled_enemy_id = np.random.randint(0, 3)
-        # self.controlled_enemy_id = random.choice([0, 2]) # control either top or bottom enemy, but not the middle
-        self.controlled_enemy_id = 2
+        self.controlled_enemy_id = random.choice([0, 2]) # control either top or bottom enemy, but not the middle
         self.controlled_enemy = self.enemy_manager.spawned_enemy_groups[0].members[self.controlled_enemy_id]
 
         for enemy in self.enemy_manager.spawned_enemy_groups[0].members:  # type: CloudSkimmer
@@ -63,21 +55,42 @@ class EnemyCloudskimmerSimpleEnv(EnemyCloudSkimmerEnv):
             # enemy.gun.ammo_speed = 52  # speed of deagle bullets  # I think learning with default bullet speed is
             #  better, because I think it would be difficult to adapt to lower speed later on
 
+    @staticmethod
+    def get_training_config() -> TrainingConfig:
+        return TrainingConfig(
+            learning_rate=0.0003,
+            n_steps=2048,
+            batch_size=64,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.1,
+            ent_coef=0.005,
+
+            policy_kwargs=dict(
+                net_arch=dict(pi=[64, 32], vf=[64, 32]),
+                activation_fn=nn.LeakyReLU,
+                ortho_init=True,
+            ),
+
+            save_freq=40_000,
+            total_timesteps=7_000_000,
+
+            normalizer=VecBoxOnlyNormalize,
+            clip_norm_obs=5.0,
+
+            frame_stack=-1
+        )
+
     def perform_step(self, action):
         self.step += 1
         for event in pygame.event.get():
             self.handle_quit(event)
 
-        # spawn new randomly positioned pipes every 360 ticks
-        # if self.step % 360 == 0:
-        #     self.pipes.spawn_initial_pipes_like_its_midgame()
-        #     self.place_pipes_well()
-
         EnemyCloudSkimmerModelController.perform_action(self.controlled_enemy, action)
 
         self.background.draw()
         self.pipes.tick()
-        self.floor.draw()
+        self.floor.tick()
         self.player.tick()
         self.enemy_manager.tick()
 
@@ -95,8 +108,7 @@ class EnemyCloudskimmerSimpleEnv(EnemyCloudSkimmerEnv):
     def get_observation(self) -> dict[str, np.ndarray]:
         obs = super().get_observation()
 
-        # TEMP: set weapon type to a random value, so agent doesn't start ignoring the
-        #  value as it wouldn't change otherwise
+        # set weapon type to a random value, so agent doesn't start ignoring the value as it wouldn't change otherwise
         obs['controlled_enemy_extra_info'][0] = random.choice([0, 1])
 
         return obs
@@ -117,35 +129,36 @@ class EnemyCloudskimmerSimpleEnv(EnemyCloudSkimmerEnv):
 
         # lil punishment when firing
         if action[0] == 1:
-            reward -= 0.2  # TEMP: 0.3 was pretty good, but maybe too much, scared top enemy from firing
+            reward -= 0.2
 
         for bullet in self.all_bullets_from_last_frame.union(self.controlled_enemy.gun.shot_bullets):
             # reward for hitting the player
             if bullet.hit_entity == 'player':
                 reward += 5
-                # bonus reward if the bullet hit the player after bouncing
+                # bonus reward if the bullet hit the player after bouncing (trickshot)
                 if bullet.bounced:
                     reward += 3
             # punishment for hitting himself or his teammates
             elif bullet.hit_entity == 'enemy':
                 reward -= 1
+            # (if we punish them for hitting the floor, they get scared of firing down, even if the player is there)
             # punishment for hitting the ground
-            elif bullet.hit_entity == 'floor':
-                reward -= 0.2
+            # elif bullet.hit_entity == 'floor':
+            #     reward -= 0.2
             # reward for hitting a pipe
             elif bullet.hit_entity == 'pipe' and bullet not in self.bullets_bounced_off_pipes:
                 self.bullets_bounced_off_pipes.add(bullet)
-                reward += 0.05
-
-            # punishment if bullet disappears without hitting the player
-            # elif bullet not in self.controlled_enemy.gun.shot_bullets and bullet.hit_entity != 'player':
-            #     reward -= 0.2
+                reward += 0.1  # was 0.05
 
         self.all_bullets_from_last_frame = set(self.controlled_enemy.gun.shot_bullets)
 
         return reward
 
     def tick_player_up_and_down(self) -> None:
+        """
+        Move player high up and down randomly, and not just between pipes, like in actual game,
+        so agents learn to hit the player and NOT just blindly fire in the center of pipes, no matter where the player is.
+        """
         # keep in mind 0 is on top, so top bound is LOWER than bottom bound
         top_bound, bottom_bound = self.get_valid_player_bounds()
 
@@ -167,6 +180,9 @@ class EnemyCloudskimmerSimpleEnv(EnemyCloudSkimmerEnv):
             else:
                 self.player.flap()
                 self.flap_state = 'flap_more'
+        else:
+            raise ValueError(f"Invalid flap_state: {self.flap_state}")
+
         self.player.tick_normal()
 
     def get_valid_player_bounds(self, max_offset: int = 210) -> tuple[float, float]:
@@ -196,26 +212,6 @@ class EnemyCloudskimmerSimpleEnv(EnemyCloudSkimmerEnv):
         # keep in mind 0 is on top, so top bound is LOWER than bottom bound
         return top_bound, bottom_bound
 
-    # def move_player_to_new_position(self):
-    #     """
-    #     Moves the player to a random position.
-    #     """
-    #     next_pipe_pair = None
-    #     for upper_pipe, lower_pipe in zip(self.pipes.upper, self.pipes.lower):
-    #         if upper_pipe.x + upper_pipe.w > self.player.x:
-    #             next_pipe_pair = (upper_pipe, lower_pipe)
-    #             break
-    #
-    #     next_pipe_pair_center_y = self.get_pipe_pair_center(next_pipe_pair)[1]
-    #
-    #     random_offset = random.randint(-300, 300)  # how far from the next pipe center can the player be (on y-axis)
-    #     self.player.y = np.clip(
-    #         a=(next_pipe_pair_center_y - self.player.h // 2) + random_offset,
-    #         a_min=self.player.min_y,
-    #         a_max=self.player.max_y
-    #     )
-    #     self.player.rotation = random.randint(-90, 20)
-
     def place_pipes_well(self) -> None:
         """
         Places the pipes in a way that they don't overlap with the player's X position.
@@ -228,4 +224,17 @@ class EnemyCloudskimmerSimpleEnv(EnemyCloudSkimmerEnv):
 
         while not are_pipes_well_placed():
             self.pipes.spawn_initial_pipes_like_its_midgame()
-        # self.move_player_to_new_position()
+
+    def set_player_speed_factor(self, speed_factor: float) -> None:
+        """
+        Set the player's speed factor, which affects how fast the player moves.
+        """
+        self.player_speed_factor = speed_factor
+        self.player.reset_vals_normal()
+        self.player.vel_y *= self.player_speed_factor  # player's velocity along Y axis
+        self.player.max_vel_y *= self.player_speed_factor  # 18.75  # max vel along Y, max descend speed
+        self.player.min_vel_y *= self.player_speed_factor  # min vel along Y, max ascend speed
+        self.player.acc_y *= self.player_speed_factor  # players downward acceleration
+        self.player.rotation *= self.player_speed_factor  # player's rotation speed
+        self.player.vel_rot *= self.player_speed_factor  # player's rotation speed
+        self.player.flap_acc *= self.player_speed_factor  # players speed on flapping

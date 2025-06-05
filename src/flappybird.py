@@ -5,11 +5,12 @@ from datetime import datetime, timezone
 
 import pygame
 
-from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds, DummySounds, ResultsManager
-from .entities import MenuManager, MainMenu, Background, Floor, Player, PlayerMode, Pipes, Score, \
-    WelcomeMessage, GameOver, Inventory, ItemManager, ItemName, EnemyManager, CloudSkimmer
 from .ai import ObservationManager
 from .database import scores_service
+from .entities import MenuManager, MainMenu, Background, Floor, Player, PlayerMode, Pipes, Score, \
+    WelcomeMessage, GameOver, Inventory, ItemManager, EnemyManager, CloudSkimmer
+from .utils import GameConfig, GameState, GameStateManager, Window, Images, Sounds, DummySounds, ResultsManager
+
 
 # from .config import Config <-- imported later to avoid circular import
 
@@ -197,7 +198,7 @@ class FlappyBird:
         for entity in controlled_entities:
             if entity not in self.observation_manager.observation_instances:
                 if isinstance(entity, CloudSkimmer):
-                    self.observation_manager.create_observation_instance(entity, env=self, controlled_enemy_id=entity.id)
+                    self.observation_manager.create_observation_instance(entity, env=self, controlled_enemy_id=entity.id, use_bullet_info=False)
                 else:
                     self.observation_manager.create_observation_instance(entity, env=self)
 

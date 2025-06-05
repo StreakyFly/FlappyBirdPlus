@@ -12,11 +12,11 @@ class Config:
     fps_cap: int = 30  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
     num_cores: int = 8  # <-- change the number of cores to use during training (more != faster training)
     debug: bool = settings_manager.get_setting('debug')  # <-- toggle debug mode
-    mode: Mode = Mode.RUN_MODEL  # <-- change the mode here
+    mode: Mode = Mode.TEST_ENV  # <-- change the mode here
     algorithm: Literal['PPO', 'DQN'] = 'PPO'  # <-- change the algorithm here (PPO is the only one fully supported)
     env_type: EnvType = EnvType.ENEMY_CLOUDSKIMMER  # <-- change environment type here
-    env_variant: EnvVariant = EnvVariant.SIMPLE  # <-- change environment variant here (doesn't work for Mode.PLAY)
-    run_id: Optional[str] = "run_20250530_131801" #None  # "run_test"  # <-- change the run id here (can/should be None for some modes)
+    env_variant: EnvVariant = EnvVariant.STEP3  # <-- change environment variant here (doesn't work for Mode.PLAY)
+    run_id: Optional[str] = None  # "run_test"  # <-- change the run id here (can/should be None for some modes)
     seed: Optional[int] = 42  # <-- None = set dynamic random seed; non-negative = fixed seed; used by the PPO algorithm and game environments
     handle_seed: bool = True  # <-- toggle if you want to handle the seed yourself (use False for Mode.TRAIN and in specific situations for some other modes)
     human_player: bool = not settings_manager.get_setting('ai_player')  # <-- toggle if you want to play the game yourself (only works for Mode.PLAY)

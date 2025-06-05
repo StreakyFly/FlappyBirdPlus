@@ -12,29 +12,25 @@ from src.ai.observations import ObservationManager
 from src.ai.training_config import TrainingConfig
 from src.entities.enemies import CloudSkimmer
 
-"""
-Randomly select one of the enemies to control.
-Once that enemy dies, terminate the episode and select another one randomly.
-"""
 
-
-# YES, IT SHOULD FLY MORE RANDOMLY!!
-# TODO Should the player fly more randomly for a part of training, not just between pipes? So the agents learn some epic
-#  bounce tricks to hit the player when he's behind the pipes, instead of just aiming at the player's current position?
-#  If we give a higher reward for hitting the player after bouncing off a pipe, the agents try to trick shot the player
-#  even when they can directly fire at it, which we don't want. Directly fire at the player when possible, otherwise
-#  try a trick shot.
-
-"""
-Masking Bullet Data:
-During the later stages of training, static placeholder values for bullet info should be introduced.
-This step teaches the model to gradually ignore these inputs, which are not critical for decision-making post-training.
-It ensures that during deployment, the model can operate effectively even when bullet data is not provided.
-Nahh... probably not necessary cuz fired bullet info shouldn't affect future firing. We'll see.
-"""
+# TODO ################## [WARN] ####################### [WARN] ####################### [WARN] ######################
+#  [WARN]: This environment ended up NOT being directly used for training the latest agent, as the agent learned    #
+#  everything I wanted it to learn in the "simpler" environments. However, since those simpler environments INHERIT #
+#  from this environment, it will remain in the codebase. I have decided not to merge it with the first inheriting  #
+#  environment (enemy_cloudskimmer_step1_env.py), or any other, because the agent is already trained, and I don't   #
+#  wanna waste time testing changes that could introduce new bugs (｡◕‿‿◕｡).                                         #
+# TODO ###### [WARN] ####################### [WARN] ####################### [WARN] ###################### [WARN] ####
 
 
 class EnemyCloudSkimmerEnv(BaseEnv):
+    """
+    [WARN] This environment kinda sucks on its own.
+    Use "simpler" environments and train the agent in multiple stages.
+
+    Key features:
+    - Randomly select one of the enemies to control.
+    - Once that enemy dies, terminate the episode and select another one randomly.
+    """
     requires_action_masking = True
 
     def __init__(self):
@@ -169,184 +165,6 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         return training_config
 
     @staticmethod
-    def OLDEST_get_action_and_observation_space() -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Dict]:
-        # index 0 -> 0: do nothing, 1: fire, 2: reload
-        # index 1 -> 0: do nothing, 1: rotate up, 2: rotate down
-        action_space = gym.spaces.MultiDiscrete([3, 3])
-
-        # TODO maybe add remaining_shoot_cooldown and remaining_reload_cooldown to the observation space after all
-        #  and punish the agent for attempting to fire or reload when they're on cooldown? Or keep it as it is now?
-        observation_space = gym.spaces.Dict({
-            'player_y_position': gym.spaces.Box(low=-120, high=755, shape=(1,), dtype=np.float32),
-            'player_y_velocity': gym.spaces.Box(low=-17, high=21, shape=(1,), dtype=np.float32),
-            # 0: top, 1: middle, 2: bottom; gun type can be derived from this as guns are always in the same order
-            'controlled_enemy': gym.spaces.Discrete(3),
-            # remaining loaded bullets in the gun
-            'remaining_bullets': gym.spaces.Box(low=0, high=30, shape=(1,), dtype=np.float32),
-            # this is gun's raw rotation - animation_rotation is not taken into account
-            'gun_rotation': gym.spaces.Box(low=-60, high=60, shape=(1,), dtype=np.float32),
-            # x position of the controlled enemy
-            'enemy_x_position': gym.spaces.Box(low=449, high=1900, shape=(1,), dtype=np.float32),
-            # 0: top enemy, 1: middle enemy, 2: bottom enemy (0: doesn't exist, 1: exists)
-            'enemy_existence': gym.spaces.MultiBinary(3),
-            'top_enemy_y_position': gym.spaces.Box(low=207, high=243, shape=(1,), dtype=np.float32),
-            'middle_enemy_y_position': gym.spaces.Box(low=335, high=365, shape=(1,), dtype=np.float32),
-            'bottom_enemy_y_position': gym.spaces.Box(low=457, high=493, shape=(1,), dtype=np.float32),
-            # x position of vertical center of the first pipe (distance between pipes is always the same)
-            'first_pipe_x_position': gym.spaces.Box(low=-265, high=118, shape=(1,), dtype=np.float32),
-            # y positions of vertical centers of pipes
-            'pipe_y_positions': gym.spaces.Box(low=272, high=528, shape=(4,), dtype=np.float32),
-            # 0: b1, 1: b2, 2: b3, 3: b4, ... (0: doesn't exist, 1: exists)
-            'bullet_existence': gym.spaces.MultiBinary(10),
-            # x and y positions of bullets
-            # Up - bullet gets removed off-screen => 0 + max height of bullet = -24 ~ -20 (can't be fired at 90 angle)
-            # Down - bullet gets stopped when hitting floor => 797
-            # Left - bullet before -256 is useless as it can't bounce back => -256
-            # Right - bullet after 1144 is useless as it can't bounce back => 1144 (1144, because that's the first point
-            #  where CloudSkimmers can fire from, if the x is larger, that means the bullet bounced and flew past them)
-            'bullet_positions': gym.spaces.Box(low=np.array([-256, -20] * 10, dtype=np.float32), high=np.array([1144, 797] * 10, dtype=np.float32), dtype=np.float32)
-        })
-
-        return action_space, observation_space
-
-    @staticmethod
-    def OLD_get_action_and_observation_space() -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Dict]:
-        # index 0 -> 0: do nothing, 1: fire, 2: reload
-        # index 1 -> 0: do nothing, 1: rotate up, 2: rotate down
-        action_space = gym.spaces.MultiDiscrete([3, 3])
-
-        TOP_PIPE_BOTTOM_LOW = 160
-        TOP_PIPE_BOTTOM_HIGH = 415
-        BOTTOM_PIPE_TOP_LOW = TOP_PIPE_BOTTOM_LOW + 225  # 225 is pipes.vertical_gap
-        BOTTOM_PIPE_TOP_HIGH = TOP_PIPE_BOTTOM_HIGH + 225  # 225 is pipes.vertical_gap
-        observation_space = gym.spaces.Dict({
-            # 0: top, 1: middle, 2: bottom (0: not controlled, 1: controlled); gun type can be derived from this as guns are always in the same order
-            'controlled_enemy': gym.spaces.MultiBinary(3),  # must be one-hot
-            # 0: top, 1: middle, 2: bottom (0: doesn't exist, 1: exists)
-            'enemy_existence': gym.spaces.MultiBinary(3),  # TODO: possibly replace with enemy velocities?
-            # 'Neural nets tolerate redundancy much better than missing information or brittle assumptions.
-            #  Structure and order matter more than minor repetition.' - ChatGPT, 2025
-            # Which is why I am passing all enemy X positions, even though two of them are the exact same.
-            'enemy_positions': gym.spaces.Box(
-                low=np.array([
-                    [579, 247],  # top enemy
-                    [489, 375],  # middle enemy
-                    [579, 497],  # bottom enemy
-                ], dtype=np.float32),
-                high=np.array([
-                    [1130, 283],  # top enemy
-                    [1040, 405],  # middle enemy
-                    [1130, 533],  # bottom enemy
-                ], dtype=np.float32),
-                shape=(3, 2),  # 3 enemies, each with x and y position
-                dtype=np.float32
-            ),
-
-            # [1, 0] = deagle, [0, 1] = ak47
-            'weapon_type': gym.spaces.MultiBinary(2),  # must be one-hot
-            # position where the bullet will spawn
-            'bullet_spawn_position': gym.spaces.Box(
-                # I can't be bothered figuring out the exact values, so let's just use some rough estimates
-                # This isn't a problem, as VecNormalize doesn't use these values anyway, but might help with debugging.
-                low=np.array([300, 100], dtype=np.float32),
-                high=np.array([1300, 700], dtype=np.float32),
-                shape=(2,),
-                dtype=np.float32
-            ),
-            # this is gun's raw rotation - animation_rotation is not taken into account
-            'gun_rotation': gym.spaces.Box(low=-60, high=60, shape=(1,), dtype=np.float32),
-            # remaining loaded bullets in the gun
-            'remaining_bullets': gym.spaces.Box(low=0, high=30, shape=(1,), dtype=np.float32),
-
-            'player_y_position': gym.spaces.Box(low=-90, high=785, shape=(1,), dtype=np.float32),
-            'player_y_velocity': gym.spaces.Box(low=-17, high=21, shape=(1,), dtype=np.float32),
-            'player_rotation': gym.spaces.Box(low=-90, high=20, shape=(1,), dtype=np.float32),
-
-            # center positions of the pipes
-            # 'pipe_positions': gym.spaces.Box(
-            #     low=np.array([
-            #         [-265, 272],  # first pipe
-            #         [125, 272],  # second pipe
-            #         [515, 272],  # third pipe
-            #         [905, 272],  # fourth pipe
-            #     ]),
-            #     high=np.array([
-            #         [125, 528],  # first pipe
-            #         [515, 528],  # second pipe
-            #         [905, 528],  # third pipe
-            #         [1295, 528],  # fourth pipe
-            #     ]),
-            #     shape=(4, 2),  # 4 pipes, each with x and y position
-            #     dtype=np.float32
-            # ),
-
-            # corner positions of the pipes (top corners of bottom pipe and bottom corners of top pipe)
-            # Do we need to be this specific when defining the low/high values? Probably not, as VecNormalize doesn't
-            # even use these values, but let's do it anyway. If we pass an observation that is out of bounds, we'll get
-            # an error, which could save us AN ETERNITY of debugging. Does it help with training? Nah, at least not
-            # with VecNormalize. Does it help with debugging? Yeah, in some situations it might—by like A LOT.
-            # (As long as you set the clip mode to -1!! and NOT 1, as that will just clip it without warning).
-            'pipe_positions': gym.spaces.Box(
-                low=np.array([
-                    [  # pipe pair 0
-                        [[-330, TOP_PIPE_BOTTOM_LOW], [-200, TOP_PIPE_BOTTOM_LOW]],  # top pipe: left, right
-                        [[-330, BOTTOM_PIPE_TOP_LOW], [-200, BOTTOM_PIPE_TOP_LOW]],  # bottom pipe: left, right
-                    ],
-                    [  # pipe pair 1
-                        [[  60, TOP_PIPE_BOTTOM_LOW], [ 190, TOP_PIPE_BOTTOM_LOW]],
-                        [[  60, BOTTOM_PIPE_TOP_LOW], [ 190, BOTTOM_PIPE_TOP_LOW]],
-                    ],
-                    [  # pipe pair 2
-                        [[ 450, TOP_PIPE_BOTTOM_LOW], [ 580, TOP_PIPE_BOTTOM_LOW]],
-                        [[ 450, BOTTOM_PIPE_TOP_LOW], [ 580, BOTTOM_PIPE_TOP_LOW]],
-                    ],
-                    [  # pipe pair 3
-                        [[ 840, TOP_PIPE_BOTTOM_LOW], [ 970, TOP_PIPE_BOTTOM_LOW]],
-                        [[ 840, BOTTOM_PIPE_TOP_LOW], [ 970, BOTTOM_PIPE_TOP_LOW]],
-                    ]
-                ]),
-                high=np.array([
-                    [  # pipe pair 0
-                        [[  60, TOP_PIPE_BOTTOM_HIGH], [ 190, TOP_PIPE_BOTTOM_HIGH]],
-                        [[  60, BOTTOM_PIPE_TOP_HIGH], [ 190, BOTTOM_PIPE_TOP_HIGH]],
-                    ],
-                    [  # pipe pair 1
-                        [[ 450, TOP_PIPE_BOTTOM_HIGH], [ 580, TOP_PIPE_BOTTOM_HIGH]],
-                        [[ 450, BOTTOM_PIPE_TOP_HIGH], [ 580, BOTTOM_PIPE_TOP_HIGH]],
-                    ],
-                    [  # pipe pair 2
-                        [[ 840, TOP_PIPE_BOTTOM_HIGH], [ 970, TOP_PIPE_BOTTOM_HIGH]],
-                        [[ 840, BOTTOM_PIPE_TOP_HIGH], [ 970, BOTTOM_PIPE_TOP_HIGH]],
-                    ],
-                    [  # pipe pair 3
-                        [[1230, TOP_PIPE_BOTTOM_HIGH], [1360, TOP_PIPE_BOTTOM_HIGH]],
-                        [[1230, BOTTOM_PIPE_TOP_HIGH], [1360, BOTTOM_PIPE_TOP_HIGH]],
-                    ]
-                ]),
-                shape=(4, 2, 2, 2),
-                dtype=np.float32
-            ),
-
-
-            # 0: b1, 1: b2, 2: b3, 3: b4, ... (0: doesn't exist, 1: exists)
-            'bullet_existence': gym.spaces.MultiBinary(5),  # TODO: possibly replace with bullet velocities?
-            # x and y positions of bullets
-            # Up - bullet gets removed off-screen => 0 + max height of bullet = -24 ~ -20 (can't be fired at 90 angle)
-            # Down - bullet gets stopped when hitting floor => 797
-            # Left - bullet before -256 is useless as it can't bounce back => -256
-            # Right - bullet after 1144 is useless as it can't bounce back => 1144 (1144, because that's the first point
-            #  where CloudSkimmers can fire from, if the x is larger, that means the bullet bounced and flew past them)
-            'bullet_positions': gym.spaces.Box(
-                low=np.full((5, 2), [-256, -20], dtype=np.float32),
-                high=np.full((5, 2), [1144, 797], dtype=np.float32),
-                shape=(5, 2),  # 10 bullets, each with x and y position
-                dtype=np.float32
-            )
-        })
-
-        return action_space, observation_space
-
-    @staticmethod
     def get_action_and_observation_space() -> tuple[gym.spaces.MultiDiscrete, gym.spaces.Dict]:
         # index 0 -> 0: do nothing, 1: fire, 2: reload
         # index 1 -> 0: do nothing, 1: rotate up, 2: rotate down
@@ -462,7 +280,6 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         return observation_space_clip_modes
 
     def perform_step(self, action):
-        # print("PERFORMING STEP")
         self.step += 1
         for event in pygame.event.get():
             # self.handle_event(event)  # handles key presses as well
@@ -471,7 +288,6 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         # here, flappy can get & perform the action before the enemy, as the agent has already decided what it'll do
         self.handle_basic_flappy()
 
-        # print(action[0], self.controlled_enemy.gun.remaining_shoot_cooldown, self.controlled_enemy.gun.remaining_reload_cooldown)
         # Must NOT init EnemyCloudSkimmerModelController(), as it would create a new instance which creates a new
         #  EnemyCloudSkimmerEnv (this), causing infinite recursion. Yeah, really messed up, but it works... for now -_-
         # self.enemy_cloudskimmer_controller.perform_action(self.controlled_enemy, action)
@@ -486,15 +302,8 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         pygame.display.update()
         self.config.tick()
 
-        # observation = self.get_state()
-        # reward = self.calculate_reward(action=action)
-        # print("STEP DONE")
-        # print()  # breakpoint here
-
-        # return (observation,
         return (
             self.get_observation(),  # observation
-            # reward,
             self.calculate_reward(action=action),  # reward,
             self.controlled_enemy not in self.enemy_manager.spawned_enemy_groups[0].members,  # terminated
             self.step > 1200,  # truncated - end the episode if it lasts too long
@@ -511,14 +320,18 @@ class EnemyCloudSkimmerEnv(BaseEnv):
 
     def calculate_reward(self, action) -> int:
         """
+        [WARN] This method was NOT used for training any of the latest/better versions of the agent.
+        It is FAR from good—so I should delete it, right?
+            Nahh, I'll keep it for reference. I like to look back at my old code and laugh at how dumb I was back then.
+
+        WARNING! The agent learns to shoot in the middle between the pipes, not actually where the player is.
+        That's probably because the trained player model flies between the pipes, so the agent has actually never
+        seen player behind the pipes. We should make the player fly more randomly, not just between pipes!!
+
         Agent should be rewarded for:
          - hitting/damaging the player (huge reward) + bonus, if the bullet hit the player after bouncing off a pipe
-         - hitting a pipe (small reward) - so the likelihood of learning a cool bounce-off-pipe strategy is higher - NONONO, we're gonna do this differently:
-            - train the agent in simpler environment at first, with static pipes and static player, hiding behind the pipes at different positions, so they learn trickshots
-            - then make player move, but still behind the pipes
-            - then make the pipes move
-            - finally make the player play normally
-         - not firing (small reward each frame the agent doesn't fire, so if he fires but doesn't hit the player, he
+         - hitting a pipe (small reward) - so the likelihood of learning a cool bounce-off-pipe strategy is higher
+         - //not firing (small reward each frame the agent doesn't fire, so if he fires but doesn't hit the player, he
            won't get the reward, which is like if he got punished - punishing him if bullet despawns without hitting
            the player might be more logical, however not only is it harder to implement, it might also confuse the
            agent that he was punished after one bullet's position changed to a placeholder)
@@ -526,11 +339,8 @@ class EnemyCloudSkimmerEnv(BaseEnv):
          - hitting himself or his teammates (big punishment)
          - rotating? Maybe a lil tiny punishment if the agent rotates? So it won't rotate unnecessarily...?
            maybe even a slightly bigger punishment for each rotation direction change, so it won't look jittery
+         - firing? Maybe a lil tiny punishment for firing, so it won't fire unnecessarily...?
         """
-
-        # TODO WARNING! The agent learns to shoot in the middle between the pipes, not actually where the player is.
-        #  That's probably because the trained player model flies between the pipes, so the agent has actually never
-        #  seen player behind the pipes. We should make the player fly more randomly, not just between pipes!!
         reward = 0
 
         # reward for not firing

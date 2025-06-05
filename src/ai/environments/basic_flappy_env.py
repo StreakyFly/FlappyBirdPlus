@@ -4,6 +4,7 @@ import pygame
 from torch import nn
 
 from .base_env import BaseEnv
+from ..controllers import BasicFlappyModelController
 from ..normalizers.vec_box_only_normalize import VecBoxOnlyNormalize
 from ..observations import ObservationManager
 from ..training_config import TrainingConfig
@@ -13,10 +14,10 @@ class BasicFlappyEnv(BaseEnv):
     def __init__(self):
         self.observation_manager = ObservationManager()
         super().__init__()
-        self.observation_manager.create_observation_instance(self.player, self)
+        self.reset_env()
 
-    def reset(self):
-        super().reset()
+    def reset_env(self):
+        super().reset_env()
         self.observation_manager.create_observation_instance(self.player, self)
 
     @staticmethod
@@ -31,6 +32,7 @@ class BasicFlappyEnv(BaseEnv):
                     batch_size=64,
                     gamma=0.99,
                     clip_range=0.2,
+                    ent_coef=0.001,
 
                     policy_kwargs=dict(
                         # Out of [128, 128], [64, 64], [32, 32], [8, 8], [8], [4] and [2], the [16, 16] reached great results the fastest.
@@ -50,7 +52,7 @@ class BasicFlappyEnv(BaseEnv):
                     ),
 
                     save_freq=40_000,
-                    total_timesteps=1_500_000,
+                    total_timesteps=800_000,
 
                     normalizer=VecBoxOnlyNormalize,
                     clip_norm_obs=10.0,
@@ -63,6 +65,7 @@ class BasicFlappyEnv(BaseEnv):
                     batch_size=64,
                     gamma=0.99,
                     clip_range=0.1,  # smaller clip_range prevents policy collapse
+                    ent_coef=0.001,
 
                     policy_kwargs=dict(
                         net_arch=dict(pi=[32, 32], vf=[32, 32]),
@@ -72,7 +75,7 @@ class BasicFlappyEnv(BaseEnv):
                     ),
 
                     save_freq=50_000,
-                    total_timesteps=2_500_000,
+                    total_timesteps=2_000_000,
 
                     normalizer=VecBoxOnlyNormalize,
                     # normalizer=VecMinMaxNormalize,  # the biggest garbage ever written, don't use if you value your time
@@ -95,8 +98,8 @@ class BasicFlappyEnv(BaseEnv):
         # index 3 -> vertical distance from player to the next pipe's vertical center
         # index 4 -> vertical distance from player to the second next pipe's vertical center
         observation_space = gym.spaces.Box(
-            low=np.array([-120, -17, 0, -650, -650], dtype=np.float32),
-            high=np.array([755, 21, 500, 550, 550], dtype=np.float32),
+            low=np.array([-90, -17, 0, -650, -650], dtype=np.float32),
+            high=np.array([785, 21, 500, 550, 550], dtype=np.float32),
             dtype=np.float32
         )
 
@@ -110,8 +113,7 @@ class BasicFlappyEnv(BaseEnv):
         return observation_space_clip_modes
 
     def perform_step(self, action):
-        if action == 1:
-            self.player.flap()
+        BasicFlappyModelController.perform_action(self.player, action)
 
         terminated = False
         passed_pipe = False
@@ -133,11 +135,15 @@ class BasicFlappyEnv(BaseEnv):
         self.player.tick()
         self.score.tick()
 
+        # Call calculate_reward before updating the display, if you want to visualize the pipe centers
+        # (must uncomment the pygame.draw.circle and pygame.draw.line lines in calculate_reward)
+        # self.calculate_reward(action=action, passed_pipe=passed_pipe)
+
         pygame.display.update()
         self.config.tick()
 
         return (self.get_observation(),
-                self.calculate_reward(action=action, died=terminated, passed_pipe=passed_pipe),
+                self.calculate_reward(action=action, passed_pipe=passed_pipe),
                 terminated,
                 False,
                 {})
@@ -145,17 +151,17 @@ class BasicFlappyEnv(BaseEnv):
     def get_observation(self):
         return self.observation_manager.get_observation(self.player)
 
-    def calculate_reward(self, action, died, passed_pipe) -> float:
+    def calculate_reward(self, action, passed_pipe) -> float:
         reward = 0
-        if died:
-            reward -= 1000
-        else:
-            reward += 1
-        if passed_pipe:
-            reward += 100
-        if action == 1:
-            reward -= 0.2
 
+        # lil punishment for flapping
+        if action == 1:
+            reward -= 0.1
+        # big reward for passing a pipe
+        if passed_pipe:
+            reward += 5
+
+        # lil reward for staying close to the center of the next pipe pair center
         for i, pipe in enumerate(self.pipes.upper):
             if pipe.x + pipe.w < self.player.x:
                 continue
@@ -164,8 +170,9 @@ class BasicFlappyEnv(BaseEnv):
                 vertical_distance_to_pipe_pair_center = abs(self.player.cy - pipe_center_y)
                 # pygame.draw.circle(self.config.screen, (255, 0, 0), (pipe.cx, pipe_center_y), 5)
                 # pygame.draw.line(self.config.screen, (255, 0, 0), (self.player.cx, self.player.cy), (pipe.cx, pipe_center_y), 2)
-                if vertical_distance_to_pipe_pair_center < 150:
-                    reward += 3  # 4
+                if vertical_distance_to_pipe_pair_center < 200:
+                    # up to 0.1 reward for being close to the center of the pipe pair
+                    reward += 0.1 * (1 - vertical_distance_to_pipe_pair_center / 200)
                 break
 
         return reward

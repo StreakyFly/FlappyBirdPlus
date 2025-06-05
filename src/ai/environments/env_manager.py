@@ -69,11 +69,18 @@ class EnvManager:
 
     @staticmethod
     def get_enemy_cloudskimmer_env_class(env_variant: EnvVariant) -> Type[BaseEnv]:
-        if env_variant == EnvVariant.MAIN:
-            from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_main_env import EnemyCloudSkimmerEnv
-            return EnemyCloudSkimmerEnv
-        elif env_variant == EnvVariant.SIMPLE:
-            from src.ai.environments.enemy_cloudskimmer.enemy_cloudskimmer_simple_env import EnemyCloudskimmerSimpleEnv
-            return EnemyCloudskimmerSimpleEnv
-        else:
-            raise ValueError(f"Invalid env_variant: {env_variant}. ENEMY_CLOUDSKIMMER supports [MAIN, STATIC] only.")
+        match env_variant:  # noqa
+            case EnvVariant.MAIN:
+                from .enemy_cloudskimmer.enemy_cloudskimmer_main_env import EnemyCloudSkimmerEnv
+                return EnemyCloudSkimmerEnv
+            case EnvVariant.STEP1:
+                from .enemy_cloudskimmer.enemy_cloudskimmer_step1_env import EnemyCloudSkimmerStep1Env
+                return EnemyCloudSkimmerStep1Env
+            case EnvVariant.STEP2:
+                from .enemy_cloudskimmer.enemy_cloudskimmer_step2_env import EnemyCloudSkimmerStep2Env
+                return EnemyCloudSkimmerStep2Env
+            case EnvVariant.STEP3:
+                from .enemy_cloudskimmer.enemy_cloudskimmer_step3_env import EnemyCloudSkimmerStep3Env
+                return EnemyCloudSkimmerStep3Env
+            case _:
+                raise ValueError(f"Invalid env_variant: {env_variant}. ENEMY_CLOUDSKIMMER supports [MAIN, STEP1, STEP2, STEP3] only.")

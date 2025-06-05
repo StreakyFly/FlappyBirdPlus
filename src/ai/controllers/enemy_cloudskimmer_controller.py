@@ -1,10 +1,9 @@
 import numpy as np
 
-from .base_controller import BaseModelController
-from ..environments import EnvType
-
 from src.entities.enemies import CloudSkimmer
 from src.entities.items import Gun
+from .base_controller import BaseModelController
+from ..environments import EnvType
 
 
 class EnemyCloudSkimmerModelController(BaseModelController):
@@ -42,6 +41,13 @@ class EnemyCloudSkimmerModelController(BaseModelController):
         # gun "can't" be reloaded if it's already full or if there's no ammo left in the inventory
         if gun.quantity == gun.magazine_size or gun.ammo_item.quantity <= 0:
             fire_reload_masks[2] = 0  # disable reload
+
+        # a lil cheat hehe: gun can't be fired if it's aimed at the middle enemy (when he's alive)
+        # Agent has mostly learned to not shoot at the middle enemy, but in certain situations it still does.
+        # TODO: if you move any of the CloudSkimmers or anything like that, this will most likely need to be adjusted.
+        if fire_reload_masks[1] != 0 and any(enemy.id == 1 for enemy in env.enemy_manager.spawned_enemy_groups[0].members):
+            if (entity.id == 0 and gun.rotation > 30) or (entity.id == 2 and gun.rotation < -28):
+                fire_reload_masks[1] = 0
 
         action_masks = np.array([fire_reload_masks, rotation_masks])
         return action_masks
