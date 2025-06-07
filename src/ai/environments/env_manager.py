@@ -41,6 +41,7 @@ class EnvManager:
         Performs a basic test run of the environment to ensure it behaves as expected.
         """
         self.create_env()
+        self.env.reset()  # reset to set the random seed
 
         use_action_masking: bool = getattr(self.env_class, 'requires_action_masking', False)
 
@@ -62,7 +63,7 @@ class EnvManager:
     @staticmethod
     def get_advanced_flappy_env_class(env_variant: EnvVariant) -> Type[BaseEnv]:
         if env_variant == EnvVariant.MAIN:
-            from .advanced_flappy_env import AdvancedFlappyEnv
+            from .advanced_flappy.advanced_flappy_main_env import AdvancedFlappyEnv
             return AdvancedFlappyEnv
         else:
             raise ValueError(f"Invalid env_variant: {env_variant}. ADVANCED_FLAPPY supports [MAIN] only.")

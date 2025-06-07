@@ -212,7 +212,7 @@ class FlappyBird:
         # perform actions for all entities
         for i, entity in enumerate(controlled_entities):
             controller = self.get_corresponding_controller(entity)
-            controller.perform_action(entity, actions[i])
+            controller.perform_action(action=actions[i], entity=entity, env=self)
 
     def get_corresponding_controller(self, entity):
         if isinstance(entity, Player):

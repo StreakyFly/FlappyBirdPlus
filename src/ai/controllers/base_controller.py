@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 from sb3_contrib import MaskablePPO
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
@@ -43,14 +44,18 @@ class BaseModelController:
         return action
 
     @staticmethod
-    def perform_action(entity, action):
+    def perform_action(action, entity, env=None):
         """
         Perform the action on the entity.
+
+        :param action: The action to perform, typically an array of integers.
+        :param entity: The entity on which the action will be performed.
+        :param env: The environment in which the action is performed (only certain agents require it, e.g. `advanced flappy`).
         """
         raise NotImplementedError("perform_action() method should be implemented in a subclass.")
 
     @staticmethod
-    def get_action_masks(*args):
+    def get_action_masks(*args) -> np.ndarray:
         """
         Get the action masks for the current game state.
         Each mask corresponds to whether an action is feasible (1) or not (0).

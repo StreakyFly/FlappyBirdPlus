@@ -86,7 +86,7 @@ class EnemyCloudSkimmerStep1Env(EnemyCloudSkimmerEnv):
         for event in pygame.event.get():
             self.handle_quit(event)
 
-        EnemyCloudSkimmerModelController.perform_action(self.controlled_enemy, action)
+        EnemyCloudSkimmerModelController.perform_action(action, self.controlled_enemy)
 
         self.background.draw()
         self.pipes.tick()

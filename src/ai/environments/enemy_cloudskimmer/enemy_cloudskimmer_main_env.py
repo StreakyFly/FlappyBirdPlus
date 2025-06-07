@@ -76,6 +76,8 @@ class EnemyCloudSkimmerEnv(BaseEnv):
 
     def fill_observation_manager(self):
         self.observation_manager.observation_instances.clear()
+        # TODO [INFO]: in ObservationManager, you must uncomment `Player: BasicFlappyObservation`,
+        #  otherwise it will create the wrong (AdvancedFlappyObservation) observation instance for the player.
         self.observation_manager.create_observation_instance(entity=self.player, env=self)
         self.observation_manager.create_observation_instance(entity=self.controlled_enemy, env=self, controlled_enemy_id=self.controlled_enemy_id)
 
@@ -291,7 +293,7 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         # Must NOT init EnemyCloudSkimmerModelController(), as it would create a new instance which creates a new
         #  EnemyCloudSkimmerEnv (this), causing infinite recursion. Yeah, really messed up, but it works... for now -_-
         # self.enemy_cloudskimmer_controller.perform_action(self.controlled_enemy, action)
-        EnemyCloudSkimmerModelController.perform_action(self.controlled_enemy, action)
+        EnemyCloudSkimmerModelController.perform_action(action, self.controlled_enemy)
 
         self.background.tick()
         self.pipes.tick()
@@ -318,7 +320,7 @@ class EnemyCloudSkimmerEnv(BaseEnv):
         #  EnemyCloudSkimmerEnv (this), causing infinite recursion. Yeah, really messed up, but (｡◕‿‿◕｡)
         return EnemyCloudSkimmerModelController.get_action_masks(self.controlled_enemy, self)
 
-    def calculate_reward(self, action) -> int:
+    def calculate_reward(self, action) -> float:
         """
         [WARN] This method was NOT used for training any of the latest/better versions of the agent.
         It is FAR from good—so I should delete it, right?

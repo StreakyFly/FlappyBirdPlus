@@ -46,6 +46,8 @@ class GymEnv(GymnasiumEnv):
             set_random_seed(seed)
         # If no seed is provided (unlikely(?)), print a warning.
         else:
+            # Seed is usually provided by Stable Baselines3, the first time reset() is called, but then not again.
+            # So we'll only print the warning if the seed hasn't been passed to the first reset() call.
             if not self._first_reset_done:
                 printc("[WARN] No seed provided; no global random seed will be set here.", color='orange')
 

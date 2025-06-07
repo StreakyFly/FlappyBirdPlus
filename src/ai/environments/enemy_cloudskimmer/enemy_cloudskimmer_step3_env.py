@@ -96,7 +96,7 @@ class EnemyCloudSkimmerStep3Env(EnemyCloudSkimmerStep2Env):
         for event in pygame.event.get():
             self.handle_quit(event)
 
-        EnemyCloudSkimmerModelController.perform_action(self.controlled_enemy, action)
+        EnemyCloudSkimmerModelController.perform_action(action, self.controlled_enemy)
 
         # Handle player mode switching
         self.remaining_mode_duration -= 1

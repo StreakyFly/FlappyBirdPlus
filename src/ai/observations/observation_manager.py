@@ -2,10 +2,11 @@ from weakref import WeakKeyDictionary
 
 import numpy as np
 
-from .basic_flappy_observation import BasicFlappyObservation
-from .enemy_cloudskimmer_observation import EnemyCloudSkimmerObservation
-from src.entities.player import Player
 from src.entities.enemies import CloudSkimmer
+from src.entities.player import Player
+from .advanced_flappy_observation import AdvancedFlappyObservation
+# from .basic_flappy_observation import BasicFlappyObservation
+from .enemy_cloudskimmer_observation import EnemyCloudSkimmerObservation
 
 
 class ObservationManager:
@@ -20,7 +21,9 @@ class ObservationManager:
 
         # maps an entity to its observation class
         self.observation_classes = {
-            Player: BasicFlappyObservation,
+            # TODO [INFO]: uncomment/comment if you want to switch between `basic` and `advanced` flappy observation
+            # Player: BasicFlappyObservation,  # what a genius idea it was to map by entity type (-_-')
+            Player: AdvancedFlappyObservation,
             CloudSkimmer: EnemyCloudSkimmerObservation,
         }
 

@@ -4,8 +4,8 @@ import numpy as np
 
 from src.entities.enemies import CloudSkimmer
 from src.entities.items import Gun
+from src.utils import printc
 from .base_observation import BaseObservation
-from ...utils import printc
 
 
 class EnemyCloudSkimmerObservation(BaseObservation):

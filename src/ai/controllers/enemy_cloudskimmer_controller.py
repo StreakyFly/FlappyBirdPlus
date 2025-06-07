@@ -11,7 +11,7 @@ class EnemyCloudSkimmerModelController(BaseModelController):
         super().__init__(env_type=EnvType.ENEMY_CLOUDSKIMMER, model_name='enemy_cloudskimmer')
 
     @staticmethod
-    def perform_action(entity: CloudSkimmer, action):
+    def perform_action(action, entity: CloudSkimmer, env=None):
         entity.rotate_gun(action[1])
 
         if action[0] == 0:
