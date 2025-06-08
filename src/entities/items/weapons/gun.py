@@ -2,8 +2,8 @@ import math
 
 import pygame
 
+from src.entities.items import Item, ItemType, ItemName
 from src.utils import rotate_on_pivot, printc
-from ..item import Item, ItemName, ItemType
 
 """
 The recoil animation currently does not work well with fast-firing guns, eg. Uzi, where self.recoil_duration is greater
@@ -20,7 +20,7 @@ be pushed back and up incrementally, reflecting a more realistic behavior.
 
 class Gun(Item):
     def __init__(self, env, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(item_type=ItemType.WEAPON, *args, **kwargs)
         self.env = env  # so bullets know where other entities are, for collision detection
         self.ammo_name = None
         self.ammo_class = None
@@ -243,16 +243,16 @@ class Gun(Item):
         return pygame.Vector2(pos_x, pos_y)
 
     def spawn_bullet(self) -> None:
-        bullet = self.ammo_class(config=self.config,
-                                 env=self.env,
-                                 item_name=self.ammo_name,
-                                 item_type=ItemType.AMMO,
-                                 damage=self.damage,
-                                 spawn_position=self.calculate_initial_bullet_position(),
-                                 speed=self.ammo_speed,
-                                 angle=self.rotation,
-                                 flipped=self.flipped,
-                                 entity=self.entity)
+        bullet = self.ammo_class(
+            config=self.config,
+            env=self.env,
+            damage=self.damage,
+            spawn_position=self.calculate_initial_bullet_position(),
+            speed=self.ammo_speed,
+            angle=self.rotation,
+            flipped=self.flipped,
+            entity=self.entity
+        )
         self.shot_bullets.add(bullet)
         bullet.draw()  # don't tick() the bullet yet, it will be ticked in the next frame, just draw it for now
         bullet.handle_collision()  # handle collision immediately (to set pipe_to_ignore if bullet spawns above a pipe)

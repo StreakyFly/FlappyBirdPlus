@@ -1,9 +1,9 @@
-from ..item import Item
+from src.entities.items import Item, ItemType, ItemName
 
 
 class TotemOfUndying(Item):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(item_type=ItemType.SPECIAL, item_name=ItemName.TOTEM_OF_UNDYING, *args, **kwargs)
 
     # @property
     # def quantity(self):

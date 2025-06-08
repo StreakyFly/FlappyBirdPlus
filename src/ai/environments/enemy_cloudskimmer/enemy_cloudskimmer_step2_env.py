@@ -32,7 +32,7 @@ class EnemyCloudSkimmerStep2Env(EnemyCloudSkimmerStep1Env):
 
         for enemy in self.enemy_manager.spawned_enemy_groups[0].members:  # type: CloudSkimmer
             if enemy.id != self.controlled_enemy_id:
-                enemy.set_max_hp(50)  # make other enemies weaker
+                enemy.set_max_hp(25)  # make other enemies weaker
 
         self.controlled_enemy.set_max_hp(100_000)  # don't let the controlled enemy die
         self.controlled_enemy.gun.shoot_cooldown = 5 if self.controlled_enemy_id != 1 else 14  # make it shoot faster to make rewards less sparse

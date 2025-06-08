@@ -1,17 +1,17 @@
 import pygame
 
-from .gun import Gun
+from src.entities.items import ItemName
 from .ammo import BigBullet
-from ..item import ItemName
+from .gun import Gun
 
 
 class AK47(Gun):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(item_name=ItemName.WEAPON_AK47, *args, **kwargs)
         self.set_properties(
             ammo_name=ItemName.BULLET_BIG,
             ammo_class=BigBullet,
-            damage=35,
+            damage=17,  # 35,
             ammo_speed=38,
             magazine_size=30,
             shoot_cooldown=7,   # int(self.config.fps * 0.23), fps being 30  <-- we don't want it tied to the fps

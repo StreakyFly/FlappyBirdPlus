@@ -1,17 +1,17 @@
 import pygame
 
-from .gun import Gun
+from src.entities.items import ItemName
 from .ammo import MediumBullet
-from ..item import ItemName
+from .gun import Gun
 
 
 class Deagle(Gun):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(item_name=ItemName.WEAPON_DEAGLE, *args, **kwargs)
         self.set_properties(
             ammo_name=ItemName.BULLET_MEDIUM,
             ammo_class=MediumBullet,
-            damage=85,
+            damage=42,  # 85,
             ammo_speed=52,
             magazine_size=7,
             shoot_cooldown=28,

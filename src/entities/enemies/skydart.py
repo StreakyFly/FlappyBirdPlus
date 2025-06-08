@@ -19,7 +19,7 @@ class SkyDart(Enemy):
         super().__init__(config, Animation(config.images.enemies['skydart'] + [config.images.enemies['skydart'][1]]), *args, **kwargs)
         self.time = 0
         self.launch_time: int = 0
-        self.set_max_hp(60)
+        self.set_max_hp(30)
         self.target: Optional[Player] = None
         self.target_x = None
         self.target_y = None

@@ -38,7 +38,7 @@ class Enemy(Entity):
         self.hp_manager.current_value = max_value
 
     def deal_damage(self, amount: int) -> None:
-        self.hp_manager.change_value(-amount)
+        self.hp_manager.change_value_by(-amount)
 
         if self.hp_manager.is_empty() and not self.is_gone:
             self.die()

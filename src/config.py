@@ -14,11 +14,11 @@ class Config:
     debug: bool = settings_manager.get_setting('debug')  # <-- toggle debug mode
     mode: Mode = Mode.TEST_ENV  # <-- change the mode here
     algorithm: Literal['PPO', 'DQN'] = 'PPO'  # <-- change the algorithm here (PPO is the only one fully supported)
-    env_type: EnvType = EnvType.ENEMY_CLOUDSKIMMER  # <-- change environment type here
-    env_variant: EnvVariant = EnvVariant.STEP3  # <-- change environment variant here (doesn't work for Mode.PLAY)
+    env_type: EnvType = EnvType.ADVANCED_FLAPPY  # <-- change environment type here
+    env_variant: EnvVariant = EnvVariant.MAIN  # <-- change environment variant here (doesn't work for Mode.PLAY)
     run_id: Optional[str] = None  # "run_test"  # <-- change the run id here (can/should be None for some modes)
     seed: Optional[int] = 42  # <-- None = set dynamic random seed; non-negative = fixed seed; used by the PPO algorithm and game environments
-    handle_seed: bool = True  # <-- toggle if you want to handle the seed yourself (use False for Mode.TRAIN and in specific situations for some other modes)
+    handle_seed: bool = False  # <-- toggle if you want to handle the seed yourself (use False for Mode.TRAIN & CONTINUE_TRAINING, sometimes for other modes as well)
     human_player: bool = not settings_manager.get_setting('ai_player')  # <-- toggle if you want to play the game yourself (only works for Mode.PLAY)
     save_results: bool = True  # <-- toggle if you want to save the results to file & database
 
@@ -66,7 +66,7 @@ class Config:
                         "currently set seed (the one specified in Config.seed), which means all environments will be identical. "
                         "You most likely don't want this. Setting handle_seed to False is recommended.", color='red')
         elif cls.mode == Mode.CONTINUE_TRAINING and cls.handle_seed:
-            cls.printcw("Mode is set to Mode.CONTINUE_TRAINING, but handle_seed is set to a True, which does not respect "
+            cls.printcw("Mode is set to Mode.CONTINUE_TRAINING, but handle_seed is set to True, which does not respect "
                         "the seed that was set by Stable Baselines3 (seed used during training) — that seed will be "
                         "overridden with currently set seed (the one specified in Config.seed). "
                         "Unless you have a specific reason for this, set handle_seed to False.")

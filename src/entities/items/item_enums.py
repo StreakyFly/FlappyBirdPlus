@@ -15,12 +15,14 @@ class ItemType(Enum):
     EMPTY = 'empty'
     EMPTY_WEAPON = 'empty-weapon'
     EMPTY_AMMO = 'empty-ammo'
+    EMPTY_FOOD = 'empty-food'
     EMPTY_HEAL = 'empty-heal'
     EMPTY_POTION = 'empty-potion'
     EMPTY_SPECIAL = 'empty-special'
 
     WEAPON = 'weapon'
     AMMO = 'ammo'
+    FOOD = 'food'
     POTION = 'potion'
     HEAL = 'heal'
     SPECIAL = 'special'
@@ -40,15 +42,18 @@ class ItemName(Enum):
     BULLET_MEDIUM = 'medium-bullet'
     BULLET_BIG = 'big-bullet'
 
-    # TBD slot 3
+    # FOOD
+    FOOD_APPLE = 'apple'
+    FOOD_BURGER = 'burger'
+    FOOD_CHOCOLATE = 'chocolate'
 
     # POTIONS
     POTION_HEAL = 'potion-heal'
     POTION_SHIELD = 'potion-shield'
 
     # HEALS
-    MEDKIT = 'medkit'
-    BANDAGE = 'bandage'
+    HEAL_MEDKIT = 'medkit'
+    HEAL_BANDAGE = 'bandage'
 
     # SPECIAL
     TOTEM_OF_UNDYING = 'totem-of-undying'

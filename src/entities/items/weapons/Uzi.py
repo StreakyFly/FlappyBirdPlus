@@ -1,17 +1,17 @@
 import pygame
 
-from .gun import Gun
+from src.entities.items import ItemName
 from .ammo import SmallBullet
-from ..item import ItemName
+from .gun import Gun
 
 
 class Uzi(Gun):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(item_name=ItemName.WEAPON_UZI, *args, **kwargs)
         self.set_properties(
             ammo_name=ItemName.BULLET_SMALL,
             ammo_class=SmallBullet,
-            damage=17,
+            damage=8,  # 17,
             ammo_speed=24,
             magazine_size=32,
             shoot_cooldown=3,

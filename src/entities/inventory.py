@@ -67,8 +67,7 @@ class Inventory(Entity):
         default_item_types = [
             ItemType.EMPTY_WEAPON,
             ItemType.EMPTY_AMMO,
-            ItemType.EMPTY,  # TODO: tiny robot that helps the player by shooting enemies (what should be
-            #                   inventory slot text? Just "1"? Or maybe his name which you can set in settings? xD
+            ItemType.EMPTY_FOOD,
             ItemType.EMPTY_POTION,
             ItemType.EMPTY_HEAL,
             ItemType.EMPTY_SPECIAL
@@ -126,7 +125,7 @@ class Inventory(Entity):
 
             # change ammo type and convert the quantity to correspond to the new weapon's magazine size
             if current_weapon.name != new_weapon.name:
-                converted_quantity = math.ceil((ammo_slot.item.quantity / ammo_slot.item.spawn_quantity) * item_to_add.magazine_size)
+                converted_quantity = math.ceil((ammo_slot.item.quantity / ammo_slot.item.spawn_quantity) * new_weapon.magazine_size)
                 ammo_slot.item = self.item_initializer.init_item(new_weapon.ammo_name)
                 ammo_slot.item.quantity = converted_quantity
 

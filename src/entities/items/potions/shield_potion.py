@@ -1,14 +1,15 @@
+from src.entities.items import ItemName
 from .potion import Potion
 
 
 class ShieldPotion(Potion):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(item_name=ItemName.POTION_SHIELD, *args, **kwargs)
 
     def use(self):
         # TODO change so it slowly heals (like slurp potion)
-        if self.entity.shield_manager.current_value == self.entity.shield_manager.max_value:
+        if self.entity.shield_bar.current_value == self.entity.shield_bar.max_value:
             return
-        self.entity.change_shield(75)
         super().use()
+        self.entity.shield_bar.change_value_by(75)
 

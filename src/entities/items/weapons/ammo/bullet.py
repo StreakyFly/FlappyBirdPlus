@@ -3,7 +3,7 @@ from typing import Callable, Union, Optional
 
 import pygame
 
-from ...item import Item
+from src.entities.items import Item, ItemType
 
 # TODO Simple collision animation/explosion when colliding with objects.
 
@@ -101,7 +101,7 @@ class Bullet(Item):
                  spawn_pos_offset: Optional[Union[pygame.Vector2, Callable[['Bullet'], pygame.Vector2]]] = None,
                  *args, **kwargs):
         self.real = not (damage == speed == angle == 0 and spawn_position == pygame.Vector2(0, 0))
-        super().__init__(*args, **kwargs)
+        super().__init__(item_type=ItemType.AMMO, *args, **kwargs)
 
         self.damage = damage
         self.speed = speed

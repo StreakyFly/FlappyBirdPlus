@@ -1,10 +1,13 @@
+import random
+
 from src.utils import GameConfig, printc
-from .item import Item
-from .item_enums import ItemName, ItemType
 from .empty_item import EmptyItem
-from .special import TotemOfUndying
+from .food import Apple, Burger, Chocolate
 from .heals import Medkit, Bandage
+from .item import Item
+from .item_enums import ItemName
 from .potions import HealPotion, ShieldPotion
+from .special import TotemOfUndying
 from .weapons import AK47, Deagle, Uzi, AmmoBox, BigBullet, MediumBullet, SmallBullet
 
 
@@ -17,37 +20,55 @@ class ItemInitializer:
     def init_item(self, item_name: ItemName, entity=None) -> Item:
         entity = entity if entity else self.entity
         c = self.config
-        t = ItemType
         n = ItemName
 
-        item: Item = None
-        match item_name:
+        item: Item = None  # type: ignore
+        match item_name:  # noqa
             case n.EMPTY:
-                item = EmptyItem(c, t.EMPTY, n.EMPTY, 0)
-            case n.TOTEM_OF_UNDYING:
-                item = TotemOfUndying(c, t.SPECIAL, n.TOTEM_OF_UNDYING, 1, entity)
-            case n.MEDKIT:
-                item = Medkit(c, t.HEAL, n.MEDKIT, 1, entity)
-            case n.BANDAGE:
-                item = Bandage(c, t.HEAL, n.BANDAGE, 3, entity)
-            case n.POTION_HEAL:
-                item = HealPotion(c, t.POTION, n.POTION_HEAL, 1, entity)
-            case n.POTION_SHIELD:
-                item = ShieldPotion(c, t.POTION, n.POTION_SHIELD, 1, entity)
+                item = EmptyItem(config=c, spawn_quantity=0)
+
+            # WEAPONS
             case n.WEAPON_AK47:
-                item = AK47(config=c, item_type=t.WEAPON, item_name=n.WEAPON_AK47, spawn_quantity=30, entity=entity, env=self.env)
+                item = AK47(config=c, spawn_quantity=30, entity=entity, env=self.env)
             case n.WEAPON_DEAGLE:
-                item = Deagle(config=c, item_type=t.WEAPON, item_name=n.WEAPON_DEAGLE, spawn_quantity=7, entity=entity, env=self.env)
+                item = Deagle(config=c, spawn_quantity=7, entity=entity, env=self.env)
             case n.WEAPON_UZI:
-                item = Uzi(config=c, item_type=t.WEAPON, item_name=n.WEAPON_UZI, spawn_quantity=32, entity=entity, env=self.env)
+                item = Uzi(config=c, spawn_quantity=32, entity=entity, env=self.env)
+
+            # AMMUNITION
             case n.AMMO_BOX:
-                item = AmmoBox(config=c, item_type=t.AMMO, item_name=n.AMMO_BOX, spawn_quantity=30)
+                item = AmmoBox(config=c, spawn_quantity=30)
             case n.BULLET_BIG:
-                item = BigBullet(config=c, item_type=t.AMMO, item_name=n.BULLET_BIG, spawn_quantity=30)
+                item = BigBullet(config=c, spawn_quantity=30)
             case n.BULLET_MEDIUM:
-                item = MediumBullet(config=c, item_type=t.AMMO, item_name=n.BULLET_MEDIUM, spawn_quantity=7)
+                item = MediumBullet(config=c, spawn_quantity=7)
             case n.BULLET_SMALL:
-                item = SmallBullet(config=c, item_type=t.AMMO, item_name=n.BULLET_SMALL, spawn_quantity=32)
+                item = SmallBullet(config=c, spawn_quantity=32)
+
+            # FOOD
+            case n.FOOD_APPLE:
+                item = Apple(config=c, spawn_quantity=random.randint(2, 4), entity=entity)
+            case n.FOOD_BURGER:
+                item = Burger(config=c, spawn_quantity=1, entity=entity)
+            case n.FOOD_CHOCOLATE:
+                item = Chocolate(config=c, spawn_quantity=random.randint(1, 2), entity=entity)
+
+            # POTIONS
+            case n.POTION_HEAL:
+                item = HealPotion(config=c, spawn_quantity=random.randint(1, 2), entity=entity)
+            case n.POTION_SHIELD:
+                item = ShieldPotion(config=c, spawn_quantity=random.randint(1, 2), entity=entity)
+
+            # HEALS
+            case n.HEAL_MEDKIT:
+                item = Medkit(config=c, spawn_quantity=1, entity=entity)
+            case n.HEAL_BANDAGE:
+                item = Bandage(config=c, spawn_quantity=random.randint(2, 4), entity=entity)
+
+            # SPECIAL
+            case n.TOTEM_OF_UNDYING:
+                item = TotemOfUndying(config=c, spawn_quantity=1, entity=entity)
+
             case _:
                 printc("Achievement unlocked: How did we get here?", color="red")
 

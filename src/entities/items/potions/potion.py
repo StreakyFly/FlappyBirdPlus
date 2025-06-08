@@ -1,9 +1,9 @@
-from ..item import Item
+from src.entities.items import Item, ItemType
 
 
 class Potion(Item):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(item_type=ItemType.POTION, *args, **kwargs)
 
     def use(self):
         super().use()

@@ -19,7 +19,7 @@ class ItemManager:
         self.first_items_to_spawn = [[ItemName.WEAPON_AK47, ItemName.WEAPON_DEAGLE, ItemName.WEAPON_UZI],
                                      [ItemName.POTION_HEAL, ItemName.POTION_SHIELD],
                                      [ItemName.WEAPON_AK47, ItemName.WEAPON_DEAGLE, ItemName.WEAPON_UZI],
-                                     [ItemName.MEDKIT, ItemName.BANDAGE]]
+                                     [ItemName.HEAL_MEDKIT, ItemName.HEAL_BANDAGE]]
 
     def tick(self) -> None:
         for item in self.spawned_items:

@@ -1,23 +1,16 @@
-import random
 from collections.abc import Callable
 from enum import Enum
 from typing import List, Optional
 
 import pygame
 
+from src.utils import GameConfig, GameStateManager, Animation
 from .attribute_bar import AttributeBar
 from .entity import Entity
 from .floor import Floor
 from .items import SpawnedItem
 from .particles import ParticleManager
 from .pipe import Pipe, Pipes
-from ..utils import GameConfig, GameStateManager, Animation
-
-
-# MAYBE ALSO ADD HUNGER BAR??
-# food can of course be collected as a special "item" that is instantly used and not put in inventory
-# food is like uhh food. You slowly become hungry and when you get down to 20%, the bird
-# doesn't jump as high but still falls as fast, when you run out of food, it starts taking damage - very original
 
 
 class PlayerMode(Enum):
@@ -42,20 +35,21 @@ class Player(Entity):
         self.crash_entity = None
         self.flapped = False
         self.rotation = None
+        self.jump_power: float = 1.0  # how high & fast the player jumps
 
-        self.mode = PlayerMode.SHM
+        self.frame: int = 0
         self.invincibility_frames = 0
+        self.mode = PlayerMode.SHM
         self.set_mode(PlayerMode.SHM)
-        self.gsm = gsm
-        # self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(255, 0, 0, 222),
-        self.hp_manager = AttributeBar(config=config, gsm=gsm, max_value=500, color=(255, 0, 0, 222),
-                                       x=self.x, y=int(self.y) - 25, w=self.w, h=10)
-        # self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=100, color=(20, 50, 255, 222),
-        self.shield_manager = AttributeBar(config=config, gsm=gsm, max_value=500, color=(20, 50, 255, 222),
-                                           x=self.x, y=int(self.y) - 40, w=self.w, h=10)
         self.particle_manager = ParticleManager(config=config)
+        self.tick_train: Optional[Callable] = None  # custom tick function for TRAIN mode
 
-        self.tick_train: Optional[Callable] = None
+        self.food_bar = AttributeBar(config=config, gsm=gsm, max_value=100, color=(96, 240, 64, 232),
+                                     x=self.x, y=int(self.y) - 10, w=self.w, h=10)
+        self.shield_bar = AttributeBar(config=config, gsm=gsm, max_value=100, color=(20, 50, 255, 222),
+                                       x=self.x, y=int(self.y) - 40, w=self.w, h=10)
+        self.hp_bar = AttributeBar(config=config, gsm=gsm, max_value=100, color=(255, 0, 0, 222),
+                                   x=self.x, y=int(self.y) - 25, w=self.w, h=10)
 
     def set_mode(self, mode: PlayerMode) -> None:
         self.mode = mode
@@ -121,6 +115,15 @@ class Player(Entity):
         self.flap_acc = 0  # players speed on flapping
         self.flapped = False  # True when player flaps
 
+    def set_jump_power(self, jump_power: float) -> None:
+        """
+        Set the jump factor, which affects how high & fast the player jumps.
+        """
+        self.jump_power = jump_power
+        self.min_vel_y = -15 * self.jump_power
+        self.vel_rot = -2.7 * self.jump_power
+        self.flap_acc = -16.875 * self.jump_power
+
     def tick_shm(self) -> None:
         if self.vel_y >= self.max_vel_y or self.vel_y <= self.min_vel_y:
             self.acc_y *= -1
@@ -135,6 +138,7 @@ class Player(Entity):
 
         self.y = pygame.math.clamp(self.y + self.vel_y, self.min_y, self.max_y)
         self.rotate()
+        self.tick_food()
 
     def tick_crash(self) -> None:
         if self.min_y <= self.y <= self.max_y:
@@ -147,19 +151,51 @@ class Player(Entity):
         if self.vel_y < self.max_vel_y:
             self.vel_y += self.acc_y
 
-    def tick_hp(self) -> None:
-        self.hp_manager.y = self.y - 25
-        self.hp_manager.tick()
-        self.shield_manager.y = self.y - 40
-        self.shield_manager.tick()
-        if self.invincibility_frames > 0:
-            self.invincibility_frames -= 1
-            self.change_hp(2)
+    def tick_food(self) -> None:
+        """
+        Drains food, heals/damages player, and adjusts its jump power based on food level.
+        """
+        # how often to remove 1 food
+        drain_interval = 30  # normal: drain every 1 second
+
+        # heal player when high food and HP is not full
+        if self.food_bar.current_value >= 80 and self.hp_bar.current_value < self.hp_bar.max_value:
+            if self.frame % 9 == 0:  # heal every 0.3 sec
+                self.hp_bar.change_value_by(1)
+            drain_interval = 15  # faster drain while healing (1 food every 0.5 sec)
+        # drain food slowly when food is low
+        elif self.food_bar.current_value <= 20:
+            drain_interval = 45  # slower drain (1 food every 1.5 sec)
+            # linearly decrease jump power
+            factor = 0.75 + 0.25 * (self.food_bar.current_value / 20)
+            self.set_jump_power(factor)  # weaker jump (0.75 - 1.0)
+
+        # restore jump power when food is high enough
+        if self.jump_power < 1.0 and self.food_bar.current_value > 20:
+            self.set_jump_power(1.0)
+
+        # damage player when food is at 0
+        if self.food_bar.current_value <= 0 and self.frame % 15 == 0:
+            self.hp_bar.change_value_by(-1)
+
+        # drain food at determined interval
+        if self.frame % drain_interval == 0:
+            self.food_bar.change_value_by(-1)
+
+    def tick_bars(self) -> None:
+        self.hp_bar.y = self.y - 25
+        self.hp_bar.tick()
+        self.shield_bar.y = self.y - 40
+        self.shield_bar.tick()
+        self.food_bar.y = self.y - 55
+        self.food_bar.tick()
 
     def rotate(self) -> None:
         self.rotation = pygame.math.clamp(self.rotation + self.vel_rot, self.rot_min, self.rot_max)
 
     def tick(self):
+        self.frame += 1
+
         match self.mode:
             case PlayerMode.SHM:
                 self.tick_shm()
@@ -171,7 +207,11 @@ class Player(Entity):
                 if self.tick_train is not None:
                     self.tick_train()
 
-        self.tick_hp()
+        if self.invincibility_frames > 0:
+            self.invincibility_frames -= 1
+            self.hp_bar.change_value_by(2)
+
+        self.tick_bars()
         self.particle_manager.tick()
         super().tick()
 
@@ -203,6 +243,10 @@ class Player(Entity):
             self.deal_damage(3)
 
         for pipe in pipes.upper + pipes.lower:
+            # TODO: add a short grace period - if player collides/bumps into the pipe at the top/bottom edge, and
+            #  stops colliding with it within a few frames (2-3), don't crash it, maybe just add some scratch particles,
+            #  deal a small amount of damage, and somehow bounce the player off the pipe (downwards/upwards).
+            #  But if the player rams into the pipe directly, then immediately crash it.
             if self.collide(pipe):
                 self.crashed = True
                 self.crash_entity = "pipe"
@@ -229,18 +273,12 @@ class Player(Entity):
         return items
 
     def deal_damage(self, amount: int) -> None:
-        if self.shield_manager.current_value >= amount:
-            self.change_shield(-amount)
+        if self.shield_bar.current_value >= amount:
+            self.shield_bar.change_value_by(-amount)
         else:
-            remaining_damage = amount - self.shield_manager.current_value
-            self.shield_manager.set_value(0)
-            self.change_hp(-remaining_damage)
-
-    def change_hp(self, amount: int) -> None:
-        self.hp_manager.change_value(amount)
-
-    def change_shield(self, amount: int) -> None:
-        self.shield_manager.change_value(amount)
+            remaining_damage = amount - self.shield_bar.current_value
+            self.shield_bar.set_value(0)
+            self.hp_bar.change_value_by(-remaining_damage)
 
     def apply_invincibility(self, duration_frames: int = 60) -> None:
         self.invincibility_frames = duration_frames

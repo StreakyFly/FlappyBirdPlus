@@ -270,7 +270,7 @@ class FlappyBird:
         )
 
     def is_player_dead(self) -> bool:
-        if self.player.hp_manager.current_value > 0:
+        if self.player.hp_bar.current_value > 0:
             return False
         elif self.player.invincibility_frames > 0:
             return False

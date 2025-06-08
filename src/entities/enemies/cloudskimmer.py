@@ -37,7 +37,7 @@ class CloudSkimmer(Enemy):
         self.frequency = 0.15  # oscillation frequency
         self.sin_y = 0  # sin wave vertical position
 
-        self.set_max_hp(200)
+        self.set_max_hp(100)
 
         self.gun: Union[Gun, Item] = None
         self.gun_rotation = 0

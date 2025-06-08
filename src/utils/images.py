@@ -56,8 +56,11 @@ class Images:
     def _load_item_images(self) -> None:
         self.items = dict()
         item_names = (
-            'empty/empty', 'empty/empty-weapon', 'empty/empty-ammo', 'empty/empty-heal', 'empty/empty-potion', 'empty/empty-special',
-            'special/totem-of-undying', 'heals/medkit', 'heals/bandage', 'potions/potion-heal', 'potions/potion-shield',
+            'empty/empty', 'empty/empty-weapon', 'empty/empty-ammo', 'empty/empty-food', 'empty/empty-heal', 'empty/empty-potion', 'empty/empty-special',
+            'food/apple', 'food/burger', 'food/chocolate',
+            'potions/potion-heal', 'potions/potion-shield',
+            'heals/medkit', 'heals/bandage',
+            'special/totem-of-undying',
         )
         item_names += _get_armament_names()
 

@@ -36,7 +36,11 @@ class AttributeBar(Entity):
                    "Current implementation uses the alpha channel of 'color' for the entire bar.", color="yellow")
         self.update_bar_surface()
 
-    def change_value(self, amount) -> None:
+    def change_value_by(self, amount: int) -> None:
+        """
+        Changes the current value of the bar by a specified amount, clamps it to
+        the range [0, max_value], and updates the bar surface if the value has changed.
+        """
         if amount == 0:
             return
 
