@@ -4,6 +4,7 @@ from typing import Union, Literal
 from src.utils import GameConfig, Animation
 from .enemy import Enemy, EnemyGroup
 from ..items import ItemName, ItemInitializer, Item, Gun
+from ..items.weapons.ammo.bullet import Bullet
 
 
 # TODO: if bullet that hasn't bounced off a pipe, hits CloudSkimmer's gun, the gun should be destroyed/explode,
@@ -21,10 +22,23 @@ from ..items import ItemName, ItemInitializer, Item, Gun
 # TODO ghosts need to be better shaded, with more detail. Possibly even have a subtle sprite animation (waves on bottom)
 
 class CloudSkimmer(Enemy):
-    def __init__(self, config: GameConfig, pos_id, amplitude, stop_dist, slow_dist, *args, **kwargs):
-        super().__init__(config, Animation(config.images.enemies['cloudskimmer']), *args, **kwargs)
+    heal_on_kill = 50  # reward the player with 50 shield when they kill a CloudSkimmer
+
+    def __init__(self, config: GameConfig, amplitude: int, stop_dist: int, slow_dist: int, *args, **kwargs):
+        super().__init__(
+            config=config,
+            animation=Animation(config.images.enemies['cloudskimmer']),
+            possible_drop_items=[
+                ItemName.AMMO_BOX,  # Ammo (CloudSkimmers use weapons, so obviously they need ammo boxes)
+                ItemName.FOOD_BURGER, ItemName.FOOD_CHOCOLATE,  # Food (they consider apples a waste of space)
+                ItemName.POTION_HEAL,  # Potions (they know how useful heal potions are, but don't have a use for shield potions)
+                ItemName.HEAL_MEDKIT, ItemName.HEAL_BANDAGE,  # Heals (heals are a necessity for CloudSkimmers)
+                ItemName.TOTEM_OF_UNDYING  # Special (they stole this from a worthy opponent in the past, very proud of it, but afraid to use it)
+            ],
+            *args, **kwargs
+        )
         self.eyes = config.images.enemies['cloudskimmer-eyes'][0]
-        self.id: Literal[0, 1, 2] = pos_id  # 0: top, 1: middle, 2: bottom (unless the group is changed)
+        self.id: Literal[0, 1, 2]  # 0: top, 1: middle, 2: bottom (unless the group is changed)
         # should they start at different times? Maybe CloudSkimmerGroup picks a random time, and then each member
         #  starts at a different time from that point within a certain range
         self.time = 0  #random.randint(0, 21)  # period of sin wave = 2 * pi / frequency = 2 * pi / 0.15 = 41.8879
@@ -39,7 +53,7 @@ class CloudSkimmer(Enemy):
 
         self.set_max_hp(100)
 
-        self.gun: Union[Gun, Item] = None
+        self.gun: Gun = None
         self.gun_rotation = 0
         self.gun_rotation_speed = 3  # Too low (like 3) and rotation becomes too slow to do sick trickshots in time,
                                      # too high and the agent can't aim precisely.
@@ -49,6 +63,7 @@ class CloudSkimmer(Enemy):
         if self.running:
             self.time += 1
             self.x += self.vel_x
+            self.vel_y = self.amplitude * self.frequency * math.cos(self.frequency * self.time)
             self.sin_y = self.amplitude * math.sin(self.frequency * self.time)
             self.y = round(self.initial_y + self.sin_y)  # without rounding this, the gun is jittery
         super().tick()
@@ -59,9 +74,10 @@ class CloudSkimmer(Enemy):
         self.gun.stop()
         super().stop()
 
-    def set_gun(self, gun: Union[Item, Gun], ammo_item) -> None:
+    def set_gun(self, gun: Gun, ammo_item: Bullet) -> None:
         self.gun = gun
         gun.update_ammo_object(ammo_item)
+        self.possible_drop_items.append(gun.name)
 
     def stop_advancing(self) -> None:
         self.vel_x = 0
@@ -70,7 +86,7 @@ class CloudSkimmer(Enemy):
         self.vel_x = round(self.initial_vel_x * ((remaining_distance + 25) / (total_distance + 25)))  # without rounding this, the gun is jittery
 
     def shoot(self) -> None:
-        if self.x > 800:  #670:  # if the enemy is not on the screen yet, don't shoot
+        if self.x > 800:  # 770:  # if not on the screen yet, don't shoot
             return
         self.gun.use(0)
 
@@ -119,15 +135,13 @@ class CloudSkimmerGroup(EnemyGroup):
 
         amplitudes = [18, 15, 18]
 
-        # second argument is ammo item - it doesn't really matter which item it is,
-        #  as we just need an object with quantity attribute -.-
-        weapons = [(ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 35)),
-                   (ItemName.WEAPON_DEAGLE, self.item_initializer.init_item(ItemName.EMPTY), 210, (-13, 35)),
-                   (ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.EMPTY), 900, (-30, 35))]
+        weapons = [(ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.BULLET_BIG), 900, (-30, 35)),
+                   (ItemName.WEAPON_DEAGLE, self.item_initializer.init_item(ItemName.BULLET_MEDIUM), 210, (-13, 35)),
+                   (ItemName.WEAPON_AK47, self.item_initializer.init_item(ItemName.BULLET_BIG), 900, (-30, 35))]
 
         for i, ((px, py), (stop_dist, slow_dist), amplitude, weapon_info) in enumerate(zip(positions, distances, amplitudes, weapons)):
             weapon, ammo_item, ammo_quantity, weapon_offset = weapon_info
-            member = CloudSkimmer(self.config, x=px, y=py, pos_id=i, amplitude=amplitude, stop_dist=stop_dist, slow_dist=slow_dist)
+            member = CloudSkimmer(self.config, x=px, y=py, instance_id=i, amplitude=amplitude, stop_dist=stop_dist, slow_dist=slow_dist)
             gun: Union[Item, Gun] = self.item_initializer.init_item(weapon, member)
             gun.flip()
             gun.update_offset(weapon_offset)

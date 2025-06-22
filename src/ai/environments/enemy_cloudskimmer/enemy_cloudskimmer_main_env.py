@@ -31,7 +31,7 @@ class EnemyCloudSkimmerEnv(BaseEnv):
     - Randomly select one of the enemies to control.
     - Once that enemy dies, terminate the episode and select another one randomly.
     """
-    requires_action_masking = True
+    REQUIRES_ACTION_MASKING = True
 
     def __init__(self):
         super().__init__()

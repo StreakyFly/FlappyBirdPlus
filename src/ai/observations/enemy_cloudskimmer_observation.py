@@ -49,23 +49,17 @@ class EnemyCloudSkimmerObservation(BaseObservation):
         return game_state
 
     def get_pipe_info(self):
-        pipe_corner_positions = [[[[(0, 0), (0, 0)], [(0, 0), (0, 0)]] for _ in range(4)]]  # shape (4, 2, 2, 2)
-
-        if self.env.pipes.upper:
-            pipe_corner_positions = []
-            for i, (up_pipe, low_pipe) in enumerate(zip(self.env.pipes.upper, self.env.pipes.lower)):
-                top_pipe_corners = [
-                    [up_pipe.x, up_pipe.y + up_pipe.h],  # left bottom corner of top pipe
-                    [up_pipe.x + up_pipe.w, up_pipe.y + up_pipe.h],  # right bottom corner of top pipe
-                ]
-                bottom_pipe_corners = [
-                    [low_pipe.x, low_pipe.y],  # left top corner of bottom pipe
-                    [low_pipe.x + low_pipe.w, low_pipe.y],  # right top corner of bottom pipe
-                ]
-                pipe_corner_positions.append([
-                    top_pipe_corners,
-                    bottom_pipe_corners
-                ])
+        pipe_corner_positions = []
+        for up_pipe, low_pipe in zip(self.env.pipes.upper, self.env.pipes.lower):
+            top_pipe_corners = [
+                [up_pipe.x, up_pipe.y + up_pipe.h],  # left bottom corner of top pipe
+                [up_pipe.x + up_pipe.w, up_pipe.y + up_pipe.h],  # right bottom corner of top pipe
+            ]
+            bottom_pipe_corners = [
+                [low_pipe.x, low_pipe.y],  # left top corner of bottom pipe
+                [low_pipe.x + low_pipe.w, low_pipe.y],  # right top corner of bottom pipe
+            ]
+            pipe_corner_positions.append([top_pipe_corners, bottom_pipe_corners])
 
         return pipe_corner_positions
 

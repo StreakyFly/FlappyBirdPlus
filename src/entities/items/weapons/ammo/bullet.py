@@ -103,6 +103,7 @@ class Bullet(Item):
         self.real = not (damage == speed == angle == 0 and spawn_position == pygame.Vector2(0, 0))
         super().__init__(item_type=ItemType.AMMO, *args, **kwargs)
 
+        self.env = env
         self.damage = damage
         self.speed = speed
         self.angle = angle
@@ -118,6 +119,7 @@ class Bullet(Item):
         self.pipes = []
         self.enemies = []
         self.player = None
+        self.item_manager = env.item_manager if env else None
         self.hit_entity: Optional[str] = None  # the entity the bullet hit
         self.frame: int = 0
         self.pipe_to_ignore = None
@@ -139,7 +141,7 @@ class Bullet(Item):
             self.flip()
 
         if self.real:
-            self.set_entities(env)
+            self.set_entities()
 
         self.set_spawn_position()
 
@@ -155,19 +157,23 @@ class Bullet(Item):
         self.velocity = self.calculate_velocity()
         self.spawn_pos_offset.x = -self.spawn_pos_offset.x
 
-    def set_entities(self, env):
+    def set_entities(self):
         # yeah uhm... spaghetti at its finest having this here aha... ha ha but like IT WORKS OKAY??
         # AND THERE IS NO 1 FRAME DELAY LIKE BEFORE, MKEY??
         spawned_enemies = []
-        for enemy_group in env.enemy_manager.spawned_enemy_groups:
+        for enemy_group in self.env.enemy_manager.spawned_enemy_groups:
             spawned_enemies.extend(enemy_group.members)
-        self.pipes = env.pipes.upper + env.pipes.lower
+        self.pipes = self.env.pipes.upper + self.env.pipes.lower
         self.enemies = spawned_enemies
-        self.player = env.player
+        self.player = self.env.player
 
     def tick(self) -> None:
         if not self.real:  # so the inventory slot's bullet doesn't update for no reason
             return
+
+        # self.set_entities() must be called every-ish frame, otherwise it keeps old
+        #  entity references that it got when set_entities() was first called in __init__
+        self.set_entities()
 
         self.prev_front_pos = self.curr_front_pos
         self.x += self.velocity.x
@@ -299,6 +305,11 @@ class Bullet(Item):
 
             self.hit_entity = 'enemy'
             enemy.deal_damage(self.damage)
+
+            # if enemy dies, reward the player with some shield and spawn an item where the enemy was killed
+            if enemy.hp_bar.is_empty():
+                self.player.shield_bar.change_value_by(enemy.heal_on_kill)
+                self.item_manager.spawn_item(pygame.Vector2(enemy.x+8, enemy.cy), [False, True], enemy.possible_drop_items)
             return
 
         # handle hitting player

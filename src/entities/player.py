@@ -273,6 +273,9 @@ class Player(Entity):
         return items
 
     def deal_damage(self, amount: int) -> None:
+        if self.invincibility_frames > 0:
+            return
+
         if self.shield_bar.current_value >= amount:
             self.shield_bar.change_value_by(-amount)
         else:

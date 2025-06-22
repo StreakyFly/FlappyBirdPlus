@@ -1,10 +1,12 @@
 import random
 from typing import List
 
+import pygame
+
 from src.utils import GameConfig
+from .item import SpawnedItem
 from .item_enums import ItemName
 from .item_spawn_chances import get_spawn_chances
-from .item import SpawnedItem
 
 
 class ItemManager:
@@ -76,28 +78,44 @@ class ItemManager:
         self.spawn_cooldown = random.randint(60, 150)  # 2-5 seconds if fps is 30
         return True
 
-    def spawn_item(self) -> None:
-        if self.first_items_to_spawn:
+    def spawn_item(self, spawn_pos: pygame.Vector2 = None, should_center: list[bool] = None, possible_items: list[ItemName] = None) -> None:
+        item_name: ItemName = None  # noqa
+        if possible_items is not None:
+            item_name = self.get_random_spawn_item(possible_items)
+        elif self.first_items_to_spawn:
             item_name = random.choice(self.first_items_to_spawn.pop(0))
         else:
-            item_name: ItemName = self.get_random_spawn_item()
+            item_name = self.get_random_spawn_item()
+
         # TODO further improve spawn position - calculate where the player will be able to collect the spawned
         #  item, and then adjust the spawn position accordingly, so that the player can collect the item and it doesn't
         #  end within the pipe when it reaches the player. Basically reverse calculate the position where the item
         #  should be spawned (take into account the amplitude and frequency of the spawned item).
-        x = random.randint(1100, 1300)
-        y = random.randint(self.last_pipe.y - self.pipes.vertical_gap - 50, self.last_pipe.y)
+        if spawn_pos is not None:
+            SPAWNED_ITEM_HALF_SIZE = 50  # half of the size of the spawned item bubble (100x100; self.config.images.item_spawn_bubble)
+            # subtract half the size of the spawned item bubble from the spawn position to center it
+            #  (as the x and y positions are for the top-left corner)
+            x = spawn_pos.x - (SPAWNED_ITEM_HALF_SIZE if should_center[0] else 0)
+            y = spawn_pos.y - (SPAWNED_ITEM_HALF_SIZE if should_center[1] else 0)
+        else:
+            x = random.randint(1100, 1300)
+            y = random.randint(self.last_pipe.y - self.pipes.vertical_gap - 50, self.last_pipe.y)
 
-        spawned_item = SpawnedItem(config=self.config, item_name=item_name,
-                                   x=x, y=y, image=self.config.images.item_spawn_bubble)
+        spawned_item = SpawnedItem(config=self.config, item_name=item_name, x=x, y=y, image=self.config.images.item_spawn_bubble)
         self.spawned_items.append(spawned_item)
 
-    def get_random_spawn_item(self) -> ItemName:
-        total_probability = sum(get_spawn_chances().values())
+    @staticmethod
+    def get_random_spawn_item(possible_items: List[ItemName] = None) -> ItemName:
+        spawn_chances = get_spawn_chances()
+
+        if possible_items is not None:
+            spawn_chances = {item: spawn_chances[item] for item in possible_items if item in spawn_chances}
+
+        total_probability = sum(spawn_chances.values())
         rand = random.uniform(0, total_probability)
 
         cumulative_prob = 0
-        for item_name, probability in get_spawn_chances().items():
+        for item_name, probability in spawn_chances.items():
             cumulative_prob += probability
             if rand <= cumulative_prob:
                 return item_name

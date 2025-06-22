@@ -32,7 +32,7 @@ class ModelPPO:
 
         self.env_class: Type[BaseEnv] = EnvManager(self.env_type, self.env_variant).get_env_class()
         self.training_config: TrainingConfig = self.env_class.get_training_config()
-        self.use_action_masking: bool = getattr(self.env_class, 'requires_action_masking', False)
+        self.use_action_masking: bool = getattr(self.env_class, 'REQUIRES_ACTION_MASKING', False)
         self.model_cls: Type[Union[PPO, MaskablePPO]] = MaskablePPO if self.use_action_masking else PPO
 
         self.seed: int = Config.seed  # seed for the training (applied globally(?), so it affects the model and all environments)

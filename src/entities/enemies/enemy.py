@@ -1,46 +1,61 @@
-import pygame
-
+from src.entities import ItemName
+from src.entities.attribute_bar import AttributeBar
+from src.entities.entity import Entity
 from src.utils import GameConfig, Animation
-from ..entity import Entity
-from ..attribute_bar import AttributeBar
 
 
 class Enemy(Entity):
-    BACKGROUND_VELOCITY = pygame.Vector2(-7.5, 0)
+    heal_on_kill: int = 0  # amount of shield to reward the player, when they kill this enemy
 
-    def __init__(self, config: GameConfig, animation: Animation, *args, **kwargs):
+    def __init__(
+            self,
+            config: GameConfig,
+            animation: Animation,
+            instance_id: int,
+            possible_drop_items: list[ItemName],  # items that this enemy can drop when killed
+            *args, **kwargs
+        ):
         super().__init__(config, *args, **kwargs)
         self.animation: Animation = animation
         self.update_image(self.animation.update())
-        self.hp_manager = AttributeBar(config=self.config, max_value=100, color=(255, 0, 0, 222),
-                                       x=self.x, y=int(self.y) - 25, w=self.w, h=10)
-        self.rotation = 0
-        self.is_gone = False
-        self.running: bool = True
+
+        self.vel_x: float = 0
+        self.vel_y: float = 0
+        self.rotation: float = 0
+
+        self.hp_bar = AttributeBar(config=self.config, max_value=100, color=(255, 0, 0, 222), x=self.x, y=int(self.y) - 25, w=self.w, h=10)
+
+        self.id: int = instance_id
+        self.is_gone = False  # whether the enemy has finished its death animation and is ready to be removed from the game
+        self.running: bool = True  # whether the enemy is currently running or is stopped
+
+        self.possible_drop_items: list[ItemName] = possible_drop_items
 
     def tick(self):
-        if self.x < -200:
+        # self.is_gone might be set to True from outside, so we check it first
+        if self.is_gone or self.x < -200:
             self.is_gone = True
+            return
 
         if self.running:
             self.update_image(self.animation.update())
 
-        self.hp_manager.y = self.y - 25
-        self.hp_manager.x = self.x
-        self.hp_manager.tick()
+        self.hp_bar.y = self.y - 25
+        self.hp_bar.x = self.x
+        self.hp_bar.tick()
         super().tick()
 
     def stop(self) -> None:
         self.running = False
 
     def set_max_hp(self, max_value: int) -> None:
-        self.hp_manager.max_value = max_value
-        self.hp_manager.current_value = max_value
+        self.hp_bar.max_value = max_value
+        self.hp_bar.current_value = max_value
 
     def deal_damage(self, amount: int) -> None:
-        self.hp_manager.change_value_by(-amount)
+        self.hp_bar.change_value_by(-amount)
 
-        if self.hp_manager.is_empty() and not self.is_gone:
+        if self.hp_bar.is_empty() and not self.is_gone:
             self.die()
 
     def die(self) -> None:

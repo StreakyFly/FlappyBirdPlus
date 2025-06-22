@@ -3,9 +3,9 @@ from typing import Union, List
 
 import pygame
 
-from ..utils import GameConfig, flappy_text, get_font, Fonts
 from .entity import Entity
 from .items import Item, ItemType, ItemName, ItemInitializer, Gun
+from ..utils import GameConfig, flappy_text, get_font, Fonts
 
 
 class InventorySlot(Entity):
@@ -18,7 +18,6 @@ class InventorySlot(Entity):
     def tick(self) -> None:
         self.item.tick()
         super().tick()
-        self.item.tick_cooldown()
 
     def draw(self) -> None:
         blit_list = [
@@ -56,8 +55,8 @@ class Inventory(Entity):
         self.item_initializer = ItemInitializer(config=config, env=env, entity=player)
         self.create_inventory_slots()
         self.empty_item = self.item_initializer.init_item(ItemName.EMPTY)
-        self.inventory_slots[0].item = self.item_initializer.init_item(ItemName.WEAPON_AK47)
-        self.inventory_slots[0].item.quantity = 1000
+        # self.inventory_slots[0].item = self.item_initializer.init_item(ItemName.WEAPON_AK47)
+        # self.inventory_slots[0].item.quantity = 1000
 
     def create_inventory_slots(self) -> None:
         num_slots = 6
@@ -101,6 +100,12 @@ class Inventory(Entity):
             # if there's no ammo and no weapon, add one magazine of BULLET_BIG ammo
             if self.inventory_slots[1].item.name == ItemName.EMPTY and self.inventory_slots[0].item.name == ItemName.EMPTY:
                 self.add_new_item(ItemName.BULLET_BIG, self.inventory_slots[1])
+            # if there's no ammo, but there's a weapon, add one magazine of the corresponding ammo
+            # — this shouldn't happen, because you always get ammo with a weapon and even when ammo reaches 0, it remains
+            # in the inventory, but just in case, if you programmatically add a weapon, but no ammo (or something like that)
+            elif self.inventory_slots[1].item.name == ItemName.EMPTY:
+                weapon: Union[Item, Gun] = self.inventory_slots[0].item
+                self.add_new_item(weapon.ammo_name, self.inventory_slots[1])
             # if there's ammo, add the corresponding quantity (one weapon magazine) to the existing ammo
             else:
                 self.inventory_slots[1].item.quantity += self.inventory_slots[1].item.spawn_quantity

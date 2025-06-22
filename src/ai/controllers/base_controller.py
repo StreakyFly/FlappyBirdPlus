@@ -19,7 +19,7 @@ class BaseModelController:
         self.dummy_env = DummyVecEnv([lambda: EnvManager(env_type).get_env()])
         self.norm_env = VecNormalize.load(norm_stats_path, self.dummy_env)
 
-        self.model_cls = MaskablePPO if getattr(EnvManager(env_type).get_env_class(), 'requires_action_masking', False) else PPO
+        self.model_cls = MaskablePPO if getattr(EnvManager(env_type).get_env_class(), 'REQUIRES_ACTION_MASKING', False) else PPO
         self.model = self.model_cls.load(model_path, env=self.norm_env)
 
         if Config.handle_seed:

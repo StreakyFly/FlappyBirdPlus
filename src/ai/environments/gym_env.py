@@ -15,7 +15,7 @@ class GymEnv(GymnasiumEnv):
         super().__init__()
         self.game_env = game_env
 
-        # self.requires_action_masking = getattr(self.game_env, 'requires_action_masking', False)
+        # self.REQUIRES_ACTION_MASKING = getattr(self.game_env, 'REQUIRES_ACTION_MASKING', False)
         # self.action_masks = None
         # https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/issues/49
 

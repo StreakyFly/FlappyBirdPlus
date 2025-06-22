@@ -43,7 +43,7 @@ class EnvManager:
         self.create_env()
         self.env.reset()  # reset to set the random seed
 
-        use_action_masking: bool = getattr(self.env_class, 'requires_action_masking', False)
+        use_action_masking: bool = getattr(self.env_class, 'REQUIRES_ACTION_MASKING', False)
 
         for _ in range(10_000):
             action = self.env.action_space.sample(tuple(self.env.action_masks()) if use_action_masking else None)  # take a random action

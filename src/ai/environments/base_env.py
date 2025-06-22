@@ -81,7 +81,7 @@ class BaseEnv(FlappyBird):
         Get the action masks for the current game state.
         Each mask corresponds to whether an action is feasible (1) or not (0).
 
-        This method is required ONLY if `requires_action_masking` is True.
+        This method is required ONLY if `REQUIRES_ACTION_MASKING` is True.
         :return: np.ndarray: A numpy array of shape (num_actions,) where each element is either 0 or 1.
         """
         raise NotImplementedError("get_action_masks() method must be implemented in the subclass")

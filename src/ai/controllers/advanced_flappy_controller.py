@@ -32,6 +32,9 @@ class AdvancedFlappyModelController(BaseModelController):
 
     @staticmethod
     def get_action_masks(entity: Player, env: FlappyBird) -> np.ndarray:
+        # TODO: implement proper action masks for Advanced Flappy Bird!
+        #  - don't fire when on reload/fire cooldown or if out of ammo
+        #  - don't use items when on cooldown or if out of items
         temp1 = np.ones(2, dtype=np.int8)
         temp2 = np.ones(3, dtype=np.int8)
         temp3 = np.ones(4, dtype=np.int8)

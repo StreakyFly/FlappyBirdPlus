@@ -1,7 +1,4 @@
-import random
-
 from src.utils import GameConfig
-from .enemy import EnemyGroup
 from .cloudskimmer import CloudSkimmerGroup
 from .skydart import SkyDartGroup
 
@@ -10,7 +7,7 @@ class EnemyManager:
     def __init__(self, config: GameConfig, env):
         self.config = config
         self.env = env
-        self.spawned_enemy_groups = []  # some files expect this list to contain no more than one enemy group at once
+        self.spawned_enemy_groups = []  # [WARN]: Most parts of the codebase expect this list to contain max one group at a time.
         self.count = 0
         self.wait = 240
         self.group_to_spawn = self.spawn_skydart
@@ -41,9 +38,9 @@ class EnemyManager:
 
     def spawn_enemy(self) -> None:
         # TODO implement this
-        self.spawn_cloudskimmer()  # temporary
+        # self.spawn_cloudskimmer()  # temporary
 
-        # self.spawn_skydart()  # temporary
+        self.spawn_skydart()  # temporary
         # self.group_to_spawn()
         # self.group_to_spawn = self.spawn_skydart if self.group_to_spawn == self.spawn_cloudskimmer else self.spawn_cloudskimmer
 
@@ -55,7 +52,7 @@ class EnemyManager:
 
     def spawn_skydart(self):
         # TODO implement this
-        self.spawned_enemy_groups.append(SkyDartGroup(self.config, x=1000, y=100, target=self.env.player))
+        self.spawned_enemy_groups.append(SkyDartGroup(self.config, x=1000, y=0, target=self.env.player))
 
     def spawn_aerothief(self):
         # TODO implement this

@@ -3,16 +3,9 @@ import random
 
 import pygame
 
+from src.entities.entity import Entity
 from src.utils import GameConfig
-from ..entity import Entity
 from .item_enums import ItemName, ItemType
-
-
-"""
-INVISIBILITY POTION!! MINIGUN THAT OVERHEATS!! Food/hunger...?
-"""
-
-# TODO when player collects the item aka. touches the bubble, the bubble should pop (simple animation).
 
 
 class SpawnedItem(Entity):
@@ -92,20 +85,17 @@ class Item(Entity):
     def quantity(self, value):
         self._quantity = max(0, value)
 
+    def tick(self) -> None:
+        if self.remaining_cooldown > 0:
+            self.remaining_cooldown -= 1
+        super().tick()
+
     def use(self, *args):
         self.quantity -= 1
 
     def set_cooldown(self, cooldown: int) -> None:
         self.total_cooldown = cooldown
-        self.remaining_cooldown = cooldown
-
-    def tick_cooldown(self):
-        """
-        Decrements the remaining cooldown by 1.
-        This needs to be called in the subclass's tick() method.
-        """
-        if self.remaining_cooldown > 0:
-            self.remaining_cooldown -= 1
+        self.remaining_cooldown = cooldown + 1  # +1, because item is ticked before the InventorySlot is drawn
 
     def draw(self) -> None:
         # Overrides Entity.draw() as Items should not be drawn on their own, unless it's a weapon or other
