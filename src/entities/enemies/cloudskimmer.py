@@ -77,7 +77,7 @@ class CloudSkimmer(Enemy):
     def set_gun(self, gun: Gun, ammo_item: Bullet) -> None:
         self.gun = gun
         gun.update_ammo_object(ammo_item)
-        self.possible_drop_items.append(gun.name)
+        self.possible_drop_items.append(gun.item_name)
 
     def stop_advancing(self) -> None:
         self.vel_x = 0

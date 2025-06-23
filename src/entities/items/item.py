@@ -50,32 +50,38 @@ class SpawnedItem(Entity):
 
 
 class Item(Entity):
+    item_type: ItemType = None
+    item_name: ItemName = None
+
     def __init__(
         self,
         config: GameConfig,
-        item_type: ItemType,
-        item_name: ItemName,
         spawn_quantity: int = 1,
         entity=None,  # in case the Item needs to access attributes/methods of Entity instance, for example its HP
         flipped: bool = False,  # flips the image horizontally, so enemies can use items too
         **kwargs
     ) -> None:
         super().__init__(config, **kwargs)
-        self.type = item_type
-        self.name = item_name
+
+        item_type = self.__class__.item_type
+        item_name = self.__class__.item_name
+        if item_type is None or item_name is None:
+            raise NotImplementedError("Item subclass must define item_type and item_name class attributes")
+
         self.spawn_quantity = spawn_quantity
         self._quantity = spawn_quantity
         self.entity = entity
         self.flipped = flipped
-        item_name_suffix = "_inventory" if item_name.value + "_inventory" in self.config.images.items else ""
-        self.inventory_image = config.images.items[item_name.value + item_name_suffix]
-        if self.type == ItemType.WEAPON:
-            self.update_image(self.config.images.items[self.name.value])
-        else:
-            self.image = self.config.images.items[self.name.value]
-        self.image = self.config.images.items[self.name.value]
         self.total_cooldown = 0
         self.remaining_cooldown = 0  # needs to be handled in the subclass
+
+        item_name_suffix = "_inventory" if f"{item_name.value}_inventory" in self.config.images.items else ""
+        self.inventory_image = config.images.items[f"{item_name.value}{item_name_suffix}"]
+
+        if item_type == ItemType.WEAPON:
+            self.update_image(self.config.images.items[item_name.value])
+        else:
+            self.image = self.config.images.items[item_name.value]
 
     @property
     def quantity(self):

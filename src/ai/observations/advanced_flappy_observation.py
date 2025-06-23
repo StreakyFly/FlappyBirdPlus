@@ -1,31 +1,46 @@
 import numpy as np
 
-from src.entities import Player, ItemName, EnemyManager
+from src.entities import Player, ItemName, EnemyManager, SpawnedItem
 from src.entities.enemies.cloudskimmer import CloudSkimmerGroup, CloudSkimmer
 from src.entities.enemies.skydart import SkyDartGroup, SkyDart
 from src.entities.inventory import InventorySlot
 from src.entities.items import Gun, ItemType, Item
 from src.entities.items.food.food import Food
 from src.entities.items.heals.heal import Heal
+from src.entities.items.item_initializer import ITEM_NAME_TO_CLASS_MAP
 from src.entities.items.potions.potion import Potion
 # from src.flappybird import FlappyBird
 from .base_observation import BaseObservation
 
 
 class AdvancedFlappyObservation(BaseObservation):
-    GUN_IDS = {
+    ITEM_IDS = {
+        # Weapons
         ItemName.WEAPON_DEAGLE: 1,
         ItemName.WEAPON_AK47: 2,
         ItemName.WEAPON_UZI: 3,
-    }
-    ITEM_IDS = {
+        # Ammunition
+        ItemName.AMMO_BOX: 1,
+        # Food
         ItemName.FOOD_APPLE: 1,
         ItemName.FOOD_BURGER: 2,
         ItemName.FOOD_CHOCOLATE: 3,
-        ItemName.HEAL_BANDAGE: 1,
-        ItemName.HEAL_MEDKIT: 2,
+        # Potions
         ItemName.POTION_HEAL: 1,
         ItemName.POTION_SHIELD: 2,
+        # Heals
+        ItemName.HEAL_BANDAGE: 1,
+        ItemName.HEAL_MEDKIT: 2,
+        # Special
+        ItemName.TOTEM_OF_UNDYING: 1,
+    }
+    TYPE_IDS = {
+        ItemType.WEAPON: 1,
+        ItemType.AMMO: 2,
+        ItemType.FOOD: 3,
+        ItemType.HEAL: 4,
+        ItemType.POTION: 5,
+        ItemType.SPECIAL: 6,
     }
     ENEMY_GROUP_IDS = {
         CloudSkimmerGroup: 1,
@@ -53,7 +68,7 @@ class AdvancedFlappyObservation(BaseObservation):
 
         # OBS: weapon
         gun: Gun = e.inventory.inventory_slots[0].item
-        if gun.type is ItemType.EMPTY:
+        if gun.item_type is ItemType.EMPTY:
             # approximate running mean values for x & y bullet spawn positions, the rest are set to 0
             weapon_info = [240, 410, 0, 0, 0, 0, 0]
         else:
@@ -63,7 +78,7 @@ class AdvancedFlappyObservation(BaseObservation):
                 initial_bullet_pos_y,  # y bullet spawn position
                 gun.remaining_shoot_cooldown,  # shoot cooldown
                 e.inventory.inventory_slots[1].item.quantity,  # ammo count in inventory
-                self.GUN_IDS[gun.name],  # gun id (1 = deagle, 2 = ak47, 3 = uzi)
+                self.ITEM_IDS[gun.item_name],  # gun id (1 = deagle, 2 = ak47, 3 = uzi)
                 gun.quantity,  # remaining magazine bullets
                 gun.damage  # bullet damage
             ]
@@ -73,18 +88,45 @@ class AdvancedFlappyObservation(BaseObservation):
         # 3 slots, each with: item id, quantity, value
         inventory_info = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]  # shape (3, 3)
         for i, slot in enumerate(inventory_slots[2:5]):  # only food, potion & heal inventory slots
-            item: (Item | Food | Potion | Heal) = slot.item
-            if item.type is not ItemType.EMPTY:
+            spawned_item: (Item | Food | Potion | Heal) = slot.item
+            if spawned_item.item_type is not ItemType.EMPTY:
                 inventory_info[i] = [
-                    self.ITEM_IDS[item.name],  # item id
-                    item.quantity,  # quantity
-                    item.fill_amount
+                    self.ITEM_IDS[spawned_item.item_name],  # item id
+                    spawned_item.quantity,  # quantity
+                    spawned_item.fill_amount  # value
                 ]
 
         # OBS: spawned items
-        # TODO yupyup
-        # TEMP yupyup
-        # TODO yupyup
+        # TODO: I don't think we can just base it on distance to the player - if one frame X, Y and Z items are closest
+        #  to the player, and then next frame A, B, C items are closest, we don't want to just replace the previous
+        #  closest items with the new ones, because the agent will get confused what the hell is going on.
+        #  Maybe do something similar like we did with bullets. Take whichever is the closest, and then keep
+        #  passing that one until it disappears/becomes irrelevant.
+        #  Write a method - is_spawned_item_info_useful() - or nah, cuz we really just need to check bounds.
+        #  Yeah, I think that's it. Keep it simple. Like what else could we even check? Nothing item based, that's for
+        #  the agent to decide, if the item is useful or not. So the only thing left is position. Soo... if player can
+        #  collect the item then consider it useful, otherwise don't.
+        # 3 items, each with: x & y position, type id, item id
+        spawned_items = [[0, 0, 0, 0] for _ in range(3)]  # shape (3, 4)
+        # get the closest 3 spawned items to the player that are within the screen bounds
+        closest_spawned_items = sorted(
+            # We can filter out items even if they're still on screen - for example if item is at x position 0, it's
+            # still fully on screen, but it's past the player, so the player can't collect it even if it wanted to.
+            filter(
+                lambda spwnd_item: 0 <= spwnd_item.x <= 720 and -100 <= spwnd_item.y <= 900,
+                e.item_manager.spawned_items
+            ),
+            key=lambda spwnd_item: np.hypot(spwnd_item.cx - player.cx, spwnd_item.cy - player.cy)
+        )[:3]
+
+        for i, spawned_item in enumerate(closest_spawned_items):
+            spawned_item: SpawnedItem
+            spawned_items[i] = [
+                spawned_item.x,  # x position
+                spawned_item.y,  # y position
+                self.TYPE_IDS[ITEM_NAME_TO_CLASS_MAP[spawned_item.item_name].item_type],  # type id
+                self.ITEM_IDS[spawned_item.item_name],  # item id
+            ]
 
         # OBS: pipes
         pipe_corner_positions = []
@@ -119,6 +161,8 @@ class AdvancedFlappyObservation(BaseObservation):
                         continue
                     # TODO: if enemy.id == 3, put it in someone else's observation, once that birb leaves - if it
                     #  doesn't, simply don't include, it so it doesn't error out
+                    if enemy.id > 2:  # TODO: DELETE THIS LINE
+                        continue      # TODO: DELETE THIS LINE
                     self.enemy_info[enemy.id] = [
                         1,  # enemy exists
                         enemy_type_id,  # type id (1: CloudSkimmer, 2: SkyDart)
@@ -139,7 +183,7 @@ class AdvancedFlappyObservation(BaseObservation):
             'player': np.array(player_info, dtype=np.float32),
             'weapon': np.array(weapon_info, dtype=np.float32),
             'inventory': np.array(inventory_info, dtype=np.float32),
-            'spawned_items': np.array([0, 0, 0, 0, 0], dtype=np.float32),
+            'spawned_items': np.array(spawned_items, dtype=np.float32),
             'pipes': np.array(pipe_corner_positions, dtype=np.float32),
             'enemies': np.array(self.enemy_info, dtype=np.float32),
             'bullets': np.full((15, 7), [0, 0, 0, -256, -20, -56, -46], dtype=np.float32),

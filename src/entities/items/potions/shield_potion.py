@@ -3,9 +3,10 @@ from .potion import Potion
 
 
 class ShieldPotion(Potion):
+    item_name = ItemName.POTION_SHIELD
+
     def __init__(self, *args, **kwargs):
         super().__init__(
-            item_name=ItemName.POTION_SHIELD,
             fill_amount=75,
             *args, **kwargs
         )

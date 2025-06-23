@@ -19,8 +19,10 @@ be pushed back and up incrementally, reflecting a more realistic behavior.
 
 
 class Gun(Item):
+    item_type = ItemType.WEAPON
+
     def __init__(self, env, *args, **kwargs):
-        super().__init__(item_type=ItemType.WEAPON, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.env = env  # so bullets know where other entities are, for collision detection
         self.ammo_name = None
         self.ammo_class = None
@@ -30,7 +32,7 @@ class Gun(Item):
         self.shoot_cooldown = 0
         self.reload_cooldown = 0
         self.ammo_item = None  # ammo item from the inventory slot[1]
-        self.weapon_name = str(self.name).split("_")[1].lower()
+        self.weapon_name = str(self.item_name).split("_")[1].lower()
 
         self.remaining_shoot_cooldown = 0
         self.remaining_reload_cooldown = 0
@@ -270,7 +272,7 @@ class Gun(Item):
         self.animation_rotation = 0
 
         if self.recoil_duration > self.shoot_cooldown:
-            printc(f"WARNING! '{self.name}' - recoil duration is greater than shoot cooldown!", color="yellow")
+            printc(f"WARNING! '{self.item_name}' - recoil duration is greater than shoot cooldown!", color="yellow")
 
     def start_shoot_animation(self) -> None:
         # if self.remaining_recoil_duration > 0:

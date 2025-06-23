@@ -2,8 +2,10 @@ from src.entities.items import Item, ItemType
 
 
 class Food(Item):
+    item_type = ItemType.FOOD
+
     def __init__(self, fill_amount: int, *args, **kwargs):
-        super().__init__(item_type=ItemType.FOOD, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fill_amount = fill_amount
 
     def use(self) -> None:

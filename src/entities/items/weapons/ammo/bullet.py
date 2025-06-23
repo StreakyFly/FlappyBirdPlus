@@ -93,6 +93,8 @@ Detailed explanation with examples and formulas:
 
 
 class Bullet(Item):
+    item_type = ItemType.AMMO
+
     VISUAL_BACKGROUND_VELOCITY = pygame.Vector2(-7.5, 0)  # how much the background moves on the screen
     REAL_CAMERA_VELOCITY = pygame.Vector2(7.5, 0)  # how much the camera moves in the game world
 
@@ -101,7 +103,7 @@ class Bullet(Item):
                  spawn_pos_offset: Optional[Union[pygame.Vector2, Callable[['Bullet'], pygame.Vector2]]] = None,
                  *args, **kwargs):
         self.real = not (damage == speed == angle == 0 and spawn_position == pygame.Vector2(0, 0))
-        super().__init__(item_type=ItemType.AMMO, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.env = env
         self.damage = damage

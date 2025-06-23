@@ -3,9 +3,10 @@ from .potion import Potion
 
 
 class HealPotion(Potion):
+    item_name = ItemName.POTION_HEAL
+
     def __init__(self, *args, **kwargs):
         super().__init__(
-            item_name=ItemName.POTION_HEAL,
             fill_amount=75,
             *args, **kwargs
         )

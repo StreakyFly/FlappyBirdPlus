@@ -6,8 +6,10 @@ from .gun import Gun
 
 
 class Deagle(Gun):
+    item_name = ItemName.WEAPON_DEAGLE
+
     def __init__(self, *args, **kwargs):
-        super().__init__(item_name=ItemName.WEAPON_DEAGLE, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.set_properties(
             ammo_name=ItemName.BULLET_MEDIUM,
             ammo_class=MediumBullet,

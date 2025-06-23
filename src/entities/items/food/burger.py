@@ -3,9 +3,10 @@ from .food import Food
 
 
 class Burger(Food):
+    item_name = ItemName.FOOD_BURGER
+
     def __init__(self, *args, **kwargs):
         super().__init__(
-            item_name=ItemName.FOOD_BURGER,
             fill_amount=60,
             *args, **kwargs
         )

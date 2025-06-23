@@ -2,19 +2,11 @@ from src.entities.items import Item, ItemType, ItemName
 
 
 class TotemOfUndying(Item):
-    def __init__(self, *args, **kwargs):
-        super().__init__(item_type=ItemType.SPECIAL, item_name=ItemName.TOTEM_OF_UNDYING, *args, **kwargs)
+    item_type = ItemType.SPECIAL
+    item_name = ItemName.TOTEM_OF_UNDYING
 
-    # @property
-    # def quantity(self):
-    #     return self._quantity
-    #
-    # @quantity.setter
-    # def quantity(self, value):
-    #     if value <= 0:
-    #         self._quantity = 0
-    #     else:
-    #         self._quantity = 1
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
 
     def use(self):
         # if self.entity.hpm.current_value <= 0:

@@ -100,26 +100,23 @@ class AdvancedFlappyEnv(BaseEnv):
                     [0, 0, 0]   # slot 5 (heals: bandage, medkit)
                 ], dtype=np.float32),
                 high=np.array([
-                    [3, 100, 60],
-                    [2, 100, 75],
+                    [3, 100, 60 ],
+                    [2, 100, 75 ],
                     [2, 100, 100]
                 ], dtype=np.float32),
                 shape=(3, 3),  # item id, quantity, value - for each of the 3 slots
                 dtype=np.float32
             ),
 
-            # TODO: change the low/high values of POSITION to match the actual values
-            # TODO: there can be multiple spawned items at once, not just one!! But how many should we allow max?
-            # TEMP: like realistically, will there ever be more than 1? If yeah, than implement that shit first before
-            #  even attempting to set the observation space to get a better feeling how it'll work. But most of the time
-            #  there'll be just one. Maybe two if enemies will drop items, but surely not more than 3. Unless you spawn
-            #  like a bunch at once for some crazy event. But then the player won't really be able to choose which
-            #  items it wants cuz they'll be so close. Maybe limit to max 3? But you'll have to actually pass 3 at times
-            #  during training otherwise it won't learn what those values are at all if they'll be at 0 all the time.
+            # TODO: spawn a few more items in the training environment, so there are 3 items on screen at once more frequently
+            # Don't pass quantity in the observation, as the player doesn't see it, so the agent shouldn't either.
+            # If the agent struggles to learn how useful each item is, also pass the item value, so for food, potions
+            #  and heals, we pass fill_value, for weapons, we pass the damage value and for ammo_box and token-of-undying,
+            #  we pass some arbitrary value, like 100. Low/high bounds can be 0-100, unless you change any of the items.
             'spawned_items': gym.spaces.Box(
-                low=np.array( [0,   0,   0, 0, 0  ], dtype=np.float32),
-                high=np.array([999, 999, 6, 3, 100], dtype=np.float32),
-                shape=(5,),  # x & y position, type id, item id, value
+                low=np.full( (3, 4), [0,   -100,   0, 0], dtype=np.float32),
+                high=np.full((3, 4), [720,  900, 6, 3], dtype=np.float32),
+                shape=(3, 4),  # x & y position, type id, item id
                 dtype=np.float32
             ),
 
@@ -174,9 +171,7 @@ class AdvancedFlappyEnv(BaseEnv):
                 dtype=np.float32
             ),
 
-            # TODO: Position SkyDarts properly, right now they are positioned weirdly, not ok! They should also
-            #  spawn at different positions (unlike CloudSkimmers, which always spawn at the same position).
-            # Don't pass enemy info when it is off screen, as the agent shouldn't be able to see it!
+            # Don't pass enemy info when it is off-screen, as the agent shouldn't be able to see it!
             #  X position bounds:
             #  - CloudSkimmer: when the front/middle CloudSkimmer peaks on the screen (its gun), at X pos roughly 768,
             #    then you can pass info for all CloudSkimmers, cuz they always form the same formation, so
@@ -186,11 +181,11 @@ class AdvancedFlappyEnv(BaseEnv):
             #    past the player, let's set the low value of the X position to 60 (cuz we'll be passing cx, not x).
             #  Y position bounds: SkyDart can get pretty much anywhere, but if player can't get there, we aren't interested,
             #   so we'll use player's min_y and max_y bounds, plus a solid amount of padding.
-            # Rotation: SkyDart might reach rotation up to 70, but in extreme cases maybe even higher, so let's keep it safe and set it to 80.
+            # Rotation: SkyDart might reach rotation just over 80, so let's set the high bound to 87 just in case.
             'enemies': gym.spaces.Box(
                 # TODO: change high bound of Y position, if you make the SkyDart to not crash in the floor (so it turns up and flies up)
                 low=np.full( (3, 8), [0, 0, 60, -220, -45, -40, -60, 0  ], dtype=np.float32),
-                high=np.full((3, 8), [1, 2, 860, 920,  0,   70,  80, 100], dtype=np.float32),
+                high=np.full((3, 8), [1, 2, 860, 800,  0,   70,  87, 100], dtype=np.float32),
                 shape=(3, 8),  # 3 enemies, each with: existence, type id, x & y position, x & y velocity, rotation, hp
                 dtype=np.float32
             ),
