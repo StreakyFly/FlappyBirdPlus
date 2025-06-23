@@ -87,19 +87,19 @@ class ItemManager:
         else:
             item_name = self.get_random_spawn_item()
 
-        # TODO further improve spawn position - calculate where the player will be able to collect the spawned
-        #  item, and then adjust the spawn position accordingly, so that the player can collect the item and it doesn't
-        #  end within the pipe when it reaches the player. Basically reverse calculate the position where the item
-        #  should be spawned (take into account the amplitude and frequency of the spawned item).
+        SPAWNED_ITEM_SIZE = 100  # size of the spawned item bubble -> 100x100; self.config.images.item_spawn_bubble
         if spawn_pos is not None:
-            SPAWNED_ITEM_HALF_SIZE = 50  # half of the size of the spawned item bubble (100x100; self.config.images.item_spawn_bubble)
             # subtract half the size of the spawned item bubble from the spawn position to center it
             #  (as the x and y positions are for the top-left corner)
-            x = spawn_pos.x - (SPAWNED_ITEM_HALF_SIZE if should_center[0] else 0)
-            y = spawn_pos.y - (SPAWNED_ITEM_HALF_SIZE if should_center[1] else 0)
+            x = spawn_pos.x - (SPAWNED_ITEM_SIZE//2 if should_center[0] else 0)
+            y = spawn_pos.y - (SPAWNED_ITEM_SIZE//2 if should_center[1] else 0)
         else:
-            x = random.randint(1100, 1300)
-            y = random.randint(self.last_pipe.y - self.pipes.vertical_gap - 50, self.last_pipe.y)
+            # x = 1370  # seems to be da best value, making the most spawned items reach the player at good position
+            x = random.randint(1320, 1420)
+            # y = self.last_pipe.y - self.pipes.vertical_gap                               # bottom part of top pipe
+            # y = self.last_pipe.y - self.pipes.vertical_gap * 0.5 - SPAWNED_ITEM_SIZE//2  # center
+            # y = self.last_pipe.y - SPAWNED_ITEM_SIZE                                     # top part of bottom pipe
+            y = random.randint(self.last_pipe.y - self.pipes.vertical_gap, self.last_pipe.y - SPAWNED_ITEM_SIZE)
 
         spawned_item = SpawnedItem(config=self.config, item_name=item_name, x=x, y=y, image=self.config.images.item_spawn_bubble)
         self.spawned_items.append(spawned_item)
