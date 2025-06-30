@@ -27,6 +27,7 @@ class AdvancedFlappyEnv(BaseEnv):
         super().__init__()
         # self.observation_manager = ObservationManager()
         self.fill_observation_manager()
+        self.init_model_controllers(human_player=True)
 
     def reset_env(self):
         super().reset_env()
@@ -73,9 +74,12 @@ class AdvancedFlappyEnv(BaseEnv):
 
         TOP_PIPE_BOTTOM_LOW = 160
         TOP_PIPE_BOTTOM_HIGH = 415
-        BOTTOM_PIPE_TOP_LOW = TOP_PIPE_BOTTOM_LOW + 225  # 225 is pipes.vertical_gap
-        BOTTOM_PIPE_TOP_HIGH = TOP_PIPE_BOTTOM_HIGH + 225  # 225 is pipes.vertical_gap
+        BOTTOM_PIPE_TOP_LOW = TOP_PIPE_BOTTOM_LOW + self.pipes.vertical_gap
+        BOTTOM_PIPE_TOP_HIGH = TOP_PIPE_BOTTOM_HIGH + self.pipes.vertical_gap
 
+        # We didn't use any "exists" flags, like we did with the CloudSkimmer observation, because now we pass
+        # type/item IDs for almost everything. Valid IDs range from 1 to N. 0 is reserved to indicate that the
+        # entity/item does not exist. Meaning adding a separate "exists" flag is redundant.
         observation_space = gym.spaces.Dict({
             'player': gym.spaces.Box(
                 low=np.array( [-90, -17, -90, 0,   0,   0  ], dtype=np.float32),
@@ -110,13 +114,18 @@ class AdvancedFlappyEnv(BaseEnv):
 
             # TODO: spawn a few more items in the training environment, so there are 3 items on screen at once more frequently
             # Don't pass quantity in the observation, as the player doesn't see it, so the agent shouldn't either.
-            # If the agent struggles to learn how useful each item is, also pass the item value, so for food, potions
-            #  and heals, we pass fill_value, for weapons, we pass the damage value and for ammo_box and token-of-undying,
-            #  we pass some arbitrary value, like 100. Low/high bounds can be 0-100, unless you change any of the items.
+            # If the agent struggles to learn how useful each item is, you could also pass the item value, so for
+            # food, potions and heals, we pass fill_value, for weapons, we pass the damage it deals and for
+            # ammo_box and token-of-undying, we pass some arbitrary value, like 100. Low/high bounds can be 0-100,
+            # unless you change any of the items values beyond that.
             'spawned_items': gym.spaces.Box(
-                low=np.full( (3, 4), [0,   -100,   0, 0], dtype=np.float32),
-                high=np.full((3, 4), [720,  900, 6, 3], dtype=np.float32),
-                shape=(3, 4),  # x & y position, type id, item id
+                # X pos: 40-720: spawn_item is 100px wide, player is at pos x 144, so 40+100 is still just past the
+                # player. The player can't reach it anymore.
+                # Y Pos: -100-800: the item can technically spawn anywhere on the screen, but we won't pass it if it
+                # spawns so high/low that the player can't reach it 99.99% of the time without crashing into a pipe.
+                low=np.full( (3, 4), [0, 0, 40, -100], dtype=np.float32),
+                high=np.full((3, 4), [6, 3, 720, 800], dtype=np.float32),
+                shape=(3, 4),  # type id, item id, x & y position
                 dtype=np.float32
             ),
 
@@ -183,28 +192,20 @@ class AdvancedFlappyEnv(BaseEnv):
             #   so we'll use player's min_y and max_y bounds, plus a solid amount of padding.
             # Rotation: SkyDart might reach rotation just over 80, so let's set the high bound to 87 just in case.
             'enemies': gym.spaces.Box(
-                # TODO: change high bound of Y position, if you make the SkyDart to not crash in the floor (so it turns up and flies up)
-                low=np.full( (3, 8), [0, 0, 60, -220, -45, -40, -60, 0  ], dtype=np.float32),
-                high=np.full((3, 8), [1, 2, 860, 800,  0,   70,  87, 100], dtype=np.float32),
-                shape=(3, 8),  # 3 enemies, each with: existence, type id, x & y position, x & y velocity, rotation, hp
+                low=np.full( (3, 7), [0, 60, -300, -55, -50, -60, 0  ], dtype=np.float32),
+                high=np.full((3, 7), [2, 860, 800,  0,   80,  87, 100], dtype=np.float32),
+                shape=(3, 7),  # 3 enemies, each with: type id, x & y position, x & y velocity, rotation, hp
                 dtype=np.float32
             ),
 
-            # TODO: bullet info (only relevant ones closer to the player to attempt dodges? and those fired by the player)
             # Up - bullet gets removed off-screen => 0 + max height of bullet = -24 ~ -20 (can't be fired at 90 angle)
-            # Down - bullet gets stopped when hitting floor => 797
-            # Left - bullet before -256 is useless as it can't bounce back => -256
-            # TODO: this value might need to be adjusted now that player bullets are also included!! Increased/reduced?
-            #  Possibly 1230, cuz that's where the max left x position of the pipe is? After that, the bullet can't bounce back
-            #  But it's VERY unlikely for the bullet to get that far...
-            # Right - bullet after 1144 is useless as it can't bounce back => 1144 (1144, because that's the first point
-            #  where CloudSkimmers can fire from, if the x is larger, that means the bullet bounced and flew past them)
+            # Down - bullet gets stopped when hitting floor at 800, but we'll use 880 just to be safe (if player falls to the floor pushing the gun lower than the 800 floor limit)
+            # Left - bullet before -256 is useless as it can't bounce back => -270 just to be safe
+            # Right - bullet despawns after 1290, but we'll use 1400 just to be safe (in case bullet has insanely high velocity)
             'bullets': gym.spaces.Box(
-                # TODO y velocity (and possibly also x velocity) might need to be adjusted/increased as player is not limited to firing at -60/60 angle
-                low=np.full( (15, 7), [0, 0, 0, -256, -20, -56, -46], dtype=np.float32),
-                high=np.full((15, 7), [3, 1, 1, 1144, 797,  37,  46], dtype=np.float32),
-                # TODO: 15 is probably overkill, test it and see what's really the max needed, could 10 be enough?
-                shape=(15, 7),  # 15 bullets, each with: type id, fired by player flag, bounced flag, x & y position, x & y velocity
+                low=np.full( (7, 7), [0, 0, 0, -270, -240, -57, -52], dtype=np.float32),
+                high=np.full((7, 7), [3, 1, 1, 1400, 880,  50,  52], dtype=np.float32),
+                shape=(7, 7),  # 7 bullets, each with: type id, fired by player flag, bounced flag, x & y position, x & y velocity
                 dtype=np.float32
             )
         })
@@ -214,24 +215,24 @@ class AdvancedFlappyEnv(BaseEnv):
     def get_observation_space_clip_modes(self):
         return {
             'player': 1, #-1,  # REVERT TO -1
-            'weapon': 0,     # print a warning - quantity may go above the high value (very unlikely, but possible)
+            'weapon': 1,  # 0,     # print a warning - quantity may go above the high value (very unlikely, but possible)  # REVERT TO 0
             'inventory': 0,  # print a warning - quantity may go above the high value (very unlikely, but possible)
             'spawned_items': -1,
             'pipes': 1,      # the pipes are out of bounds at the beginning, so clip them
-            'enemies': -1,
+            'enemies': 1,  #-1,  # REVERT TO -1
             'bullets': -1,
         }
 
     def perform_step(self, action):
         # Here, other entities can get & perform the action before the agent,
         # as the agent has already decided what it'll do this step.
-        # self.handle_basic_flappy()
-        # self.perform_entity_actions()
+        # self.handle_basic_flappy()  # TODO: delete this? Why is this even here??
+        self.perform_entity_actions()
 
         for event in pygame.event.get():
-            self.handle_event(event)  # handles key presses as well
-            # self.handle_mouse_buttons()  # handles mouse button presses as well
             self.handle_quit(event)
+            self.handle_event(event)  # handles key presses as well  # TODO: comment out when training!
+        self.handle_mouse_buttons()  # handles mouse button presses as well  # TODO: comment out when training!
 
         # Must NOT init AdvancedFlappyModelController(), as it would create a new instance which creates a new
         #  AdvancedFlappyEnv (this), causing infinite recursion. Yeah, really messed up, but (｡◕‿‿◕｡)

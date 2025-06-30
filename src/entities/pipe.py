@@ -1,8 +1,7 @@
 import random
-from typing import List
 
+from src.utils import GameConfig
 from .entity import Entity
-from ..utils import GameConfig
 
 
 class Pipe(Entity):
@@ -16,19 +15,12 @@ class Pipe(Entity):
 
 
 class Pipes(Entity):
-    upper: List[Pipe]
-    lower: List[Pipe]
-    vertical_gap: int
-    horizontal_gap: int
-
     def __init__(self, config: GameConfig) -> None:
         super().__init__(config)
-        self.vertical_gap = 225
-        self.horizontal_gap = 390
-        self.top = 0
-        self.bottom = self.config.window.viewport_height
-        self.upper = []
-        self.lower = []
+        self.vertical_gap: int = 225
+        self.horizontal_gap: int = 390
+        self.upper: list[Pipe] = []
+        self.lower: list[Pipe] = []
         self.spawn_initial_pipes()
 
     def tick(self) -> None:
