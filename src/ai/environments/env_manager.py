@@ -1,5 +1,8 @@
 from typing import Type, Callable, Optional
 
+import numpy as np
+from gymnasium.spaces import MultiDiscrete
+
 from .base_env import BaseEnv
 from .env_types import EnvType, EnvVariant
 from .gym_env import GymEnv
@@ -46,11 +49,39 @@ class EnvManager:
         use_action_masking: bool = getattr(self.env_class, 'REQUIRES_ACTION_MASKING', False)
 
         for _ in range(10_000):
-            action = self.env.action_space.sample(tuple(self.env.action_masks()) if use_action_masking else None)  # take a random action
+            if use_action_masking:
+                action_masks = self.format_action_mask(self.env.action_masks(), self.env.action_space)
+                action = self.env.action_space.sample(action_masks)  # take a random action
+            else:
+                action = self.env.action_space.sample()  # take a random action
             obs, reward, terminated, truncated, info = self.env.step(action)
 
             if terminated or truncated:
                 self.env.reset()
+
+    @staticmethod
+    def format_action_mask(flat_mask, action_space) -> tuple[np.ndarray, ...]:
+        """
+        Converts a flat boolean/int action mask into a tuple format suitable for MultiDiscrete sampling.
+        Can be extended to support other action spaces in the future.
+
+        :param flat_mask: 1D numpy array of bools/ints.
+        :param action_space: The MultiDiscrete action space (e.g. MultiDiscrete([2, 3, 4]))
+
+        return: Tuple of numpy arrays, one for each sub-action dimension.
+        """
+        # if the mask is already split, return it as is (but as a tuple)
+        if flat_mask.ndim > 1:
+            return tuple(flat_mask)
+
+        mask = flat_mask
+
+        # handle MultiDiscrete action spaces (for now)
+        if isinstance(action_space, MultiDiscrete):
+            splits = np.cumsum(action_space.nvec[:-1])
+            mask = np.split(flat_mask, splits)
+
+        return tuple(mask)
 
     @staticmethod
     def get_basic_flappy_env_class(env_variant: EnvVariant) -> Type[BaseEnv]:

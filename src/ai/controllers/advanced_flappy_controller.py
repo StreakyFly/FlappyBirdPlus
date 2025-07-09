@@ -1,7 +1,8 @@
 import numpy as np
 
 from src.ai.environments import EnvType
-from src.entities import Player
+from src.entities import Player, ItemName
+from src.entities.items import Gun
 from src.flappybird import FlappyBird
 from .base_controller import BaseModelController
 
@@ -32,12 +33,43 @@ class AdvancedFlappyModelController(BaseModelController):
 
     @staticmethod
     def get_action_masks(entity: Player, env: FlappyBird) -> np.ndarray:
-        # TODO: implement proper action masks for Advanced Flappy Bird!
-        #  - don't fire when on reload/fire cooldown or if out of ammo
-        #  - don't use items when on cooldown or if out of items
-        temp1 = np.ones(2, dtype=np.int8)
-        temp2 = np.ones(3, dtype=np.int8)
-        temp3 = np.ones(4, dtype=np.int8)
+        # initialize masks for each action type — all actions are initially available
+        flap_mask = np.ones(2, dtype=np.int8)  # [do nothing, flap]  <-- flap is always available
+        gun_mask = np.ones(3, dtype=np.int8)  # [do nothing, fire, reload]
+        inventory_mask = np.ones(4, dtype=np.int8)  # [do nothing, use slot 2, use slot 3, use slot 4]
 
-        action_masks = np.array([temp1, temp2, temp3], dtype=object)
+        # gun_mask
+        gun: Gun = env.inventory.inventory_slots[0].item
+        if gun.item_name == ItemName.EMPTY:
+            gun_mask[1] = 0  # disable fire
+            gun_mask[2] = 0  # disable reload
+        else:
+            # gun can't be neither fired nor reloaded if it's on reload cooldown
+            if gun.remaining_reload_cooldown > 0:
+                gun_mask[1] = 0  # disable fire
+                gun_mask[2] = 0  # disable reload
+
+            # gun can't be fired if it's on shoot cooldown or if there's no ammo left in the gun
+            if gun.remaining_shoot_cooldown > 0 or gun.quantity <= 0:
+                gun_mask[1] = 0  # disable fire
+
+            # gun "can't" be reloaded if it's already full or if there's no ammo left in the inventory
+            if gun.quantity == gun.magazine_size or gun.ammo_item.quantity <= 0:
+                gun_mask[2] = 0  # disable reload
+
+        # inventory_mask
+        inventory_slots = env.inventory.inventory_slots
+        # slot is empty | entity's hunger is full
+        if inventory_slots[2].item.item_name == ItemName.EMPTY or entity.food_bar.current_value >= entity.food_bar.max_value:
+            inventory_mask[1] = 0
+        # slot is empty | it's a shield potion but entity's shield is full | it's a health potion but entity's health is full
+        if inventory_slots[3].item.item_name == ItemName.EMPTY or \
+                (inventory_slots[3].item.item_name == ItemName.POTION_SHIELD and entity.shield_bar.current_value >= entity.shield_bar.max_value) or \
+                (inventory_slots[3].item.item_name == ItemName.POTION_HEAL and entity.hp_bar.current_value >= entity.hp_bar.max_value):
+            inventory_mask[2] = 0
+        # slot is empty | entity's health is full
+        if inventory_slots[4].item.item_name == ItemName.EMPTY or entity.hp_bar.current_value >= entity.hp_bar.max_value:
+            inventory_mask[3] = 0
+
+        action_masks = np.concatenate((flap_mask, gun_mask, inventory_mask), axis=0)
         return action_masks
