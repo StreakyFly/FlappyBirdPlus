@@ -66,10 +66,14 @@ class AdvancedFlappyObservation(BaseObservation):
         self.bullet_index_dict = WeakKeyDictionary()  # map bullets to their initial index in the list
         self.ignored_bullets = WeakSet()  # bullets that will no longer be included in the observation (because they are no longer a thread)
         self.rightmost_visible_enemy_x: int | None = None  # x position of enemy farthest to the right | None if no enemy on screen
+        self.player_cx: int | None = None
+        self.player_cy: int | None = None
 
     def get_observation(self):
         e: 'FlappyBird' = self.env  # noqa: F821  # don't import FlappyBird to avoid circular import issues
         # e: FlappyBird = self.env
+        self.player_cx = e.player.cx
+        self.player_cy = e.player.cy
 
         # OBS: player
         player: Player = e.player
@@ -85,13 +89,12 @@ class AdvancedFlappyObservation(BaseObservation):
         # OBS: weapon
         gun: Gun = e.inventory.inventory_slots[0].item
         if gun.item_type is ItemType.EMPTY:
-            # approximate running mean values for x & y bullet spawn positions, the rest are set to 0
-            weapon_info = [240, 410, 0, 0, 0, 0, 0]
+            weapon_info = [50, 0, 0, 0, 0, 0, 0]
         else:
             initial_bullet_pos_x, initial_bullet_pos_y = gun.calculate_initial_bullet_position()
             weapon_info = [
-                initial_bullet_pos_x,  # x bullet spawn position
-                initial_bullet_pos_y,  # y bullet spawn position
+                initial_bullet_pos_x - self.player_cx,  # relative x bullet spawn position to player
+                initial_bullet_pos_y - self.player_cy,  # relative y bullet spawn position to player
                 gun.remaining_shoot_cooldown,  # shoot cooldown
                 e.inventory.inventory_slots[1].item.quantity,  # ammo count in inventory
                 self.ITEM_IDS[gun.item_name],  # gun id (1 = deagle, 2 = ak47, 3 = uzi)
@@ -142,12 +145,12 @@ class AdvancedFlappyObservation(BaseObservation):
         # Only include the first three pipe pairs in the observation - last pipe pair is always off-screen.
         for up_pipe, low_pipe in islice(zip(self.env.pipes.upper, self.env.pipes.lower), 3):
             top_pipe_corners = [
-                [up_pipe.x, up_pipe.y + up_pipe.h],  # left bottom corner of top pipe
-                [up_pipe.x + up_pipe.w, up_pipe.y + up_pipe.h],  # right bottom corner of top pipe
+                [up_pipe.x - self.player_cx, up_pipe.y + up_pipe.h - self.player_cy],  # left-bottom of top pipe
+                [up_pipe.x + up_pipe.w - self.player_cx, up_pipe.y + up_pipe.h - self.player_cy]  # right-bottom of top pipe
             ]
             bottom_pipe_corners = [
-                [low_pipe.x, low_pipe.y],  # left top corner of bottom pipe
-                [low_pipe.x + low_pipe.w, low_pipe.y],  # right top corner of bottom pipe
+                [low_pipe.x - self.player_cx, low_pipe.y - self.player_cy],  # left-top of bottom pipe
+                [low_pipe.x + low_pipe.w - self.player_cx, low_pipe.y - self.player_cy]  # right-top of bottom pipe
             ]
             pipe_corner_positions.append([top_pipe_corners, bottom_pipe_corners])
 
@@ -214,8 +217,8 @@ class AdvancedFlappyObservation(BaseObservation):
             spawned_items[item_index] = [
                 self.TYPE_IDS[ITEM_NAME_TO_CLASS_MAP[spawned_item.item_name].item_type],  # type id
                 self.ITEM_IDS[spawned_item.item_name],  # item id
-                spawned_item.cx - e.player.cx,  # relative x position to player
-                spawned_item.cy - e.player.cy,  # relative y position to player
+                spawned_item.cx - self.player_cx,  # relative x position to player
+                spawned_item.cy - self.player_cy,  # relative y position to player
             ]
 
         for new_item in new_items:
@@ -227,8 +230,8 @@ class AdvancedFlappyObservation(BaseObservation):
                 spawned_items[free_item_index] = [
                     self.TYPE_IDS[ITEM_NAME_TO_CLASS_MAP[new_item.item_name].item_type],  # type id
                     self.ITEM_IDS[new_item.item_name],  # item id
-                    new_item.cx - e.player.cx,  # relative x position to player
-                    new_item.cy - e.player.cy,  # relative y position to player
+                    new_item.cx - self.player_cx,  # relative x position to player
+                    new_item.cy - self.player_cy,  # relative y position to player
                 ]
             else:
                 # No free slots - we'll just ignore this and all remaining spawned items.
@@ -293,8 +296,8 @@ class AdvancedFlappyObservation(BaseObservation):
 
                 enemy_info[index] = [
                     enemy_type_id,  # type id (1: CloudSkimmer, 2: SkyDart)
-                    enemy.cx,  # x position
-                    enemy.cy,  # y position
+                    enemy.cx - self.player_cx,  # relative x position to player
+                    enemy.cy - self.player_cy,  # relative y position to player
                     enemy.vel_x,  # x velocity
                     enemy.vel_y,  # y velocity
                     enemy.gun_rotation if enemy_type_id == 1 else enemy.rotation,  # rotation (gun rotation for CloudSkimmer, rotation for SkyDart)
@@ -372,8 +375,8 @@ class AdvancedFlappyObservation(BaseObservation):
                 self.BULLET_IDS[bullet.item_name],  # type id
                 fired_by_player,  # fired by player flag
                 int(bullet.bounced),  # bounced flag
-                bullet.curr_front_pos.x,  # x position
-                bullet.curr_front_pos.y,  # y position
+                bullet.curr_front_pos.x - self.player_cx,  # relative x position to player
+                bullet.curr_front_pos.y - self.player_cy,  # relative y position to player
                 bullet.velocity.x,  # x velocity
                 bullet.velocity.y  # y velocity
             ]
@@ -389,8 +392,8 @@ class AdvancedFlappyObservation(BaseObservation):
                         self.BULLET_IDS[bullet.item_name],  # type id
                         fired_by_player,  # fired by player flag
                         int(bullet.bounced),  # bounced flag
-                        bullet.curr_front_pos.x,  # x position
-                        bullet.curr_front_pos.y,  # y position
+                        bullet.curr_front_pos.x - self.player_cx,  # relative x position to player
+                        bullet.curr_front_pos.y - self.player_cy,  # relative y position to player
                         bullet.velocity.x,  # x velocity
                         bullet.velocity.y  # y velocity
                     ]

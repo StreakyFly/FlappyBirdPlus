@@ -1,3 +1,5 @@
+import warnings
+
 import gymnasium as gym
 import numpy as np
 import pygame
@@ -12,7 +14,11 @@ from ..base_env import BaseEnv
 
 class AdvancedFlappyEnv(BaseEnv):
     """
-    # TODO: speedrun write this docstring
+    [WARN] This environment isn't intended to be used directly for training.
+    Use "simpler" environments and train the agent in multiple stages.
+
+    Key features:
+    - nothing bruh
     """
     REQUIRES_ACTION_MASKING = True
 
@@ -21,6 +27,13 @@ class AdvancedFlappyEnv(BaseEnv):
         # self.observation_manager = ObservationManager()
         self.fill_observation_manager()
         self.init_model_controllers(human_player=True)  # True, cuz it shouldn't init player model as we'll be training it
+
+        # Supress these two specific warnings, otherwise it complains we loose precision when working with
+        # PLAYER_CX because it's 186.5 (a float64 by default), but float32 is plenty enough to represent it, so
+        # instead of wrapping the values in np.float32(x) in every single place, we just supress these two warnings.
+        # Hopefully this doesn't backfire ._.
+        warnings.filterwarnings("ignore", message=".*Box low's precision lowered by casting to float32, current low.dtype=float64*")
+        warnings.filterwarnings("ignore", message=".*Box high's precision lowered by casting to float32, current high.dtype=float64*")
 
     def reset_env(self):
         super().reset_env()
@@ -63,26 +76,43 @@ class AdvancedFlappyEnv(BaseEnv):
             4   # use slot (0: nothing, 1: use slot 3, 2: use slot 4, 3: use slot 5)
         ])
 
+        # Player Y position bounds
+        PLAYER_CX = self.player.cx
+        assert PLAYER_CX == 186.5, (
+            f"Expected player.cx to be 186.5 (fixed center-X used for relative observations), "
+            f"but got {PLAYER_CX}. If you changed the player's width, "
+            f"you must update the observation space bounds accordingly."  # and retrain the agent ._.
+        )
+        PLAYER_CY_LOW = -90   # Keep in mind low as low value! And NOT position on screen, this is the top of the window.
+        PLAYER_CY_HIGH = 785  # Keep in mind high as high value! And NOT position on screen, this is the bottom of the window.
+
+        # Pipe Y positions
         TOP_PIPE_BOTTOM_LOW = 160
         TOP_PIPE_BOTTOM_HIGH = 415
         BOTTOM_PIPE_TOP_LOW = TOP_PIPE_BOTTOM_LOW + self.pipes.vertical_gap
         BOTTOM_PIPE_TOP_HIGH = TOP_PIPE_BOTTOM_HIGH + self.pipes.vertical_gap
+
+        # Relative Y bounds
+        TOP_Y_REL_LOW = TOP_PIPE_BOTTOM_LOW - PLAYER_CY_HIGH
+        TOP_Y_REL_HIGH = TOP_PIPE_BOTTOM_HIGH - PLAYER_CY_LOW
+        BOTTOM_Y_REL_LOW = BOTTOM_PIPE_TOP_LOW - PLAYER_CY_HIGH
+        BOTTOM_Y_REL_HIGH = BOTTOM_PIPE_TOP_HIGH - PLAYER_CY_LOW
 
         # We didn't use any "exists" flags, like we did with the CloudSkimmer observation, because now we pass
         # type/item IDs for almost everything. Valid IDs range from 1 to N. 0 is reserved to indicate that the
         # entity/item does not exist. Meaning adding a separate "exists" flag is redundant.
         observation_space = gym.spaces.Dict({
             'player': gym.spaces.Box(
-                low=np.array( [-90, -17, -90, 0,   0,   0  ], dtype=np.float32),
-                high=np.array([785,  21,  20, 100, 100, 100], dtype=np.float32),
-                shape=(6,),  # y position, y velocity, rotation, hp, shield, food
+                low=np.array( [PLAYER_CY_LOW, -17, -90, 0,   0,   0  ], dtype=np.float32),
+                high=np.array([PLAYER_CY_HIGH, 21,  20, 100, 100, 100], dtype=np.float32),
+                shape=(6,),  # absolute y position, y velocity, rotation, hp, shield, food
                 dtype=np.float32
             ),
 
             'weapon': gym.spaces.Box(
-                low=np.array( [205, -114, 0,  0,    0, 0,  0 ], dtype=np.float32),
-                high=np.array([262,  874, 28, 9000, 3, 32, 42], dtype=np.float32),
-                shape=(7,),  # x & y bullet spawn position, remaining shoot cooldown, bullets in ammo inventory slot, weapon id, remaining magazine bullets, bullet damage
+                low=np.array( [15, -45, 0,  0,    0, 0,  0 ], dtype=np.float32),
+                high=np.array([80,  90, 28, 9000, 3, 32, 42], dtype=np.float32),
+                shape=(7,),  # relative x & y bullet spawn position to player, remaining shoot cooldown, bullets in ammo inventory slot, weapon id, remaining magazine bullets, bullet damage
                 dtype=np.float32
             ),
 
@@ -103,18 +133,13 @@ class AdvancedFlappyEnv(BaseEnv):
                 dtype=np.float32
             ),
 
-            # TODO: spawn a few more items in the training environment, so there are 3 items on screen at once more frequently
+            # TODO: make sure to spawn a few more items in the training environment,
+            #  so there are 3 items on screen at once more frequently.
             # Don't pass quantity in the observation, as the player doesn't see it, so the agent shouldn't either.
             'spawned_items': gym.spaces.Box(
-                # NAH, we won't pass absolute positions -------------
-                # X pos: 40-720: spawn_item is 100px wide, player is at pos x 144, so 40+100 is still just past the
-                # player. The player can't reach it anymore.
-                # Y Pos: -100-800: the item can technically spawn anywhere on the screen, but we won't pass it if it
-                # spawns so high/low that the player can't reach it 99.99% of the time without crashing into a pipe.
-                # ------------- BUT RATHER RELATIVE TO PLAYER POSITION -------------
                 low=np.full( (3, 4), [0, 0, -100, -900], dtype=np.float32),
                 high=np.full((3, 4), [6, 3, 600, 900], dtype=np.float32),
-                shape=(3, 4),  # type id, item id, x & y position
+                shape=(3, 4),  # type id, item id, relative x & y position to player
                 dtype=np.float32
             ),
 
@@ -131,50 +156,41 @@ class AdvancedFlappyEnv(BaseEnv):
             #  pipes placed like it's midgame—hopefully not, but adding this comment just in case I forget this and
             #  can't figure out why the agent after getting magnificent results during training is miserably failing
             #  during real-environment testing/evaluation.
-            # corner positions of the pipes (top corners of bottom pipe and bottom corners of top pipe)
+            # relative corner positions of the pipes to player (top corners of bottom pipe and bottom corners of top pipe)
             # Do we need to be this specific when defining the low/high values? Probably not, as VecNormalize doesn't
             # even use these values, but let's do it anyway. If we pass an observation that is out of bounds, we'll get
             # an error, which could save us AN ETERNITY of debugging. Does it help with training? Nah, at least not
             # with VecNormalize. Does it help with debugging? Yeah, in some situations it might—by like A LOT.
             # (As long as you set the clip mode to -1!! and NOT 1, as that will just clip it without warning).
+            # Last pipe pair is never visible! So we only pass the first 3 pipe pairs.
             'pipes': gym.spaces.Box(
                 low=np.array([
                     [  # pipe pair 0
-                        [[-330, TOP_PIPE_BOTTOM_LOW], [-200, TOP_PIPE_BOTTOM_LOW]],  # top pipe: left, right
-                        [[-330, BOTTOM_PIPE_TOP_LOW], [-200, BOTTOM_PIPE_TOP_LOW]],  # bottom pipe: left, right
+                        [[-330 - PLAYER_CX, TOP_Y_REL_LOW   ], [-200 - PLAYER_CX, TOP_Y_REL_LOW   ]],
+                        [[-330 - PLAYER_CX, BOTTOM_Y_REL_LOW], [-200 - PLAYER_CX, BOTTOM_Y_REL_LOW]],
                     ],
                     [  # pipe pair 1
-                        [[  60, TOP_PIPE_BOTTOM_LOW], [ 190, TOP_PIPE_BOTTOM_LOW]],
-                        [[  60, BOTTOM_PIPE_TOP_LOW], [ 190, BOTTOM_PIPE_TOP_LOW]],
+                        [[  60 - PLAYER_CX, TOP_Y_REL_LOW   ], [190 - PLAYER_CX, TOP_Y_REL_LOW   ]],
+                        [[  60 - PLAYER_CX, BOTTOM_Y_REL_LOW], [190 - PLAYER_CX, BOTTOM_Y_REL_LOW]],
                     ],
                     [  # pipe pair 2
-                        [[ 450, TOP_PIPE_BOTTOM_LOW], [ 580, TOP_PIPE_BOTTOM_LOW]],
-                        [[ 450, BOTTOM_PIPE_TOP_LOW], [ 580, BOTTOM_PIPE_TOP_LOW]],
+                        [[ 450 - PLAYER_CX, TOP_Y_REL_LOW   ], [580 - PLAYER_CX, TOP_Y_REL_LOW   ]],
+                        [[ 450 - PLAYER_CX, BOTTOM_Y_REL_LOW], [580 - PLAYER_CX, BOTTOM_Y_REL_LOW]],
                     ],
-                    # LAST PIPE PAIR IS NEVER VISIBLE!
-                    # [  # pipe pair 3
-                    #     [[ 840, TOP_PIPE_BOTTOM_LOW], [ 970, TOP_PIPE_BOTTOM_LOW]],
-                    #     [[ 840, BOTTOM_PIPE_TOP_LOW], [ 970, BOTTOM_PIPE_TOP_LOW]],
-                    # ]
                 ]),
                 high=np.array([
                     [  # pipe pair 0
-                        [[  60, TOP_PIPE_BOTTOM_HIGH], [ 190, TOP_PIPE_BOTTOM_HIGH]],
-                        [[  60, BOTTOM_PIPE_TOP_HIGH], [ 190, BOTTOM_PIPE_TOP_HIGH]],
+                        [[ 60 - PLAYER_CX, TOP_Y_REL_HIGH   ], [190 - PLAYER_CX, TOP_Y_REL_HIGH   ]],
+                        [[ 60 - PLAYER_CX, BOTTOM_Y_REL_HIGH], [190 - PLAYER_CX, BOTTOM_Y_REL_HIGH]],
                     ],
                     [  # pipe pair 1
-                        [[ 450, TOP_PIPE_BOTTOM_HIGH], [ 580, TOP_PIPE_BOTTOM_HIGH]],
-                        [[ 450, BOTTOM_PIPE_TOP_HIGH], [ 580, BOTTOM_PIPE_TOP_HIGH]],
+                        [[450 - PLAYER_CX, TOP_Y_REL_HIGH   ], [580 - PLAYER_CX, TOP_Y_REL_HIGH   ]],
+                        [[450 - PLAYER_CX, BOTTOM_Y_REL_HIGH], [580 - PLAYER_CX, BOTTOM_Y_REL_HIGH]],
                     ],
                     [  # pipe pair 2
-                        [[ 840, TOP_PIPE_BOTTOM_HIGH], [ 970, TOP_PIPE_BOTTOM_HIGH]],
-                        [[ 840, BOTTOM_PIPE_TOP_HIGH], [ 970, BOTTOM_PIPE_TOP_HIGH]],
+                        [[840 - PLAYER_CX, TOP_Y_REL_HIGH   ], [970 - PLAYER_CX, TOP_Y_REL_HIGH   ]],
+                        [[840 - PLAYER_CX, BOTTOM_Y_REL_HIGH], [970 - PLAYER_CX, BOTTOM_Y_REL_HIGH]],
                     ],
-                    # LAST PIPE PAIR IS NEVER VISIBLE!
-                    # [  # pipe pair 3
-                    #     [[1230, TOP_PIPE_BOTTOM_HIGH], [1360, TOP_PIPE_BOTTOM_HIGH]],
-                    #     [[1230, BOTTOM_PIPE_TOP_HIGH], [1360, BOTTOM_PIPE_TOP_HIGH]],
-                    # ]
                 ]),
                 shape=(3, 2, 2, 2),
                 dtype=np.float32
@@ -192,9 +208,9 @@ class AdvancedFlappyEnv(BaseEnv):
             #   so we'll use player's min_y and max_y bounds, plus a solid amount of padding.
             # Rotation: SkyDart might reach rotation just over 80, so let's set the high bound to 87 just in case.
             'enemies': gym.spaces.Box(
-                low=np.full( (3, 7), [0, 60, -300, -55, -50, -60, 0  ], dtype=np.float32),
-                high=np.full((3, 7), [2, 860, 800,  0,   80,  87, 100], dtype=np.float32),
-                shape=(3, 7),  # 3 enemies, each with: type id, x & y position, x & y velocity, rotation, hp
+                low=np.full( (3, 7), [0,  60-PLAYER_CX, -300-PLAYER_CY_HIGH, -55, -50, -60, 0  ], dtype=np.float32),
+                high=np.full((3, 7), [2, 860-PLAYER_CX,  800-PLAYER_CY_LOW ,  0,   80,  87, 100], dtype=np.float32),
+                shape=(3, 7),  # 3 enemies, each with: type id, relative x & y position to player, x & y velocity, rotation, hp
                 dtype=np.float32
             ),
 
@@ -203,9 +219,9 @@ class AdvancedFlappyEnv(BaseEnv):
             # Left - bullet before -256 is useless as it can't bounce back => -270 just to be safe
             # Right - bullet despawns after 1290, but we'll use 1400 just to be safe (in case bullet has insanely high velocity)
             'bullets': gym.spaces.Box(
-                low=np.full( (7, 7), [0, 0, 0, -270, -240, -57, -52], dtype=np.float32),
-                high=np.full((7, 7), [3, 1, 1, 1400, 880,  50,  52], dtype=np.float32),
-                shape=(7, 7),  # 7 bullets, each with: type id, fired by player flag, bounced flag, x & y position, x & y velocity
+                low=np.full( (7, 7), [0, 0, 0, -270-PLAYER_CX, -240-PLAYER_CY_HIGH, -57, -52], dtype=np.float32),
+                high=np.full((7, 7), [3, 1, 1, 1400-PLAYER_CX,  880-PLAYER_CY_LOW,   50,  52], dtype=np.float32),
+                shape=(7, 7),  # 7 bullets, each with: type id, fired by player flag, bounced flag, relative x & y position to player, x & y velocity
                 dtype=np.float32
             )
         })
@@ -274,6 +290,4 @@ class AdvancedFlappyEnv(BaseEnv):
         return AdvancedFlappyModelController.get_action_masks(self.player, self)
 
     def calculate_reward(self, action, died: bool, passed_pipe: bool, collected_items: int) -> float:
-        # TODO: reward the agent, if it hits enemies while they are still dangerous - if SkyDart flies past the player,
-        #  it's no longer dangerous, the agent shouldn't waste its ammo on it.
         return 0.0
