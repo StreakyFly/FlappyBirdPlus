@@ -45,7 +45,7 @@ class BasicFlappyEnv(BaseEnv):
                         # So it seems like [16, 16] is the golden middle, going in either direction (lower or higher)
                         # makes the training slower with each neuron added/removed, but it still works until a certain point.
                         net_arch=dict(pi=[16, 16], vf=[16, 16]),
-                        # The minimum network size that learned to play in reasonable time - just 2 neurons!
+                        # The minimum network size that learned to play in reasonable time - just 2 neurons per hidden layer!
                         # net_arch=dict(pi=[2], vf=[2]),
                         activation_fn=nn.Tanh,
                         ortho_init=True,
@@ -113,7 +113,7 @@ class BasicFlappyEnv(BaseEnv):
         return observation_space_clip_modes
 
     def perform_step(self, action):
-        BasicFlappyModelController.perform_action(self.player, action)
+        BasicFlappyModelController.perform_action(action, self.player)
 
         terminated = False
         passed_pipe = False

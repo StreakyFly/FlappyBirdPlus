@@ -1,3 +1,4 @@
+from itertools import islice
 from weakref import WeakKeyDictionary, WeakSet
 
 import numpy as np
@@ -114,9 +115,32 @@ class AdvancedFlappyObservation(BaseObservation):
         # OBS: spawned items
         spawned_items = self.get_spawned_item_info(e)
 
+        # OBS: pipes_simple
+        next_pipe_pair = next_next_pipe_pair = None
+        for i, pipe in enumerate(e.pipes.upper):
+            if pipe.x + pipe.w < self.entity.x:
+                continue
+            next_pipe_pair = (pipe, e.pipes.lower[i])
+            next_next_pipe_pair = (e.pipes.upper[i + 1], e.pipes.lower[i + 1])
+            break
+
+        horizontal_distance_to_next_pipe = next_pipe_pair[0].x + next_pipe_pair[0].w - e.player.x
+        next_pipe_vertical_center = e.get_pipe_pair_center(next_pipe_pair)[1]
+        next_next_pipe_vertical_center = e.get_pipe_pair_center(next_next_pipe_pair)[1]
+
+        vertical_distance_to_next_pipe_center = e.player.cy - next_pipe_vertical_center
+        vertical_distance_to_next_next_pipe_center = e.player.cy - next_next_pipe_vertical_center
+
+        pipes_simple = [
+            horizontal_distance_to_next_pipe,
+            vertical_distance_to_next_pipe_center,
+            vertical_distance_to_next_next_pipe_center
+        ]
+
         # OBS: pipes
         pipe_corner_positions = []
-        for up_pipe, low_pipe in zip(self.env.pipes.upper, self.env.pipes.lower):
+        # Only include the first three pipe pairs in the observation - last pipe pair is always off-screen.
+        for up_pipe, low_pipe in islice(zip(self.env.pipes.upper, self.env.pipes.lower), 3):
             top_pipe_corners = [
                 [up_pipe.x, up_pipe.y + up_pipe.h],  # left bottom corner of top pipe
                 [up_pipe.x + up_pipe.w, up_pipe.y + up_pipe.h],  # right bottom corner of top pipe
@@ -138,6 +162,7 @@ class AdvancedFlappyObservation(BaseObservation):
             'weapon': np.array(weapon_info, dtype=np.float32),
             'inventory': np.array(inventory_info, dtype=np.float32),
             'spawned_items': np.array(spawned_items, dtype=np.float32),
+            'pipes_simple': np.array(pipes_simple, dtype=np.float32),
             'pipes': np.array(pipe_corner_positions, dtype=np.float32),
             'enemies': np.array(enemy_info, dtype=np.float32),
             'bullets': np.array(bullet_info, dtype=np.float32),
@@ -160,7 +185,7 @@ class AdvancedFlappyObservation(BaseObservation):
         Considering we'll very rarely have more than 3 items on screen at once, I think I have already complicated
         this far enough and should MOVE THE FUCK ON WHY AM I EVEN WRITING THIS LONG ASS USELESS DOCSTRING????????
         """
-        DEFAULT_INFO = [0, 0, 40, 0]
+        DEFAULT_INFO = [0, 0, -100, -900]
         # 3 items, each with: type id, item id, x & y position
         spawned_items = [DEFAULT_INFO.copy() for _ in range(3)]  # shape (3, 4)
 
@@ -189,21 +214,21 @@ class AdvancedFlappyObservation(BaseObservation):
             spawned_items[item_index] = [
                 self.TYPE_IDS[ITEM_NAME_TO_CLASS_MAP[spawned_item.item_name].item_type],  # type id
                 self.ITEM_IDS[spawned_item.item_name],  # item id
-                spawned_item.x,  # x position
-                spawned_item.y,  # y position
+                spawned_item.cx - e.player.cx,  # relative x position to player
+                spawned_item.cy - e.player.cy,  # relative y position to player
             ]
 
         for new_item in new_items:
             free_item_index = next((i for i, item in enumerate(spawned_items) if item == DEFAULT_INFO), -1)
 
-            if free_item_index == -1:
+            if free_item_index != -1:
                 # assign the new item to the free slot
                 self.spawned_item_index_dict[new_item] = free_item_index
                 spawned_items[free_item_index] = [
                     self.TYPE_IDS[ITEM_NAME_TO_CLASS_MAP[new_item.item_name].item_type],  # type id
                     self.ITEM_IDS[new_item.item_name],  # item id
-                    new_item.x,  # x position
-                    new_item.y,  # y position
+                    new_item.cx - e.player.cx,  # relative x position to player
+                    new_item.cy - e.player.cy,  # relative y position to player
                 ]
             else:
                 # No free slots - we'll just ignore this and all remaining spawned items.

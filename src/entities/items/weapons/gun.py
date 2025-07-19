@@ -3,7 +3,7 @@ import math
 import pygame
 
 from src.entities.items import Item, ItemType, ItemName
-from src.utils import rotate_on_pivot, printc
+from src.utils import rotate_on_pivot
 
 """
 The recoil animation currently does not work well with fast-firing guns, eg. Uzi, where self.recoil_duration is greater
@@ -271,8 +271,8 @@ class Gun(Item):
         self.animation_offset = pygame.Vector2(0, 0)
         self.animation_rotation = 0
 
-        if self.recoil_duration > self.shoot_cooldown:
-            printc(f"WARNING! '{self.item_name}' - recoil duration is greater than shoot cooldown!", color="yellow")
+        # if self.recoil_duration > self.shoot_cooldown:
+        #     printc(f"WARNING! '{self.item_name}' - recoil duration is greater than shoot cooldown!", color="yellow")
 
     def start_shoot_animation(self) -> None:
         # if self.remaining_recoil_duration > 0:

@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Dict, List
 
 
 class EnvType(Enum):
@@ -20,10 +19,3 @@ class EnvVariant(Enum):
     STEP1 = 'step1'  # step 1 in the training process
     STEP2 = 'step2'  # step 2 in the training process
     STEP3 = 'step3'  # step 3 in the training process
-
-
-ENV_TYPE_TO_VARIANTS: Dict[EnvType, List[EnvVariant]] = {
-    EnvType.BASIC_FLAPPY: [EnvVariant.MAIN],
-    EnvType.ENEMY_CLOUDSKIMMER: [EnvVariant.MAIN, EnvVariant.STEP1, EnvVariant.STEP2, EnvVariant.STEP3],
-    EnvType.ADVANCED_FLAPPY: [EnvVariant.MAIN]
-}

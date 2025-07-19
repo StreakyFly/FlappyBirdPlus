@@ -99,7 +99,8 @@ class ItemManager:
             # y = self.last_pipe.y - self.pipes.vertical_gap                               # bottom part of top pipe
             # y = self.last_pipe.y - self.pipes.vertical_gap * 0.5 - SPAWNED_ITEM_SIZE//2  # center
             # y = self.last_pipe.y - SPAWNED_ITEM_SIZE                                     # top part of bottom pipe
-            y = random.randint(self.last_pipe.y - self.pipes.vertical_gap, self.last_pipe.y - SPAWNED_ITEM_SIZE)
+            # y = random.randint(self.last_pipe.y - self.pipes.vertical_gap, self.last_pipe.y - SPAWNED_ITEM_SIZE)  # REVERT uncomment
+            y = random.randint(self.last_pipe.y - self.pipes.vertical_gap - 300, self.last_pipe.y - SPAWNED_ITEM_SIZE + 50)  # TEMP: bigger y offset during training  # REVERT comment this line
 
         spawned_item = SpawnedItem(config=self.config, item_name=item_name, x=x, y=y, image=self.config.images.item_spawn_bubble)
         self.spawned_items.append(spawned_item)

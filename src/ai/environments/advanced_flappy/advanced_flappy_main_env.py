@@ -10,13 +10,6 @@ from src.ai.training_config import TrainingConfig
 from ..base_env import BaseEnv
 
 
-# TODO before training the Advanced Flappy Bird agent:
-#  4. Finish observations_space in get_action_and_observation_space() method
-#  5. Finish advanced_flappy_observation.py, so it returns the correct observation
-#  6. Implement proper get_action_masks() method in AdvancedFlappyModelController
-#  7. Create a training environment and finally start the training!
-
-
 class AdvancedFlappyEnv(BaseEnv):
     """
     # TODO: speedrun write this docstring
@@ -27,7 +20,7 @@ class AdvancedFlappyEnv(BaseEnv):
         super().__init__()
         # self.observation_manager = ObservationManager()
         self.fill_observation_manager()
-        self.init_model_controllers(human_player=True)
+        self.init_model_controllers(human_player=True)  # True, cuz it shouldn't init player model as we'll be training it
 
     def reset_env(self):
         super().reset_env()
@@ -39,19 +32,17 @@ class AdvancedFlappyEnv(BaseEnv):
 
     @staticmethod
     def get_training_config() -> TrainingConfig:
-        # TODO: this worked great for CloudSkimmer, but AdvancedFlappy is a bit
-        #  different, so it might need some adjustments
         return TrainingConfig(
             learning_rate=0.0003,
             n_steps=2048,
-            batch_size=64,
+            batch_size=256,
             gamma=0.99,
             gae_lambda=0.95,
             clip_range=0.1,
             ent_coef=0.005,
 
             policy_kwargs=dict(
-                net_arch=dict(pi=[64, 32], vf=[64, 32]),
+                net_arch=dict(pi=[64, 32], vf=[64, 32]),  # actor and critic network layers are separate - not shared!
                 activation_fn=nn.LeakyReLU,
                 ortho_init=True,
             ),
@@ -114,18 +105,25 @@ class AdvancedFlappyEnv(BaseEnv):
 
             # TODO: spawn a few more items in the training environment, so there are 3 items on screen at once more frequently
             # Don't pass quantity in the observation, as the player doesn't see it, so the agent shouldn't either.
-            # If the agent struggles to learn how useful each item is, you could also pass the item value, so for
-            # food, potions and heals, we pass fill_value, for weapons, we pass the damage it deals and for
-            # ammo_box and token-of-undying, we pass some arbitrary value, like 100. Low/high bounds can be 0-100,
-            # unless you change any of the items values beyond that.
             'spawned_items': gym.spaces.Box(
+                # NAH, we won't pass absolute positions -------------
                 # X pos: 40-720: spawn_item is 100px wide, player is at pos x 144, so 40+100 is still just past the
                 # player. The player can't reach it anymore.
                 # Y Pos: -100-800: the item can technically spawn anywhere on the screen, but we won't pass it if it
                 # spawns so high/low that the player can't reach it 99.99% of the time without crashing into a pipe.
-                low=np.full( (3, 4), [0, 0, 40, -100], dtype=np.float32),
-                high=np.full((3, 4), [6, 3, 720, 800], dtype=np.float32),
+                # ------------- BUT RATHER RELATIVE TO PLAYER POSITION -------------
+                low=np.full( (3, 4), [0, 0, -100, -900], dtype=np.float32),
+                high=np.full((3, 4), [6, 3, 600, 900], dtype=np.float32),
                 shape=(3, 4),  # type id, item id, x & y position
+                dtype=np.float32
+            ),
+
+            # index 0 -> horizontal distance from player to the next pipe's right-most point
+            # index 1 -> vertical distance from player to the next pipe's vertical center
+            # index 2 -> vertical distance from player to the second next pipe's vertical center
+            'pipes_simple': gym.spaces.Box(
+                low=np.array([0, -650, -650], dtype=np.float32),
+                high=np.array([500, 550, 550], dtype=np.float32),
                 dtype=np.float32
             ),
 
@@ -153,10 +151,11 @@ class AdvancedFlappyEnv(BaseEnv):
                         [[ 450, TOP_PIPE_BOTTOM_LOW], [ 580, TOP_PIPE_BOTTOM_LOW]],
                         [[ 450, BOTTOM_PIPE_TOP_LOW], [ 580, BOTTOM_PIPE_TOP_LOW]],
                     ],
-                    [  # pipe pair 3
-                        [[ 840, TOP_PIPE_BOTTOM_LOW], [ 970, TOP_PIPE_BOTTOM_LOW]],
-                        [[ 840, BOTTOM_PIPE_TOP_LOW], [ 970, BOTTOM_PIPE_TOP_LOW]],
-                    ]
+                    # LAST PIPE PAIR IS NEVER VISIBLE!
+                    # [  # pipe pair 3
+                    #     [[ 840, TOP_PIPE_BOTTOM_LOW], [ 970, TOP_PIPE_BOTTOM_LOW]],
+                    #     [[ 840, BOTTOM_PIPE_TOP_LOW], [ 970, BOTTOM_PIPE_TOP_LOW]],
+                    # ]
                 ]),
                 high=np.array([
                     [  # pipe pair 0
@@ -171,12 +170,13 @@ class AdvancedFlappyEnv(BaseEnv):
                         [[ 840, TOP_PIPE_BOTTOM_HIGH], [ 970, TOP_PIPE_BOTTOM_HIGH]],
                         [[ 840, BOTTOM_PIPE_TOP_HIGH], [ 970, BOTTOM_PIPE_TOP_HIGH]],
                     ],
-                    [  # pipe pair 3
-                        [[1230, TOP_PIPE_BOTTOM_HIGH], [1360, TOP_PIPE_BOTTOM_HIGH]],
-                        [[1230, BOTTOM_PIPE_TOP_HIGH], [1360, BOTTOM_PIPE_TOP_HIGH]],
-                    ]
+                    # LAST PIPE PAIR IS NEVER VISIBLE!
+                    # [  # pipe pair 3
+                    #     [[1230, TOP_PIPE_BOTTOM_HIGH], [1360, TOP_PIPE_BOTTOM_HIGH]],
+                    #     [[1230, BOTTOM_PIPE_TOP_HIGH], [1360, BOTTOM_PIPE_TOP_HIGH]],
+                    # ]
                 ]),
-                shape=(4, 2, 2, 2),
+                shape=(3, 2, 2, 2),
                 dtype=np.float32
             ),
 
@@ -214,29 +214,29 @@ class AdvancedFlappyEnv(BaseEnv):
 
     def get_observation_space_clip_modes(self):
         return {
-            'player': 1, #-1,  # REVERT TO -1
-            'weapon': 1,  # 0,     # print a warning - quantity may go above the high value (very unlikely, but possible)  # REVERT TO 0
-            'inventory': 0,  # print a warning - quantity may go above the high value (very unlikely, but possible)
-            'spawned_items': -1,
+            'player': -1,
+            'weapon': 0,     # print a warning - quantity may go above the high value (very rarely, but possible)
+            'inventory': 0,  # print a warning - quantity may go above the high value (very rarely, but possible)
+            'spawned_items': 0,  # print a warning - relative y position to player may go out of bounds (very unlikely, but possible)
+            'pipes_simple': -1,
             'pipes': 1,      # the pipes are out of bounds at the beginning, so clip them
-            'enemies': 1,  #-1,  # REVERT TO -1
+            'enemies': -1,
             'bullets': -1,
         }
 
     def perform_step(self, action):
         # Here, other entities can get & perform the action before the agent,
         # as the agent has already decided what it'll do this step.
-        # self.handle_basic_flappy()  # TODO: delete this? Why is this even here??
         self.perform_entity_actions()
 
         for event in pygame.event.get():
             self.handle_quit(event)
-            self.handle_event(event)  # handles key presses as well  # TODO: comment out when training!
-        self.handle_mouse_buttons()  # handles mouse button presses as well  # TODO: comment out when training!
+            # self.handle_event(event)  # handles key presses as well  # TODO: comment out when training!
+        # self.handle_mouse_buttons()  # handles mouse button presses as well  # TODO: comment out when training!
 
         # Must NOT init AdvancedFlappyModelController(), as it would create a new instance which creates a new
         #  AdvancedFlappyEnv (this), causing infinite recursion. Yeah, really messed up, but (｡◕‿‿◕｡)
-        # AdvancedFlappyModelController.perform_action(action=action, entity=self.player, env=self)
+        AdvancedFlappyModelController.perform_action(action=action, entity=self.player, env=self)
 
         terminated = False
         passed_pipe = False
@@ -259,7 +259,7 @@ class AdvancedFlappyEnv(BaseEnv):
 
         return (
             self.get_observation(),  # observation
-            self.calculate_reward(action=action),  # reward,
+            self.calculate_reward(action=action, died=terminated, passed_pipe=passed_pipe, collected_items=len(collided_items)),  # reward,
             terminated,  # terminated
             False,  # truncated - end the episode if it lasts too long
             {}  # info
@@ -273,7 +273,7 @@ class AdvancedFlappyEnv(BaseEnv):
         #  AdvancedFlappyEnv (this), causing infinite recursion. Yeah, really messed up, but (｡◕‿‿◕｡)
         return AdvancedFlappyModelController.get_action_masks(self.player, self)
 
-    def calculate_reward(self, action) -> float:
+    def calculate_reward(self, action, died: bool, passed_pipe: bool, collected_items: int) -> float:
         # TODO: reward the agent, if it hits enemies while they are still dangerous - if SkyDart flies past the player,
         #  it's no longer dangerous, the agent shouldn't waste its ammo on it.
         return 0.0
