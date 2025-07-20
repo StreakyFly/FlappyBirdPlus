@@ -68,6 +68,7 @@ class ModelPPO:
                 gae_lambda=self.training_config.gae_lambda,
                 clip_range=self.training_config.clip_range,
                 ent_coef=self.training_config.ent_coef,
+                vf_coef=self.training_config.vf_coef,
                 policy_kwargs=self.training_config.policy_kwargs,
             )
 
@@ -140,8 +141,19 @@ class ModelPPO:
         printc("[WARN] Each episode ends after termination. "
                "If termination never happens, the episode will never end.", color="yellow")
 
+        N_EVAL_EPISODES = 18
         evaluate_policy = maskable_evaluate_policy if self.use_action_masking else normal_evaluate_policy
-        mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10, deterministic=True, reward_threshold=None)
+        episode_rewards, episode_lengths = evaluate_policy(
+            model, model.get_env(), n_eval_episodes=N_EVAL_EPISODES, deterministic=True, reward_threshold=None, return_episode_rewards=True
+        )
+        print(f"n_eval_episodes={N_EVAL_EPISODES}")
+        print("episode lengths:", episode_lengths)
+        print("episode rewards:", [round(r, 2) for r in episode_rewards])
+        mean_length = np.mean(episode_lengths)
+        std_length = np.std(episode_lengths)
+        mean_reward = np.mean(episode_rewards)
+        std_reward = np.std(episode_rewards)
+        print(f"mean_length: {mean_length: .2f} +/- {std_length: .2f}")
         print(f"mean_reward: {mean_reward: .2f} +/- {std_reward: .2f}")
         norm_env.close()
 

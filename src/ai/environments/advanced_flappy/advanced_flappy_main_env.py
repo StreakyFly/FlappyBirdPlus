@@ -53,6 +53,7 @@ class AdvancedFlappyEnv(BaseEnv):
             gae_lambda=0.95,
             clip_range=0.1,
             ent_coef=0.005,
+            vf_coef=0.5,
 
             policy_kwargs=dict(
                 net_arch=dict(pi=[64, 32], vf=[64, 32]),  # actor and critic network layers are separate - not shared!
@@ -234,7 +235,7 @@ class AdvancedFlappyEnv(BaseEnv):
             'weapon': 0,     # print a warning - quantity may go above the high value (very rarely, but possible)
             'inventory': 0,  # print a warning - quantity may go above the high value (very rarely, but possible)
             'spawned_items': 0,  # print a warning - relative y position to player may go out of bounds (very unlikely, but possible)
-            'pipes_simple': -1,
+            'pipes_simple': 1,  # the pipes are out of bounds at the beginning, so clip them
             'pipes': 1,      # the pipes are out of bounds at the beginning, so clip them
             'enemies': -1,
             'bullets': -1,

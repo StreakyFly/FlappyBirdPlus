@@ -28,35 +28,71 @@ class AdvancedFlappyStep1Env(AdvancedFlappyEnv):
 
     @staticmethod
     def get_training_config() -> TrainingConfig:
-        return TrainingConfig(
-            learning_rate=0.0003,
-            n_steps=2048,
-            batch_size=256,
-            gamma=0.99,
-            gae_lambda=0.95,
-            clip_range=0.1,
-            ent_coef=0.005,
+        VERSION: str = "medium_netarch"  # which training config to use
 
-            policy_kwargs=dict(
-                net_arch=dict(pi=[64, 32], vf=[64, 32]),
-                activation_fn=nn.LeakyReLU,
-                ortho_init=True,
-            ),
+        match VERSION:  # noqa
+            case "small_netarch":
+                training_config = TrainingConfig(
+                    learning_rate=3e-4,
+                    n_steps=2048,
+                    batch_size=256,
+                    gamma=0.99,
+                    gae_lambda=0.96,
+                    clip_range=0.1,
+                    ent_coef=0.006,
+                    vf_coef=0.5,
 
-            save_freq=40_000,
-            total_timesteps=7_000_000,
+                    policy_kwargs=dict(
+                        net_arch=dict(pi=[64, 32], vf=[64, 32]),
+                        activation_fn=nn.LeakyReLU,
+                        ortho_init=True,
+                    ),
 
-            normalizer=VecBoxOnlyNormalize,
-            clip_norm_obs=5.0,
+                    save_freq=40_000,
+                    total_timesteps=12_000_000,
 
-            frame_stack=-1
-        )
+                    normalizer=VecBoxOnlyNormalize,
+                    clip_norm_obs=5.0,
+
+                    frame_stack=-1
+                )
+
+            case "medium_netarch":
+                training_config = TrainingConfig(
+                    learning_rate=3e-4,
+                    n_steps=2048,
+                    batch_size=512,
+                    gamma=0.99,
+                    gae_lambda=0.96,
+                    clip_range=0.1,
+                    ent_coef=0.006,
+                    vf_coef=0.5,
+
+                    policy_kwargs=dict(
+                        net_arch=dict(pi=[96, 48], vf=[96, 48]),
+                        activation_fn=nn.LeakyReLU,
+                        ortho_init=True,
+                    ),
+
+                    save_freq=40_000,
+                    total_timesteps=12_000_000,
+
+                    normalizer=VecBoxOnlyNormalize,
+                    clip_norm_obs=5.0,
+
+                    frame_stack=-1
+                )
+
+            case _:
+                raise ValueError(f"Unknown training config version: {VERSION}")
+
+        return training_config
 
     def perform_step(self, action):
         """
         In item_manager.py (ItemManager), in the spawn_item() method, we increased the offset the items can spawn at,
         to prepare the agent for item drops from killed enemies. We used this during training of step1 env:
-        y = random.randint(self.last_pipe.y - self.pipes.vertical_gap - 300, self.last_pipe.y - SPAWNED_ITEM_SIZE + 50)
+        y = random.randint(self.last_pipe.y - self.pipes.vertical_gap - 200, self.last_pipe.y - SPAWNED_ITEM_SIZE + 100)
         """
         for event in pygame.event.get():
             self.handle_quit(event)
@@ -109,12 +145,9 @@ class AdvancedFlappyStep1Env(AdvancedFlappyEnv):
     def calculate_reward(self, action, died: bool, passed_pipe: bool, collected_items: int) -> float:
         reward = 0
 
-        # tiny reward every frame because chatgpt said so
-        reward += 0.05  # "survival incentive"
-
         # huge punishment for dying
         if died:
-            reward -= 16
+            reward -= 12
         # lil punishment for flapping
         if action[0] == 1:
             reward -= 0.1
@@ -122,7 +155,7 @@ class AdvancedFlappyStep1Env(AdvancedFlappyEnv):
         if passed_pipe:
             reward += 2
         # big reward for each collected item
-        reward += collected_items * 7
+        reward += collected_items * 4
 
         # lil reward for staying close to the center of the next pipe pair center  <-- don't include this in step2 env!
         for i, pipe in enumerate(self.pipes.upper):
