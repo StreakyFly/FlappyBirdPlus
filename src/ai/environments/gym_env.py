@@ -54,7 +54,7 @@ class GymEnv(GymnasiumEnv):
         self.game_env.reset_env()
         self._first_reset_done = True
 
-        observation = self.game_env.get_observation()
+        observation = self.clip_observation(self.game_env.get_observation())
         info = {}
 
         return observation, info
