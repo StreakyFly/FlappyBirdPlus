@@ -272,14 +272,14 @@ class ModelPPO:
                 break
             file_path = inspect.getfile(cls)
             if file_path not in env_files:
-                with open(file_path, 'r') as f:
+                with open(file_path, 'r', encoding='utf-8') as f:
                     relative_path = os.path.relpath(file_path, start='')
                     env_files[relative_path] = f.read()
         config_dict['environment_files'] = env_files
 
         filename = f"training_config_{'initial_' if not continue_training else 'updated_'}{self._get_current_time()}.json"
         config_path = os.path.join(self.training_config_dir, filename)
-        with open(config_path, 'w') as f:
+        with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config_dict, f, indent=4, default=serialize)
 
     def _load_training_config(self) -> None:
