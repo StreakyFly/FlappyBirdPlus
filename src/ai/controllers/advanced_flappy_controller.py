@@ -36,7 +36,7 @@ class AdvancedFlappyModelController(BaseModelController):
         # initialize masks for each action type — all actions are initially available
         flap_mask = np.ones(2, dtype=np.int8)  # [do nothing, flap]  <-- flap is always available
         gun_mask = np.ones(3, dtype=np.int8)  # [do nothing, fire, reload]
-        inventory_mask = np.ones(4, dtype=np.int8)  # [do nothing, use slot 2, use slot 3, use slot 4]
+        inventory_mask = np.ones(4, dtype=np.int8)  # [do nothing, use slot 3, use slot 4, use slot 5]
 
         # gun_mask
         gun: Gun = env.inventory.inventory_slots[0].item

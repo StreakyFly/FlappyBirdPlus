@@ -73,7 +73,7 @@ class Player(Entity):
         self.min_vel_y = -15  # min vel along Y, max ascend speed
         self.acc_y = 1.875  # players downward acceleration
 
-        self.rotation = 80  # player's current rotation
+        self.rotation = 20  # 80 <-- why was 80 here??  # player's current rotation
         self.vel_rot = -2.7  # player's rotation speed
         self.rot_min = -90  # player's min rotation angle
         self.rot_max = 20  # player's max rotation angle

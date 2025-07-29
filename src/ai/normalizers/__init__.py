@@ -1,0 +1,2 @@
+from .vec_box_only_normalize import VecBoxOnlyNormalize
+from .vec_min_max_normalize import VecMinMaxNormalize

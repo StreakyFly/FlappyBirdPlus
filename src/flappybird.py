@@ -71,10 +71,13 @@ class FlappyBird:
         This method should be called outside the FlappyBird class, before the game loop starts.
         :param human_player: whether a human will control the flappy bird, or the AI
         """
-        from .ai.controllers import BasicFlappyModelController, EnemyCloudSkimmerModelController
+        # from .ai.controllers import BasicFlappyModelController, EnemyCloudSkimmerModelController
+        from .ai.controllers import EnemyCloudSkimmerModelController, AdvancedFlappyModelController
         self.human_player = human_player
         if not human_player:
-            self.flappy_controller = BasicFlappyModelController()
+            # TODO: use BasicFlappyModelController for training CloudSkimmer
+            # self.flappy_controller = BasicFlappyModelController()
+            self.flappy_controller = AdvancedFlappyModelController()
         self.enemy_cloudskimmer_controller = EnemyCloudSkimmerModelController()
 
     async def start(self):

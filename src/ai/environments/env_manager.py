@@ -100,8 +100,11 @@ class EnvManager:
             case EnvVariant.STEP1:
                 from .advanced_flappy.advanced_flappy_step1_env import AdvancedFlappyStep1Env
                 return AdvancedFlappyStep1Env
+            case EnvVariant.STEP2:
+                from .advanced_flappy.advanced_flappy_step2_env import AdvancedFlappyStep2Env
+                return AdvancedFlappyStep2Env
             case _:
-                raise ValueError(f"Invalid env_variant: {env_variant}. ADVANCED_FLAPPY supports [MAIN, STEP1] only.")
+                raise ValueError(f"Invalid env_variant: {env_variant}. ADVANCED_FLAPPY supports [MAIN, STEP1, STEP2] only.")
 
     @staticmethod
     def get_enemy_cloudskimmer_env_class(env_variant: EnvVariant) -> Type[BaseEnv]:

@@ -137,6 +137,9 @@ class ModelPPO:
         norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=env, for_training=False)
         norm_env = self._wrap_with_frame_stack(norm_env)
         model = self._load_model(path=self.final_model_path, venv=norm_env)
+        # Print model's policy weights
+        # for name, param in model.policy.named_parameters():
+        #     print(f"Layer: {name}, Weights: {param.data}")
 
         printc("[WARN] Each episode ends after termination. "
                "If termination never happens, the episode will never end.", color="yellow")

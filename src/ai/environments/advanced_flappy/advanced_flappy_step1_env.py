@@ -157,7 +157,7 @@ class AdvancedFlappyStep1Env(AdvancedFlappyEnv):
         # big reward for each collected item
         reward += collected_items * 4
 
-        # lil reward for staying close to the center of the next pipe pair center  <-- don't include this in step2 env!
+        # lil reward for staying close to the vertical center of the next pipe pair
         for i, pipe in enumerate(self.pipes.upper):
             if pipe.x + pipe.w < self.player.x:
                 continue
