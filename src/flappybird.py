@@ -322,12 +322,28 @@ class FlappyBird:
         if m_left:
             self.inventory.use_item(inventory_slot_index=0)  # gun slot
 
-    @staticmethod
-    def handle_quit(event):
+    def handle_quit(self, event):
         if event.type == pygame.QUIT:
             print("Quitting...")
             pygame.quit()
             sys.exit()
+        # So ummm, this clearly doesn't belong in handle_quit(), but because [MY_EXCUSE_GOES_HERE],
+        # I decided to 'temporarily' (LFMAOOO) put it here, because this method is called in
+        # all environments/modes/game loops, meaning this is the only place I had to modify.
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+            self.take_screenshot()
+
+    @staticmethod
+    def take_screenshot():
+        """
+        Takes a screenshot of the current game state and saves it to a file.
+        """
+        SS_DIR_NAME = "screenshots"
+        os.makedirs(SS_DIR_NAME, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S%f")
+        filename = f'screenshot_{timestamp}.png'
+        pygame.image.save(pygame.display.get_surface(), os.path.join(SS_DIR_NAME, filename))
+        print(f"Screenshot saved as {filename}")
 
     def submit_result_async(self):
         current_time = datetime.now(timezone.utc).isoformat()

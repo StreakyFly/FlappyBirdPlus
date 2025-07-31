@@ -20,6 +20,7 @@ ai-models/**/run*
 
 # Persistent data, like user settings
 data/
+screenshots/
 
 
 __pycache__
