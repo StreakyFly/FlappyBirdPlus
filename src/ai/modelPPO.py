@@ -344,24 +344,26 @@ class LogAllInfoCallback(BaseCallback):
     def __init__(self, prefix: str = "rollout_extra", verbose: int = 0):
         super().__init__(verbose)
         self.prefix = prefix
+        self.episode_data = {}
 
     def _on_step(self) -> bool:
-        log_data = {}
-
         for info, done in zip(self.locals["infos"], self.locals["dones"]):
-            if done:
+            if done:  # ONLY log info at the end of each episode
                 for key, value in info.items():
                     if key == "TimeLimit.truncated":  # exclude this key
                         continue
-                    if isinstance(value, (int, float)):  # ensure only numerical values are logged
-                        if key not in log_data:
-                            log_data[key] = []
-                        log_data[key].append(value)
+                    # If the value is a number, log it
+                    elif isinstance(value, (int, float)):
+                        if key not in self.episode_data:
+                            self.episode_data[key] = []
+                        self.episode_data[key].append(value)
+        return True
 
-        # Log means across all finished episodes in this iteration
-        for key, values in log_data.items():
+    def _on_rollout_end(self) -> None:
+        # Log the mean of collected values at the end of each rollout
+        for key, values in self.episode_data.items():
             if values:
                 mean_value = np.mean(values)
                 self.logger.record(f"{self.prefix}/ep_{key}_mean", mean_value)
-
-        return True
+        # Clear buffer for the next rollout
+        self.episode_data.clear()
