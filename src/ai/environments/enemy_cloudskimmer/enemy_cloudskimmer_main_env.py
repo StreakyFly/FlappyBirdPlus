@@ -385,4 +385,4 @@ class EnemyCloudSkimmerEnv(BaseEnv):
     def handle_basic_flappy(self):
         flappy_observation = self.observation_manager.get_observation(self.player)
         flappy_action = self.basic_flappy_controller.predict_action(flappy_observation, use_action_masks=False)
-        self.basic_flappy_controller.perform_action(self.player, flappy_action)
+        self.basic_flappy_controller.perform_action(flappy_action, self.player)
