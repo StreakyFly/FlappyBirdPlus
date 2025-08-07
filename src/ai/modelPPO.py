@@ -38,15 +38,18 @@ class ModelPPO:
         self.seed: int = Config.seed  # seed for the training (applied globally(?), so it affects the model and all environments)
         self.num_cores: int = Config.num_cores  # number of cores to use during training
 
-        self.checkpoints_dir = None
-        self.tensorboard_dir = None
-        self.training_config_dir = None
-        self.final_model_path = None
-        self.norm_stats_path = None
-
-        self._initialize_directories()
+        # Prepare paths for various directories and files
+        base_dir = os.path.join('ai-models', 'PPO', self.env_type.value)
+        self.run_dir = os.path.join(base_dir, self.run_id)
+        self.checkpoints_dir = os.path.join(self.run_dir, 'checkpoints')
+        self.tensorboard_dir = os.path.join(self.run_dir, 'tensorboard_logs')
+        self.monitor_dir = os.path.join(self.run_dir, 'monitor_logs', f"session_{self._get_current_time()}")
+        self.training_config_dir = os.path.join(self.run_dir, 'training_configs')
+        self.final_model_path = os.path.join(self.run_dir, self.env_type.value)
+        self.norm_stats_path = os.path.join(self.run_dir, self.env_type.value + '_normalization_stats.pkl')
 
     def train(self, norm_venv: VecEnvWrapper = None, model=None, continue_training: bool = False) -> None:
+        self._initialize_directories()
         self._save_training_config(continue_training=continue_training)
 
         if not continue_training:
@@ -106,6 +109,7 @@ class ModelPPO:
         norm_venv.save(self.norm_stats_path)
 
     def continue_training(self) -> None:
+        self._ensure_run_dir_exist()
         venv = self._create_venv(n_envs=self.num_cores, use_subproc_vec_env=True, monitor=True)
         norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=venv)
         norm_env = self._wrap_with_frame_stack(norm_env)
@@ -114,6 +118,7 @@ class ModelPPO:
         self.train(norm_env, model, continue_training=True)
 
     def run(self) -> None:
+        self._ensure_run_dir_exist()
         self._load_training_config()
         env = self._create_venv(n_envs=1, use_subproc_vec_env=False, monitor=False)
         norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=env, for_training=False)
@@ -132,6 +137,7 @@ class ModelPPO:
                 obs = norm_env.reset()
 
     def evaluate(self) -> None:
+        self._ensure_run_dir_exist()
         self._load_training_config()
         env = self._create_venv(n_envs=self.num_cores, use_subproc_vec_env=True, monitor=False)
         norm_env = self._wrap_with_normalizer(path=self.norm_stats_path, venv=env, for_training=False)
@@ -234,23 +240,21 @@ class ModelPPO:
         return time.strftime(time_format)
 
     def _initialize_directories(self) -> None:
-        base_dir = os.path.join('ai-models', 'PPO', self.env_type.value)
-        run_dir = os.path.join(base_dir, self.run_id)
-
-        self.checkpoints_dir = os.path.join(run_dir, 'checkpoints')
-        self.tensorboard_dir = os.path.join(run_dir, 'tensorboard_logs')
-        self.monitor_dir = os.path.join(run_dir, 'monitor_logs', f"session_{self._get_current_time()}")
-        self.training_config_dir = os.path.join(run_dir, 'training_configs')
-        self.final_model_path = os.path.join(run_dir, self.env_type.value)
-        self.norm_stats_path = os.path.join(run_dir, self.env_type.value + '_normalization_stats.pkl')
-
-        os.makedirs(run_dir, exist_ok=True)
+        os.makedirs(self.run_dir, exist_ok=True)
         os.makedirs(self.checkpoints_dir, exist_ok=True)
         os.makedirs(self.tensorboard_dir, exist_ok=True)
         # os.makedirs(self.monitor_dir, exist_ok=True)  # Nuh-uh, don't create this dir yourself, it will be created when needed
         os.makedirs(self.training_config_dir, exist_ok=True)
+        self._create_notes_file(dir_path=self.run_dir)
 
-        self._create_notes_file(dir_path=run_dir)
+    def _ensure_run_dir_exist(self) -> None:
+        """
+        Ensures that the run directory exists. If it doesn't, it prints an error message and exits.
+        """
+        if not os.path.exists(self.run_dir):
+            printc(f"[ERROR] Run directory '{self.run_dir}' does not exist. "
+                   f"You either messed up the `run_id` or set the wrong mode. Exiting...", color="red", styles=['reverse'])
+            raise FileNotFoundError(f"Run directory '{self.run_dir}' does not exist.")
 
     def _save_training_config(self, continue_training: bool) -> None:
         import inspect
