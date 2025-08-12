@@ -147,24 +147,31 @@ class ModelPPO:
         # for name, param in model.policy.named_parameters():
         #     print(f"Layer: {name}, Weights: {param.data}")
 
-        printc("[WARN] Each episode ends after termination. "
-               "If termination never happens, the episode will never end.", color="yellow")
+        printc("[INFO] Evaluating the model...", color="blue")
+        printc("[WARN] Each episode ends after termination. If termination never happens, the episode will never end.", color="yellow")
 
-        N_EVAL_EPISODES = 18
+        N_EVAL_EPISODES = 50
         evaluate_policy = maskable_evaluate_policy if self.use_action_masking else normal_evaluate_policy
         episode_rewards, episode_lengths = evaluate_policy(
             model, model.get_env(), n_eval_episodes=N_EVAL_EPISODES, deterministic=True, reward_threshold=None, return_episode_rewards=True
         )
-        print(f"n_eval_episodes={N_EVAL_EPISODES}")
+        print(f"episodes={N_EVAL_EPISODES}")
         print("episode lengths:", episode_lengths)
         print("episode rewards:", [round(r, 2) for r in episode_rewards])
         mean_length = np.mean(episode_lengths)
         std_length = np.std(episode_lengths)
         mean_reward = np.mean(episode_rewards)
         std_reward = np.std(episode_rewards)
-        print(f"mean_length: {mean_length: .2f} +/- {std_length: .2f}")
-        print(f"mean_reward: {mean_reward: .2f} +/- {std_reward: .2f}")
+        print(f"mean_length: {mean_length:.2f} +/- {std_length:.2f}")
+        print(f"mean_reward: {mean_reward:.2f} +/- {std_reward:.2f}")
         norm_env.close()
+
+        results_path = os.path.join(self.run_dir, 'evaluation_results.txt')
+        with open(results_path, 'a') as f:
+            f.write(f"Evaluation at {self._get_current_time(time_format='%d.%m.%Y - %H:%M:%S')}:\n")
+            f.write(f"episodes: {N_EVAL_EPISODES}\n")
+            f.write(f"mean_length: {mean_length:.2f} +/- {std_length:.2f} {episode_lengths}\n")
+            f.write(f"mean_reward: {mean_reward:.2f} +/- {std_reward:.2f} {[round(r, 2) for r in episode_rewards]}\n\n\n")
 
     def _create_venv(self, n_envs: int = 1, use_subproc_vec_env: bool = False, monitor: bool = False) -> VecEnv:
         """
@@ -341,7 +348,7 @@ class ModelPPO:
         if not os.path.exists(notes_path):
             with open(notes_path, 'w') as f:
                 f.write(f"# Training Notes\n")
-                f.write(f"**Start Time**: {self._get_current_time(time_format='%d. %m. %Y %H:%M:%S')}\n\n")
+                f.write(f"**Start Time**: {self._get_current_time(time_format='%d.%m.%Y %H:%M:%S')}\n\n")
 
 
 class LogAllInfoCallback(BaseCallback):

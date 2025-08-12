@@ -1,8 +1,6 @@
-from typing import Literal
-from typing import Optional
+from typing import Literal, Optional
 
-from .ai.environments import EnvType
-from .ai.environments.env_types import EnvVariant
+from .ai.environments.env_types import EnvType, EnvVariant
 from .modes import Mode
 from .utils import printc, SettingsManager
 
@@ -12,11 +10,12 @@ class Config:
     fps_cap: int = 30  # <-- change the FPS cap here; default = 30; no cap = 0 or a negative value
     num_cores: int = 8  # <-- change the number of cores to use during training (more != faster training)
     debug: bool = settings_manager.get_setting('debug')  # <-- toggle debug mode
-    mode: Mode = Mode.TEST_ENV  # <-- change the mode here
+    mode: Mode = Mode.CONTINUE_TRAINING  # <-- change the mode here
     algorithm: Literal['PPO', 'DQN'] = 'PPO'  # <-- change the algorithm here (PPO is the only one fully supported)
     env_type: EnvType = EnvType.ADVANCED_FLAPPY  # <-- change environment type here
     env_variant: EnvVariant = EnvVariant.MAIN  # <-- change environment variant here (doesn't work for Mode.PLAY)
     run_id: Optional[str] = None  # "run_test"  # <-- change the run id here (can/should be None for some modes)
+    evaluate_after_training: bool = True  # <-- toggle if you want to evaluate the model after training
     seed: Optional[int] = 42  # <-- None = set dynamic random seed; non-negative = fixed seed; used by the PPO algorithm and game environments
     handle_seed: bool = False  # <-- toggle if you want to handle the seed yourself (use False for Mode.TRAIN & CONTINUE_TRAINING, sometimes for other modes as well)
     human_player: bool = not settings_manager.get_setting('ai_player')  # <-- toggle if you want to play the game yourself (only works for Mode.PLAY)
@@ -39,6 +38,7 @@ class Config:
                 cls.printcw("Headless mode is enabled but FPS is capped. Use 0 for no FPS cap.")
             if cls.mode == Mode.RUN_MODEL:
                 cls.printcw("Headless mode is enabled but mode is set to Mode.RUN_MODEL.")
+        # TODO: Mode.PLAY will not use env_type either, maybe add a warning for that as well? Or remove a warning for env_variant?
         if cls.env_variant != EnvVariant.MAIN and cls.mode == Mode.PLAY:
             cls.printcw("Mode.PLAY will NOT take the env_variant into account. EnvVariant.MAIN will be used instead.")
         if cls.algorithm == 'PPO' and cls.run_id is None and cls.mode in [Mode.CONTINUE_TRAINING, Mode.EVALUATE_MODEL, Mode.RUN_MODEL]:
@@ -80,6 +80,9 @@ class Config:
                             "This means that each time you run the game, you'll get the exact same environment. "
                             "Unless you have a specific reason for this, set seed to None.")
         elif cls.mode == Mode.EVALUATE_MODEL:
+            # Err, the logic for handling seeds when evaluating is kinda messed up, if you set `handle_seed` to True,
+            # and `seed` to None, it'll use a dynamic seed -- but for ALL environments, so you'll get the exact same
+            # environment for multiple evaluations... NOT O.K.
             if not cls.handle_seed:
                 cls.printcw("Mode is set to Mode.EVALUATE_MODEL, but handle_seed is set to False. "
                             "This means that the same seed will likely be used as in training, which will lead to biased results. "
@@ -88,6 +91,9 @@ class Config:
                 cls.printcw("Mode is set to Mode.EVALUATE_MODEL, but seed is set to a fixed value (which could also possibly match the seed used during training). "
                             "This means that each time you run the evaluation, you'll get the exact same environment. "
                             "Unless you have a specific reason for this, set seed to None.")
+            else:
+                cls.printcw("I just found out that seed handling with Mode.EVALUATE_MODEL is a bit "
+                            "wibbly-wobbly, timey-wimey messed up. So umm... good luck fixing that (｡◕‿‿◕｡). ")
 
     @staticmethod
     def printcw(message: str, color: str = 'orange') -> None:

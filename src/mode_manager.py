@@ -44,11 +44,17 @@ class ModeExecutor:
 
     @staticmethod
     def train():
-        ModeExecutor.init_model().train()
+        model = ModeExecutor.init_model()
+        model.train()
+        if Config.evaluate_after_training:
+            model.evaluate()
 
     @staticmethod
     def continue_training():
-        ModeExecutor.init_model().continue_training()
+        model = ModeExecutor.init_model()
+        model.continue_training()
+        if Config.evaluate_after_training:
+            model.evaluate()
 
     @staticmethod
     def run_model():
