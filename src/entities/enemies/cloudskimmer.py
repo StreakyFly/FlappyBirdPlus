@@ -10,7 +10,7 @@ from ..items.weapons.ammo.bullet import Bullet
 # TODO: if bullet that hasn't bounced off a pipe, hits CloudSkimmer's gun, the gun should be destroyed/explode,
 #  the CloudSkimmer should loose some HP and look scarred or maybe run away/off screen, back where it came from!
 # TODO: When CloudSkimmer gets hit by the player, its face should turn angry and it could shoot faster for a while?
-#  Or maybe when one of the CloudSkimmers dies, the others get angry and shoot faster?
+#  Or maybe when one of the CloudSkimmers dies, the others get angry and shoot faster? -- YUP!
 # TODO: when one of the CloudSkimmers hits his teammate, the teammate should get angry and they should start shooting
 #  at each other xD — this would only work if the CloudSkimmers hit each other VERY rarely - or maybe there could
 #  be a 3% chance of this happening, so it doesn't happen too often, but still happens sometimes?
@@ -46,8 +46,8 @@ class CloudSkimmer(Enemy):
         self.vel_x = -8
         self.initial_vel_x = self.vel_x
         self.amplitude = amplitude  # oscillation amplitude
-        self.stop_distance = stop_dist  # distance at which the cloudskimmer stops
-        self.slow_down_distance = slow_dist  # distance at which the cloudskimmer starts slowing down
+        self.stop_distance = stop_dist  # distance at which the CloudSkimmer stops
+        self.slow_down_distance = slow_dist  # distance at which the CloudSkimmer starts slowing down
         self.frequency = 0.15  # oscillation frequency
         self.sin_y = 0  # sin wave vertical position
 
@@ -77,6 +77,8 @@ class CloudSkimmer(Enemy):
     def set_gun(self, gun: Gun, ammo_item: Bullet) -> None:
         self.gun = gun
         gun.update_ammo_object(ammo_item)
+        # Increase the shoot cooldown to make the CloudSkimmers less deadly, as they're way too OP.
+        gun.shoot_cooldown = int(gun.shoot_cooldown * 1.3) + 2
         self.possible_drop_items.append(gun.item_name)
 
     def stop_advancing(self) -> None:
@@ -174,3 +176,13 @@ class CloudSkimmerGroup(EnemyGroup):
                         member.stop_advancing()
 
         super().tick()
+
+    def on_member_death(self, member: Enemy) -> None:
+        """
+        Decrease the shoot cooldown of remaining member guns each time a member dies.
+        3 CloudSkimmers alive? Longest cooldown.
+        2 CloudSkimmers alive? Shorter cooldown.
+        1 CloudSkimmer alive? Shortest cooldown -- the default cooldown (unless you change the cooldown increase in CloudSkimmer.set_gun()).
+        """
+        for m in self.members:
+            m.gun.shoot_cooldown = max(1, int(m.gun.shoot_cooldown * 0.87))

@@ -88,6 +88,7 @@ class EnemyGroup:
             member.tick()
             if member.is_gone:
                 self.members.remove(member)
+                self.on_member_death(member)
 
     def stop(self) -> None:
         for member in self.members:
@@ -95,6 +96,13 @@ class EnemyGroup:
 
     def is_empty(self) -> bool:
         return not self.members
+
+    def on_member_death(self, member: Enemy) -> None:
+        """
+        This method is called when a member of the group dies.
+        It can be overridden in subclasses to implement specific behavior on member death.
+        """
+        pass
 
     def spawn_members(self) -> None:
         raise NotImplementedError("spawn_members method must be implemented in subclass")
