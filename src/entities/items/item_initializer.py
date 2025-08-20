@@ -78,23 +78,23 @@ class ItemInitializer:
 
             # Food
             case n.FOOD_APPLE:
-                item = Apple(config=c, spawn_quantity=random.randint(2, 4), entity=entity)
+                item = Apple(config=c, spawn_quantity=random.randint(3, 4), entity=entity)
             case n.FOOD_BURGER:
-                item = Burger(config=c, spawn_quantity=1, entity=entity)
+                item = Burger(config=c, spawn_quantity=random.randint(1, 2), entity=entity)
             case n.FOOD_CHOCOLATE:
-                item = Chocolate(config=c, spawn_quantity=random.randint(1, 2), entity=entity)
+                item = Chocolate(config=c, spawn_quantity=random.randint(2, 3), entity=entity)
 
             # Potions
             case n.POTION_HEAL:
-                item = HealPotion(config=c, spawn_quantity=random.randint(1, 2), entity=entity)
+                item = HealPotion(config=c, spawn_quantity=random.randint(2, 3), entity=entity)
             case n.POTION_SHIELD:
-                item = ShieldPotion(config=c, spawn_quantity=random.randint(1, 2), entity=entity)
+                item = ShieldPotion(config=c, spawn_quantity=random.randint(2, 3), entity=entity)
 
             # Heals
             case n.HEAL_MEDKIT:
-                item = Medkit(config=c, spawn_quantity=1, entity=entity)
+                item = Medkit(config=c, spawn_quantity=random.randint(1, 2), entity=entity)
             case n.HEAL_BANDAGE:
-                item = Bandage(config=c, spawn_quantity=random.randint(2, 4), entity=entity)
+                item = Bandage(config=c, spawn_quantity=random.randint(3, 5), entity=entity)
 
             # Special
             case n.TOTEM_OF_UNDYING:

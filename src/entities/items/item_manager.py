@@ -17,7 +17,7 @@ class ItemManager:
         self.spawned_items: List[SpawnedItem] = []
         self.spawn_cooldown: int = 150  # self.config.fps * 5 <-- we don't want it tied to the fps
         self.stopped = False
-        # self.count = 0  # TODO delete
+        # self.count = 0
         self.first_items_to_spawn = [[ItemName.WEAPON_AK47, ItemName.WEAPON_DEAGLE, ItemName.WEAPON_UZI],
                                      [ItemName.POTION_HEAL, ItemName.POTION_SHIELD],
                                      [ItemName.WEAPON_AK47, ItemName.WEAPON_DEAGLE, ItemName.WEAPON_UZI],
@@ -30,8 +30,8 @@ class ItemManager:
         if self.stopped:
             return
 
-        # self.count += 1  # TODO: delete
-        # if 70 < self.count < 90:  # TODO: delete
+        # self.count += 1
+        # if 70 < self.count < 90:
         #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_SHIELD,
         #                                x=800, y=700, image=self.config.images.item_spawn_bubble))
         #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
@@ -49,13 +49,9 @@ class ItemManager:
         #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=ItemName.POTION_HEAL,
         #                                x=800, y=0, image=self.config.images.item_spawn_bubble))
 
-        # items = [ItemName.WEAPON_AK47, ItemName.WEAPON_DEAGLE, ItemName.WEAPON_UZI, ItemName.AMMO_BOX,
-        #          ItemName.POTION_HEAL, ItemName.POTION_SHIELD, ItemName.TOTEM_OF_UNDYING]
         # for i in range(16):
-        #     item_name = random.choice(items)
-        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=item_name,
+        #     self.spawned_items.append(SpawnedItem(config=self.config, item_name=self.get_random_spawn_item(),
         #                               x=800, y=50*i, image=self.config.images.item_spawn_bubble))
-        # print(len(self.spawned_items))
 
         if self.can_spawn_item():
             self.spawn_item()
@@ -68,14 +64,11 @@ class ItemManager:
             item.stop()
 
     def can_spawn_item(self) -> bool:
-        self.last_pipe = self.pipes.lower[-1]
-        # return True
-
         if self.spawn_cooldown > 0:
             self.spawn_cooldown -= 1
             return False
 
-        self.spawn_cooldown = random.randint(60, 150)  # 2-5 seconds if fps is 30
+        self.spawn_cooldown = random.randint(36, 114)  # 1.2─3.8 seconds if fps is 30 (was 2─5s before)
         return True
 
     def spawn_item(self, spawn_pos: pygame.Vector2 = None, should_center: list[bool] = None, possible_items: list[ItemName] = None) -> None:
@@ -94,13 +87,14 @@ class ItemManager:
             x = spawn_pos.x - (SPAWNED_ITEM_SIZE//2 if should_center[0] else 0)
             y = spawn_pos.y - (SPAWNED_ITEM_SIZE//2 if should_center[1] else 0)
         else:
+            last_pipe = self.pipes.lower[-1]
             # x = 1370  # seems to be da best value, making the most spawned items reach the player at good position
             x = random.randint(1320, 1420)
-            # y = self.last_pipe.y - self.pipes.vertical_gap                               # bottom part of top pipe
-            # y = self.last_pipe.y - self.pipes.vertical_gap * 0.5 - SPAWNED_ITEM_SIZE//2  # center
-            # y = self.last_pipe.y - SPAWNED_ITEM_SIZE                                     # top part of bottom pipe
-            # y = random.randint(self.last_pipe.y - self.pipes.vertical_gap, self.last_pipe.y - SPAWNED_ITEM_SIZE)  # REVERT uncomment
-            y = random.randint(self.last_pipe.y - self.pipes.vertical_gap - 200, self.last_pipe.y - SPAWNED_ITEM_SIZE + 100)  # TEMP: bigger y offset during training  # REVERT comment this line
+            # y = last_pipe.y - self.pipes.vertical_gap                               # bottom part of top pipe
+            # y = last_pipe.y - self.pipes.vertical_gap * 0.5 - SPAWNED_ITEM_SIZE//2  # center
+            # y = last_pipe.y - SPAWNED_ITEM_SIZE                                     # top part of bottom pipe
+            y = random.randint(last_pipe.y - self.pipes.vertical_gap, last_pipe.y - SPAWNED_ITEM_SIZE)
+            # y = random.randint(last_pipe.y - self.pipes.vertical_gap - 200, last_pipe.y - SPAWNED_ITEM_SIZE + 100)  # TEMP: bigger y offset during training (step 1 & 2 env)
 
         spawned_item = SpawnedItem(config=self.config, item_name=item_name, x=x, y=y, image=self.config.images.item_spawn_bubble)
         self.spawned_items.append(spawned_item)

@@ -210,6 +210,8 @@ class Player(Entity):
         if self.invincibility_frames > 0:
             self.invincibility_frames -= 1
             self.hp_bar.change_value_by(2)
+            self.shield_bar.change_value_by(2)
+            self.food_bar.change_value_by(2)
 
         self.tick_bars()
         self.particle_manager.tick()
@@ -247,6 +249,8 @@ class Player(Entity):
             #  stops colliding with it within a few frames (2-3), don't crash it, maybe just add some scratch particles,
             #  deal a small amount of damage, and somehow bounce the player off the pipe (downwards/upwards).
             #  But if the player rams into the pipe directly, then immediately crash it.
+            #  How will I know if it's a "ram" or a "bump"? Maybe simulate the next 3-4 frames. Is the player still
+            #  colliding? If yes, then it's a "ram", if not, then it's a "bump".
             if self.collide(pipe):
                 self.crashed = True
                 self.crash_entity = "pipe"

@@ -1,8 +1,14 @@
 import pygame
 
-from ..utils import GameConfig, Fonts, flappy_text, get_font
 from .entity import Entity
+from ..utils import GameConfig, Fonts, flappy_text, get_font
 
+
+# Just noticed a flaw in this cache implementation...
+# Each time the player dies we call reset() which re-initializes the Score object, meaning the cache is cleared.
+# So the cache is created, but never used for previous scores. It uses it only for the current score.
+# Meaning we could 'cache'/store only the last used score instead of 100 or however many, and we'd get the same benefits
+# for way less overhead.
 
 class Score(Entity):
     text_cache = {}

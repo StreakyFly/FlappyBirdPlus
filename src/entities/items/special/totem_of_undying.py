@@ -12,7 +12,7 @@ class TotemOfUndying(Item):
         # if self.entity.hpm.current_value <= 0:
         #     self.entity.change_hp(100)
         super().use()
-        self.entity.apply_invincibility(duration_frames=60)
+        self.entity.apply_invincibility(duration_frames=100)
 
         # TODO play an animation & sound
 
